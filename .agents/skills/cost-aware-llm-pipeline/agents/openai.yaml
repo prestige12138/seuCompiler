@@ -1,0 +1,7 @@
+interface:
+  display_name: "Cost-Aware LLM"
+  short_description: "Cost optimization patterns for LLM pipelines"
+  brand_color: "#8B5CF6"
+  default_prompt: "Optimize an LLM workflow for cost, retries, and model routing"
+policy:
+  allow_implicit_invocation: true

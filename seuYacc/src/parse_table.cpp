@@ -380,7 +380,56 @@ std::string stripOuterBraces(const std::string& action) {
   return action;
 }
 
-std::string translateSemanticAction(const std::string& action) {
+std::string semanticFieldForSymbol(const YaccSpecification& specification, const std::string& symbol) {
+  const auto nonterminal = specification.nonterminalTypes.find(symbol);
+  if (nonterminal != specification.nonterminalTypes.end()) {
+    return sanitizeIdentifier(nonterminal->second);
+  }
+  const auto terminal = specification.tokenTypes.find(symbol);
+  if (terminal != specification.tokenTypes.end()) {
+    return sanitizeIdentifier(terminal->second);
+  }
+  return "";
+}
+
+std::string typedValueAccess(const YaccRule& rule,
+                             const std::string& tag,
+                             int rhs_index) {
+  const std::string member = sanitizeIdentifier(tag);
+  if (rhs_index == 0) {
+    return member.empty() ? "yyval_ref" : "yyval_ref." + member;
+  }
+  if (rhs_index > 0 && rhs_index <= static_cast<int>(rule.grammar.right.size())) {
+    const std::string base =
+        "rhs[static_cast<std::size_t>(" + std::to_string(rhs_index - 1) + ")].value";
+    if (!member.empty()) {
+      return base + "." + member;
+    }
+    return base;
+  }
+  return "";
+}
+
+std::string inferredValueAccess(const YaccSpecification& specification,
+                                const YaccRule& rule,
+                                int rhs_index) {
+  if (rhs_index == 0) {
+    const std::string member = semanticFieldForSymbol(specification, rule.grammar.left);
+    return member.empty() ? "yyval_ref" : "yyval_ref." + member;
+  }
+  if (rhs_index > 0 && rhs_index <= static_cast<int>(rule.grammar.right.size())) {
+    const std::string base =
+        "rhs[static_cast<std::size_t>(" + std::to_string(rhs_index - 1) + ")].value";
+    const std::string member =
+        semanticFieldForSymbol(specification, rule.grammar.right[static_cast<std::size_t>(rhs_index - 1)]);
+    return member.empty() ? base : base + "." + member;
+  }
+  return "";
+}
+
+std::string translateSemanticAction(const std::string& action,
+                                    const YaccRule& rule,
+                                    const YaccSpecification& specification) {
   const std::string body = stripOuterBraces(action);
   std::ostringstream out;
   bool in_string = false;
@@ -453,17 +502,17 @@ std::string translateSemanticAction(const std::string& action) {
     }
     if (ch == '$') {
       if (index + 1 < body.size() && body[index + 1] == '$') {
-        out << "yyval_ref";
+        out << inferredValueAccess(specification, rule, 0);
         index += 2;
         continue;
       }
       if (index + 1 < body.size() && body[index + 1] == '<') {
         const std::size_t tag_end = body.find('>', index + 2);
         if (tag_end != std::string::npos) {
-          const std::string tag = sanitizeIdentifier(body.substr(index + 2, tag_end - index - 2));
+          const std::string tag = body.substr(index + 2, tag_end - index - 2);
           std::size_t cursor = tag_end + 1;
           if (cursor < body.size() && body[cursor] == '$') {
-            out << "yyval_ref." << tag;
+            out << typedValueAccess(rule, tag, 0);
             index = cursor + 1;
             continue;
           }
@@ -474,7 +523,7 @@ std::string translateSemanticAction(const std::string& action) {
           if (cursor > number_begin) {
             const int rhs_index = std::stoi(body.substr(number_begin, cursor - number_begin));
             if (rhs_index > 0) {
-              out << "rhs[static_cast<std::size_t>(" << rhs_index - 1 << ")].value." << tag;
+              out << typedValueAccess(rule, tag, rhs_index);
               index = cursor;
               continue;
             }
@@ -488,7 +537,7 @@ std::string translateSemanticAction(const std::string& action) {
       if (cursor > index + 1) {
         const int rhs_index = std::stoi(body.substr(index + 1, cursor - index - 1));
         if (rhs_index > 0) {
-          out << "rhs[static_cast<std::size_t>(" << rhs_index - 1 << ")].value";
+          out << inferredValueAccess(specification, rule, rhs_index);
           index = cursor;
           continue;
         }
@@ -665,7 +714,13 @@ void ParserCodeGenerator::emitParser(const std::vector<parse_table_item>& table,
          << "#include <unordered_map>\n"
          << "#include <utility>\n"
          << "#include <vector>\n\n"
-         << specification.verbatimDefinitions << '\n'
+         << specification.verbatimDefinitions << '\n';
+  if (!specification.userSubroutines.empty()) {
+    output << "\nusing " << name_space << "::Token;\n"
+           << "using " << name_space << "::YYSTYPE;\n\n"
+           << specification.userSubroutines << '\n';
+  }
+  output << '\n'
          << "namespace " << name_space << " {\n\n"
          << "namespace {\n"
          << "struct SemanticValue {\n"
@@ -801,7 +856,8 @@ void ParserCodeGenerator::emitParser(const std::vector<parse_table_item>& table,
              << "        yyval_ref = rhs.front().value;\n"
              << "      }\n";
     } else {
-      std::istringstream action_stream(translateSemanticAction(specification.rules[index].action));
+      std::istringstream action_stream(
+          translateSemanticAction(specification.rules[index].action, specification.rules[index], specification));
       std::string line;
       while (std::getline(action_stream, line)) {
         output << "      " << line << '\n';
@@ -889,11 +945,6 @@ void ParserCodeGenerator::emitParser(const std::vector<parse_table_item>& table,
          << "  return false;\n"
          << "}\n\n"
          << "}  // namespace " << name_space << "\n";
-  if (!specification.userSubroutines.empty()) {
-    output << "\nusing " << name_space << "::Token;\n"
-           << "using " << name_space << "::YYSTYPE;\n\n"
-           << specification.userSubroutines << '\n';
-  }
 }
 
 void SeuYaccDriver::generate(const std::string& yacc_path,

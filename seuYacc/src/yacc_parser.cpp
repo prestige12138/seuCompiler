@@ -373,6 +373,7 @@ std::vector<YaccRule> parseRules(const std::string& text) {
   std::vector<YaccRule> rules;
   std::size_t pos = 0;
   int line = 1;
+  int midrule_index = 0;
   while (pos < text.size()) {
     skipSpaceAndComments(text, &pos, &line);
     if (pos >= text.size()) {
@@ -398,7 +399,24 @@ std::vector<YaccRule> parseRules(const std::string& text) {
           throw std::runtime_error("unterminated production for " + left);
         }
         if (text[pos] == '{') {
-          rule.action = parseActionBlock(text, &pos);
+          const std::string action = parseActionBlock(text, &pos);
+          std::size_t lookahead_pos = pos;
+          int lookahead_line = line;
+          skipSpaceAndComments(text, &lookahead_pos, &lookahead_line);
+          const bool is_final_action = lookahead_pos >= text.size() || text[lookahead_pos] == '|' ||
+                                       text[lookahead_pos] == ';';
+          if (is_final_action) {
+            rule.action = action;
+            continue;
+          }
+
+          YaccRule synthetic;
+          synthetic.grammar.left =
+              "__midrule_" + left + "_" + std::to_string(midrule_index++);
+          synthetic.source_line = line;
+          synthetic.action = action;
+          rules.push_back(synthetic);
+          rule.grammar.right.push_back(synthetic.grammar.left);
           continue;
         }
         if (text[pos] == '|') {

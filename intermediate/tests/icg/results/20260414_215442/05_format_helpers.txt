@@ -1,0 +1,4 @@
+ast_type=NODE_WHILE
+tri_op=OP_FUNC_CALL
+stmt=7: t3 = call foo(x, 1)
+dump=1: x = 1 | 2: return x

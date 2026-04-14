@@ -1,0 +1,3 @@
+exit_code=0
+stdout=[self-test] ast_construction_basic: ok [self-test] parse_root_handoff: ok [self-test] symbol_table_scope: ok [self-test] arithmetic_assignment_ir: ok [self-test] control_flow_and_call_ir: ok [self-test] function_body_ir: ok
+stderr=

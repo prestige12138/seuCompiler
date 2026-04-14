@@ -1,0 +1,8 @@
+NODE_PROGRAM[value="program",type=<empty>,children=2]
+  NODE_VAR_DECL[value="counter",type="int",children=1]
+    NODE_CONSTANT[value="0",type="int",children=0]
+  NODE_ASSIGN[value="=",type="int",children=2]
+    NODE_ID[value="counter",type="int",children=0]
+    NODE_ARITH[value="+",type="int",children=2]
+      NODE_ID[value="counter",type="int",children=0]
+      NODE_CONSTANT[value="1",type="int",children=0]

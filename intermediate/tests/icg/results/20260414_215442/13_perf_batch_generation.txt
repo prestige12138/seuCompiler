@@ -1,0 +1,4 @@
+iterations=2000
+final_stmt_count=3
+total_stmt_count=6000
+status=ok

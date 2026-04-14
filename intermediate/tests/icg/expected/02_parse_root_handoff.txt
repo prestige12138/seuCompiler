@@ -1,0 +1,4 @@
+observed_same=yes
+released_same=yes
+after_release_null=yes
+second_release_null=yes

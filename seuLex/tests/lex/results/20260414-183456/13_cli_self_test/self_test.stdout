@@ -1,0 +1,36 @@
+1 3 4 3
+[self-test] "if" => 1 (expected 1)
+[self-test] "else" => 2 (expected 2)
+[self-test] "abc123" => 3 (expected 3)
+[self-test] "42" => 4 (expected 4)
+[self-test] " 	" => 0 (expected 0)
+[self-test] "@" => -1 (expected -1)
+[regex-test] . / "a" => 7 (expected 7)
+[regex-test] . / "
+" => -1 (expected -1)
+[regex-test] [^a-c] / "z" => 7 (expected 7)
+[regex-test] [^a-c] / "b" => -1 (expected -1)
+[regex-test] a? / "" => 7 (expected 7)
+[regex-test] a? / "a" => 7 (expected 7)
+[regex-test] a? / "aa" => -1 (expected -1)
+[regex-test] a{2,4} / "a" => -1 (expected -1)
+[regex-test] a{2,4} / "aa" => 7 (expected 7)
+[regex-test] a{2,4} / "aaa" => 7 (expected 7)
+[regex-test] a{2,4} / "aaaa" => 7 (expected 7)
+[regex-test] a{2,4} / "aaaaa" => -1 (expected -1)
+[regex-test] "" / "" => 7 (expected 7)
+[regex-test] "" / "x" => -1 (expected -1)
+[regex-test] \" / "\"" => 7 (expected 7)
+[regex-test] \" / "a" => -1 (expected -1)
+[regex-test] {DIGIT}{DIGIT} / "42" => 7 (expected 7)
+[regex-test] {DIGIT}{DIGIT} / "4" => -1 (expected -1)
+[regex-error] |a => failed
+[regex-error] a| => failed
+[regex-error] a||b => failed
+[regex-error] {MISSING} => failed
+[dfa-empty] ok
+[parser-test] action_delimiter.l => ok
+[parser-test] comment_brace.l => ok
+[self-test] generated lexer: /tmp/seuLex_runtimetiRHCW/generated_sample_lexer.cpp
+[self-test] generated minic lexer: /tmp/seuLex_runtimetiRHCW/generated_minic_lexer.cpp
+[self-test] generated c99 lexer: /tmp/seuLex_runtimetiRHCW/generated_c99_lexer.cpp

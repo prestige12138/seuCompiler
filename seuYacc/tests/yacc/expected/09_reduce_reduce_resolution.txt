@@ -1,0 +1,7 @@
+conflicts=1
+shift_reduce=0
+reduce_reduce=1
+action_conflicts=0
+err_actions=0
+first_conflict=reduce/reduce conflict in state 4 on lookahead $: r2 vs r3
+resolved_action=r2

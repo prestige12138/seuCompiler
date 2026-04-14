@@ -1,691 +1,465 @@
-# API Reference
+# seuLex API 参考
 
-This document is based strictly on the current implementation in `include/` and `src/`.
+本文档基于当前 `include/` 和 `src/` 的实际实现整理。
 
-## 1. CLI Entry
+## 1. 命令行入口
 
 ### `int main(int argc, char** argv)`
 
-Defined in [`main.cpp`](/Users/llawliet/代码/seuCompiler/seuLex/src/main.cpp).
+文件：
 
-Purpose:
-- Parse CLI arguments.
-- Dispatch to generation mode or self-test mode.
+- `src/main.cpp`
 
-Parameters:
-- `argc`: argument count.
-- `argv`: argument vector.
+功能：
 
-Behavior:
-- `--self-test` calls `SeuLexDriver::runSelfTests()`.
-- Otherwise expects:
-  - `argv[1]`: Lex file path
-  - `argv[2]`: optional generated lexer output path
-  - `argv[3]`: optional dot output directory
+- 解析命令行参数
+- 进入生成模式或自测模式
 
-Return:
-- `0` on success.
-- `1` on usage error or thrown exception.
+参数：
 
-Dependencies:
-- `currentWorkingDirectory()`
-- `seu_lex::SeuLexDriver`
+- `argc`：参数个数
+- `argv`：参数数组
 
-## 2. Internal CLI Helper
+行为：
+
+- `--self-test` 调用 `SeuLexDriver::runSelfTests()`
+- 否则进入普通生成模式
+
+返回：
+
+- 成功返回 `0`
+- 参数错误或异常返回 `1`
+
+## 2. CLI 辅助函数
 
 ### `std::string currentWorkingDirectory()`
 
-Defined in anonymous namespace in [`main.cpp`](/Users/llawliet/代码/seuCompiler/seuLex/src/main.cpp).
+文件：
 
-Purpose:
-- Resolve the current workspace root for self-tests.
+- `src/main.cpp`
 
-Return:
-- current working directory as `std::string`
+功能：
 
-Failure:
-- throws if `getcwd()` fails
+- 获取当前工作目录，用于自测定位仓库根目录
 
-## 3. `node.h`
+失败行为：
 
-### `class node`
+- `getcwd()` 失败时抛异常
 
-Report-defined automaton state node.
+## 3. `node`
 
-#### `node()`
+定义位置：
 
-Purpose:
-- Construct a default non-accepting node.
+- `include/node.h`
 
-Parameters:
-- none
+实现位置：
 
-Return:
-- constructed object
+- `src/node.cpp`
 
-Dependencies:
-- none
+### `node()`
 
-#### `node(int state, bool accepttag)`
+功能：
 
-Purpose:
-- Construct a node with an explicit numeric state label and accept flag.
+- 构造默认非接受态
 
-Parameters:
-- `state`: state ID
-- `accepttag`: accepting flag
+### `node(int state, bool accepttag)`
 
-Return:
-- constructed object
+功能：
 
-#### `void Addoutstate(char ch, node* nd)`
+- 构造带状态编号和接受标记的节点
 
-Purpose:
-- Add an outgoing transition.
+### `void Addoutstate(char ch, node* nd)`
 
-Parameters:
-- `ch`: edge label, with `'\0'` representing epsilon
-- `nd`: target node pointer
+功能：
 
-Return:
-- none
+- 添加一条出边
 
-Dependencies:
-- `outstate`
+参数：
 
-#### `bool IsAccepted()`
-#### `bool IsAccepted() const`
+- `ch`：边字符，`'\0'` 表示 epsilon
+- `nd`：目标节点
 
-Purpose:
-- Query whether this node is accepting.
+### `bool IsAccepted()`
+### `bool IsAccepted() const`
 
-Return:
-- `true` if accepting, else `false`
+功能：
 
-#### `void SetAccept(bool tag)`
+- 查询是否为接受态
 
-Purpose:
-- Update the accepting flag.
+### `void SetAccept(bool tag)`
 
-Parameters:
-- `tag`: new accept value
+功能：
 
-Return:
-- none
+- 更新接受态标记
 
-#### `mulit GetNextStates(char ch)`
+### `mulit GetNextStates(char ch)`
 
-Purpose:
-- Return an iterator to the first matching outgoing transition.
+功能：
 
-Parameters:
-- `ch`: edge label
+- 获取给定字符对应的出边迭代器
 
-Return:
-- iterator into `outstate`
+### `int GetState()`
+### `int GetState() const`
 
-#### `int GetState()`
-#### `int GetState() const`
+功能：
 
-Purpose:
-- Return the numeric state label.
+- 读取状态编号
 
-Return:
-- state ID
+### `std::multimap<char, node*> getMultimap()`
+### `std::multimap<char, node*> getMultimap() const`
 
-#### `std::multimap<char, node*> getMultimap()`
-#### `std::multimap<char, node*> getMultimap() const`
+功能：
 
-Purpose:
-- Return a copy of the outgoing transition multimap.
+- 返回当前出边表的副本
 
-Return:
-- copied transition multimap
+说明：
 
-Note:
-- This is copy-based, not reference-based.
+- 当前是拷贝返回，不是引用返回
 
-#### `void setNextState(myMul next)`
+### `void setNextState(myMul next)`
 
-Purpose:
-- Replace the transition multimap.
+功能：
 
-Parameters:
-- `next`: new multimap
+- 替换整个出边表
 
-Return:
-- none
+### `void Setstate(int state)`
 
-#### `void Setstate(int state)`
+功能：
 
-Purpose:
-- Replace the numeric state label.
+- 更新状态编号
 
-Parameters:
-- `state`: new state ID
+## 4. `nfa`
 
-Return:
-- none
+定义位置：
 
-## 4. `nfa.h`
+- `include/nfa.h`
 
-### `typedef struct nfa`
+字段：
 
-Fields:
 - `node* start`
 - `std::vector<node*> terminal`
 
-Purpose:
-- Represent one NFA fragment or merged NFA.
+作用：
 
-### Global Tables
+- 表示单个规则 NFA 或合并后的总 NFA
 
-#### `extern std::set<char> char_set`
+## 5. 全局表
 
-Purpose:
-- Alphabet seen in non-epsilon transitions.
+### `extern std::set<char> char_set`
 
-Used by:
-- `buildNFA()`
-- `subsetConstruct()`
-- `minimizeDFA()`
+作用：
 
-#### `extern std::map<std::string, std::string> idreTable`
+- 保存所有非 epsilon 输入字符
 
-Purpose:
-- Named regular-definition table from the Definitions section.
+### `extern std::map<std::string, std::string> idreTable`
 
-Used by:
-- `parseLexFile()`
-- `expandRE()`
+作用：
 
-#### `extern std::vector<nfa> nfaTable`
+- 保存 Definitions 段的命名正则定义
 
-Purpose:
-- Stores one NFA per parsed rule before merging.
+### `extern std::vector<nfa> nfaTable`
 
-Used by:
-- `SeuLexDriver::generate()`
-- `SeuLexDriver::runSelfTests()`
+作用：
 
-#### `extern std::map<int, std::string> nfaterstatetoaction`
+- 保存每条规则构造出的 NFA
 
-Purpose:
-- Map accepting NFA state ID to its action text.
+### `extern std::map<int, std::string> nfaterstatetoaction`
 
-Used by:
-- `buildNFA()`
-- `pickActionFromSet()`
+作用：
 
-## 5. `dfa.h`
+- NFA 接受态编号到动作代码的映射
 
-### `typedef struct dfa`
+### `extern std::vector<node*> dfaterminals`
 
-Fields:
+作用：
+
+- 当前 DFA 阶段的接受态集合
+
+### `extern std::map<int, std::string> TerStateActionTable`
+
+作用：
+
+- DFA 接受态编号到动作代码的映射
+
+### `extern std::map<int, std::string> mindfareturn`
+
+作用：
+
+- 最小 DFA 接受态编号到动作代码的映射
+
+## 6. `dfa`
+
+定义位置：
+
+- `include/dfa.h`
+
+字段：
+
 - `node* start`
 - `std::vector<node> nodeVec`
 - `std::vector<node> endNode`
 
-#### `dfa(node* st = nullptr)`
+### `dfa(node* st = nullptr)`
 
-Purpose:
-- Construct a DFA with an optional start pointer.
+功能：
 
-Parameters:
-- `st`: start state pointer
+- 构造一个可选起点的 DFA 对象
 
-#### `void Eclosure(std::set<node*>& x)`
+### `void Eclosure(std::set<node*>& x)`
 
-Purpose:
-- Expand an NFA-state set by following epsilon edges.
+功能：
 
-Parameters:
-- `x`: input/output NFA-state set
+- 对 NFA 状态集合做 epsilon-closure
 
-Return:
-- none
+### `void printDFA()`
 
-Dependencies:
-- `node::getMultimap()`
-- epsilon symbol `'\0'`
+功能：
 
-#### `void printDFA()`
+- 输出 DFA 调试信息到标准输出
 
-Purpose:
-- Print all DFA states and outgoing transitions to stdout for debugging.
+## 7. `LexParser`
 
-Return:
-- none
+### `LexSpecification parseLexFile(const std::string& path) const`
 
-### Global Tables
+文件：
 
-#### `extern std::vector<node*> dfaterminals`
+- `include/lex_parser.h`
+- `src/lex_parser.cpp`
 
-Purpose:
-- Accepting DFA state pointers.
+功能：
 
-#### `extern std::map<int, std::string> TerStateActionTable`
+- 解析 `.l` 文件并返回结构化结果
 
-Purpose:
-- Accepting DFA state ID to action string.
+输入：
 
-#### `extern std::map<int, std::string> mindfareturn`
+- `path`：Lex 文件路径
 
-Purpose:
-- Accepting minimized DFA state ID to action string.
+返回：
 
-## 6. `lex_parser.h`
+- `LexSpecification`
 
-### `struct LexRule`
+异常：
 
-Fields:
-- `regex`
-- `action`
-- `priority`
-- `expandedRegex`
-- `postfixRegex`
+- 文件无法打开
+- 缺失 `%%`
+- action 块不平衡
+- 规则语法非法
 
-Purpose:
-- Store one parsed rule across all compilation stages.
+## 8. `REExpander`
 
-### `struct LexSpecification`
+### `std::string expandRE(const std::string& raw) const`
 
-Fields:
-- `definitionsSection`
-- `verbatimDefinitions`
-- `rulesSection`
-- `userSubroutines`
-- `rules`
+文件：
 
-Purpose:
-- Store the parsed Lex source file.
+- `include/regex_expander.h`
+- `src/regex_expander.cpp`
 
-### `LexSpecification LexParser::parseLexFile(const std::string& path) const`
+功能：
 
-Purpose:
-- Parse a Lex file into `LexSpecification`.
+- 把扩展 Lex 正则展开为内部普通表示
 
-Parameters:
-- `path`: source `.l` file path
+输入：
 
-Return:
-- parsed specification
+- 原始正则字符串
 
-Failure:
-- throws on file open failure
-- throws on missing `%%` separators
-- throws on unterminated `%{...%}` blocks
-- throws on malformed multi-line rules
+返回：
 
-Dependencies:
-- `idreTable`
-- internal helpers in `lex_parser.cpp`
+- 规范化后的正则串
 
-## 7. `nfa_constructor.h`
+## 9. `NFABuilder`
 
-### `std::string REExpander::expandRE(const std::string& raw) const`
+### `std::string toPostfix(const std::string& infix) const`
 
-Purpose:
-- Expand extended Lex regex syntax into normalized ordinary RE form.
+功能：
 
-Parameters:
-- `raw`: original regex text
+- 中缀转后缀
 
-Return:
-- normalized token string
+### `nfa buildNFA(const std::string& postfix, const std::string& action, std::size_t priority) const`
 
-Failure:
-- throws on undefined names
-- throws on cyclic named definitions
-- throws on malformed regex syntax
-- throws on repetition overflow or implementation-limit breach
+功能：
 
-Dependencies:
-- `idreTable`
-- `expandNamedDefinitions()`
-- `ExtendedRegexParser`
-- `serializeAst()`
+- 用 Thompson 算法构造单规则 NFA
 
-### `std::string NFABuilder::toPostfix(const std::string& infix) const`
+参数：
 
-Purpose:
-- Convert normalized infix RE to postfix form.
+- `postfix`：后缀正则
+- `action`：规则动作代码
+- `priority`：规则优先级
 
-Parameters:
-- `infix`: normalized RE string
+### `nfa mergeNFA(const std::vector<nfa>& automata) const`
 
-Return:
-- postfix token string
+功能：
 
-Failure:
-- throws on mismatched parentheses
-- throws on unknown token kinds
+- 合并多个规则 NFA
 
-### `nfa NFABuilder::buildNFA(const std::string& postfix, const std::string& action, std::size_t priority) const`
+## 10. `DFABuilder`
 
-Purpose:
-- Build one Thompson NFA from one postfix RE.
+### `dfa subsetConstruct(const nfa& automaton) const`
 
-Parameters:
-- `postfix`: postfix token string
-- `action`: action attached to the accepting state
-- `priority`: rule priority, lower means earlier rule
+文件：
 
-Return:
-- constructed NFA
+- `include/dfa_builder.h`
+- `src/dfa_builder.cpp`
 
-Failure:
-- throws on malformed postfix RE
-- throws on unsupported literal range
+功能：
 
-Dependencies:
-- `char_set`
-- `nfaterstatetoaction`
-- internal arena `g_nodeArena`
-- internal priority table `g_nfaPriorityTable`
+- 用子集构造把 NFA 变成 DFA
 
-### `nfa NFABuilder::mergeNFA(const std::vector<nfa>& automata) const`
+输入：
 
-Purpose:
-- Merge multiple rule NFAs under one epsilon start node.
+- 合并后的 NFA
 
-Parameters:
-- `automata`: per-rule NFAs
+返回：
 
-Return:
-- merged NFA
+- 原始 DFA
 
-Dependencies:
-- internal state allocator
+说明：
 
-### `dfa DFABuilder::subsetConstruct(const nfa& automaton) const`
+- 若 `automaton.start == nullptr`，返回空 DFA，而不是解引用空指针
 
-Purpose:
-- Determinize an NFA using subset construction.
+## 11. `resetGlobalTables()`
 
-Parameters:
-- `automaton`: merged NFA
+功能：
 
-Return:
-- constructed DFA
+- 清空所有报告要求的全局表和内部构造状态
 
-Dependencies:
-- `char_set`
-- `TerStateActionTable`
-- `dfaterminals`
-- `pickActionFromSet()`
-- `dfa::Eclosure()`
+说明：
 
-### `void resetGlobalTables()`
+- 每次新生成前都应调用
+- 调用后，旧 `nfa`、`nfaTable`、`dfaterminals` 中保存的 `node*` 都不再有效
 
-Purpose:
-- Reset all report-defined global state and internal construction arenas.
+## 12. `DFAMinimizer`
 
-Return:
-- none
+### `dfa minimizeDFA(const dfa& automaton) const`
 
-Dependencies reset:
-- `char_set`
-- `idreTable`
-- `nfaTable`
-- `dfaterminals`
-- `nfaterstatetoaction`
-- `TerStateActionTable`
-- `mindfareturn`
-- internal `g_nfaPriorityTable`
-- internal `g_nodeArena`
-- internal next-state counter
+文件：
 
-## 8. `dfa_minimizer.h`
+- `include/dfa_minimizer.h`
+- `src/dfa_minimizer.cpp`
 
-### `dfa DFAMinimizer::minimizeDFA(const dfa& automaton) const`
+功能：
 
-Purpose:
-- Minimize DFA states while preserving accepting action semantics.
+- 最小化 DFA
 
-Parameters:
-- `automaton`: source DFA
+说明：
 
-Return:
-- minimized DFA
+- 当前实现按接受动作分组，避免错误合并
 
-Dependencies:
-- `char_set`
-- `TerStateActionTable`
-- `mindfareturn`
-- `dfaterminals`
+## 13. `CodeGenerator`
 
-Failure:
-- assumes state IDs are valid indices into `nodeVec`
+### `void emitLexer(const dfa& automaton, const LexSpecification& specification, const std::string& outPath) const`
 
-## 9. `code_generator.h`
+功能：
 
-### `void CodeGenerator::emitLexer(const dfa& automaton, const LexSpecification& specification, const std::string& outPath) const`
+- 输出最终 lexer C++ 源码
 
-Purpose:
-- Emit standalone C++ lexer source code.
+输出内容包括：
 
-Parameters:
-- `automaton`: minimized DFA
-- `specification`: parsed Lex source, used for verbatim blocks and user code
-- `outPath`: output C++ file path
+- 状态转移表
+- 接受态动作分发
+- `analysis(std::string yytext)`
+- `next_token()`
+- `tokenize(const std::string& source)`
+- `input()`
+- verbatim definitions
+- 用户动作和子程序
 
-Return:
-- none
+## 14. `Visualizer`
 
-Failure:
-- throws if DFA has no start state
-- throws if output file cannot be opened
-- throws if output directories cannot be created
+### `void dumpNFA(const nfa& automaton, const std::string& path) const`
 
-Dependencies:
-- `mindfareturn`
-- `TerStateActionTable`
-- internal filesystem helpers in `code_generator.cpp`
+功能：
 
-### `void Visualizer::dumpNFA(const nfa& automaton, const std::string& path) const`
+- 输出 NFA 的 dot 文件
 
-Purpose:
-- Emit Graphviz dot for an NFA.
+### `void dumpDFA(const dfa& automaton, const std::string& path) const`
 
-Parameters:
-- `automaton`: source NFA
-- `path`: output path
+功能：
 
-Return:
-- none
+- 输出 DFA 的 dot 文件
 
-Dependencies:
-- `escapeDotLabel()`
-- `ensureDirectory()`
+## 15. `SeuLexDriver`
 
-### `void Visualizer::dumpDFA(const dfa& automaton, const std::string& path) const`
+### `void generate(const std::string& lexPath, const std::string& outCppPath, const std::string& dotDir) const`
 
-Purpose:
-- Emit Graphviz dot for a DFA.
+功能：
 
-Parameters:
-- `automaton`: source DFA
-- `path`: output path
+- 调度整个词法生成流程
 
-Return:
-- none
+主要步骤：
 
-### `void SeuLexDriver::generate(const std::string& lexPath, const std::string& outCppPath, const std::string& dotDir) const`
+1. 清理全局表
+2. 解析 `.l`
+3. 扩展每条规则正则
+4. 中缀转后缀
+5. 构造 NFA
+6. 合并 NFA
+7. 子集构造
+8. DFA 最小化
+9. 输出 dot
+10. 输出 lexer
 
-Purpose:
-- Run the full seuLex generation pipeline.
+### `bool runSelfTests(const std::string& workspaceRoot) const`
 
-Parameters:
-- `lexPath`: source `.l` file
-- `outCppPath`: generated lexer output path
-- `dotDir`: visualization output directory
+功能：
 
-Return:
-- none
+- 运行内建自测
 
-Dependencies:
-- `resetGlobalTables()`
-- `LexParser`
-- `REExpander`
-- `NFABuilder`
-- `DFABuilder`
-- `DFAMinimizer`
-- `CodeGenerator`
-- `Visualizer`
-- `nfaTable`
+当前覆盖：
 
-### `bool SeuLexDriver::runSelfTests(const std::string& workspaceRoot) const`
+- 小样例 lexer 编译运行
+- DFA 行为测试
+- 非法正则异常测试
+- Lex 解析器边界回归
+- `minic.l` / `c99.l` 生成
 
-Purpose:
-- Run built-in generation, parser, regex, and smoke tests.
+## 16. 关键内部函数
 
-Parameters:
-- `workspaceRoot`: current working directory used to locate repository resources
+以下函数不是公开 API，但在调试时非常关键。
 
-Return:
-- `true` if all internal checks pass
-- `false` if any internal logical check fails
+### `expandNamedDefinitions`
 
-Failure:
-- throws on temp directory creation failure
-- throws on sample lexer compile failure
-- throws on sample lexer runtime failure
-- throws if repository resources cannot be located
+文件：
 
-Dependencies:
-- `resolveRepoRoot()`
-- `makeTempDir()`
-- `runProcess()`
-- full generation pipeline
+- `src/regex_expander.cpp`
 
-## 10. Internal Helpers In `lex_parser.cpp`
+功能：
 
-### `findSectionDelimiter(const std::string&, std::size_t)`
+- 递归替换 `{NAME}`
+- 检查未定义引用和循环引用
 
-Purpose:
-- Find a standalone `%%` line starting at a given offset.
+### `evaluateDFA`
 
-### `trim(const std::string&)`
+文件：
 
-Purpose:
-- Remove leading and trailing whitespace.
+- `src/code_generator.cpp`
 
-### `splitByLines(const std::string&)`
+功能：
 
-Purpose:
-- Split text into line vector while preserving trailing empty line information.
+- 在自测阶段直接驱动 DFA，检查词素识别和动作选择
 
-### `stripInlineComment(const std::string&)`
+### `runProcess`
 
-Purpose:
-- Remove `/* ...` inline suffix in definition lines.
+文件：
 
-### `isActionBalanced(const std::string&)`
+- `src/code_generator.cpp`
 
-Purpose:
-- Decide whether a possibly multi-line action block is complete.
+功能：
 
-### `splitRegexAndAction(const std::string&)`
+- 以子进程运行编译器或测试可执行文件
 
-Purpose:
-- Split one accumulated rule string into regex and action text.
+## 17. 错误处理约定
 
-### `readWholeFile(const std::string&)`
+公共入口采用 C++ 异常向上抛出：
 
-Purpose:
-- Read a full file into memory.
+- 文件错误
+- 规格错误
+- 正则非法
+- 自动机构造失败
+- 自测失败
 
-### `takeBetweenMarkers(const std::string&, const std::string&, const std::string&, std::vector<std::pair<std::size_t, std::size_t>>*)`
+命令行入口统一捕获并打印：
 
-Purpose:
-- Extract all blocks between markers and optionally record source ranges.
-
-### `removeRanges(const std::string&, const std::vector<std::pair<std::size_t, std::size_t>>&)`
-
-Purpose:
-- Remove a set of source ranges from text.
-
-## 11. Internal Helpers In `nfa_constructor.cpp`
-
-### State And Storage Helpers
-
-- `isIdentifierLike()`: validate named-definition references
-- `splitSpaceTokens()`: split normalized token streams
-- `joinKey()`: canonicalize NFA-state subsets
-- `createState()`: allocate one node from the arena
-- `buildAsciiUniverse()`: create ASCII character domain
-- `decodeEscape()`: decode escape sequences
-
-### Regex AST Helpers
-
-- `makeLiteral()`
-- `makeEpsilon()`
-- `makeSet()`
-- `makeConcat()`
-- `makeUnion()`
-- `makeStar()`
-- `cloneAst()`
-- `serializeAst()`
-
-Purpose:
-- Construct, copy, and serialize regex AST nodes.
-
-### Named-Definition Expansion
-
-- `expandNamedDefinitions()`
-
-Purpose:
-- Recursively expand `{NAME}` references.
-
-### `class ExtendedRegexParser`
-
-Internal recursive-descent parser with methods:
-
-- `parse()`
-- `parseUnion()`
-- `parseConcat()`
-- `parseRepeat()`
-- `parseBoundedRepeat()`
-- `parsePrimary()`
-- `parseQuotedString()`
-- `parseCharacterClass()`
-- `parseInteger()`
-- `skipSpace()`
-- `expect()`
-- `peek()`
-- `canStartPrimary()`
-
-### Thompson/DFA Helpers
-
-- `Fragment`: NFA fragment pair
-- `pickActionFromSet()`: choose highest-priority accepting action from an NFA-state subset
-
-## 12. Internal Helpers In `dfa_minimizer.cpp`
-
-### `actionForState(int stateId)`
-
-Purpose:
-- Resolve the best action table currently in force for a DFA state.
-
-## 13. Internal Helpers In `code_generator.cpp`
-
-### Path And Process Helpers
-
-- `trim()`
-- `dirnameOf()`
-- `joinPath()`
-- `ensureDirectory()`
-- `makeTempDir()`
-- `fileExists()`
-- `resolveRepoRoot()`
-- `runProcess()`
-
-Purpose:
-- Support path creation, repository discovery, and self-test subprocess execution.
-
-### Codegen Helpers
-
-- `escapeDotLabel()`: printable labels for dot output
-- `actionForState()`: resolve action text for emitted tables
-- `evaluateDFA()`: internal DFA evaluator used by self-test
+```text
+seuLex error: ...
+```

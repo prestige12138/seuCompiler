@@ -1,0 +1,7 @@
+# name: negated_escape
+analysis|Q|1
+analysis|\t|2
+analysis|\n|3
+dot_exists|merged_nfa.dot|
+dot_exists|dfa.dot|
+dot_exists|min_dfa.dot|

@@ -1,100 +1,66 @@
-# seuLex Documentation
+# seuLex 文档总览
 
-## Overview
+这组文档面向两类读者：
 
-`seuLex` is a modular lexical-analyzer generator implemented in C++17 for UNIX/POSIX environments. The current codebase keeps the report-defined names unchanged while moving them into `namespace seu_lex`.
+- 需要审阅 `seuLex` 设计、算法和实现边界的开发者
+- 需要把 `seuLex` 与 `seuYacc` 或上层编译器前端联调的集成人员
 
-The implementation covers the full generation chain present in the code:
+## 文档索引
 
-1. Parse a Lex source file into Definitions / Rules / User subroutines.
-2. Expand extended regular expressions into a normalized ordinary form.
-3. Convert normalized infix RE to postfix form.
-4. Build per-rule Thompson NFAs.
-5. Merge multiple NFAs under a new epsilon start node.
-6. Determinize the merged NFA into a DFA.
-7. Minimize the DFA by partition refinement.
-8. Generate standalone C++ lexer code and dot visualizations.
-9. Run built-in smoke, regex, and parser regression tests.
+- [ARCHITECTURE.md](./ARCHITECTURE.md)
+  - 模块职责、生成链路、核心设计决策
+- [ALGORITHMS.md](./ALGORITHMS.md)
+  - Lex 解析、扩展正则展开、NFA / DFA / 最小化、代码生成
+- [API_REFERENCE.md](./API_REFERENCE.md)
+  - 公开接口与关键内部函数说明
+- [DATA_STRUCTURES.md](./DATA_STRUCTURES.md)
+  - 中期报告结构、全局表和辅助结构说明
+- [DEPENDENCY_GRAPH.md](./DEPENDENCY_GRAPH.md)
+  - Mermaid 模块依赖图和流水线图
+- [DEVELOPMENT_PROCESS.md](./DEVELOPMENT_PROCESS.md)
+  - 模块演化过程、验证方式、已知边界
 
-## Directory Layout
+## 推荐阅读顺序
 
-```text
-seuLex/
-├── include/
-│   ├── node.h
-│   ├── nfa.h
-│   ├── dfa.h
-│   ├── lex_parser.h
-│   ├── nfa_constructor.h
-│   ├── dfa_minimizer.h
-│   └── code_generator.h
-├── src/
-│   ├── lex_parser.cpp
-│   ├── nfa_constructor.cpp
-│   ├── dfa_minimizer.cpp
-│   ├── code_generator.cpp
-│   └── main.cpp
-├── tests/
-│   └── sample_smoke.l
-├── docs/
-│   ├── README.md
-│   ├── ALGORITHMS.md
-│   ├── API_REFERENCE.md
-│   ├── DATA_STRUCTURES.md
-│   ├── DEVELOPMENT_PROCESS.md
-│   └── DEPENDENCY_GRAPH.md
-├── CMakeLists.txt
-└── README-LEX.md
-```
+如果你第一次读 `seuLex`：
 
-## Build And Run
+1. 先看 [ARCHITECTURE.md](./ARCHITECTURE.md)
+2. 再看 [DATA_STRUCTURES.md](./DATA_STRUCTURES.md)
+3. 然后看 [ALGORITHMS.md](./ALGORITHMS.md)
+4. 最后查 [API_REFERENCE.md](./API_REFERENCE.md)
 
-```bash
-cd seuLex
-cmake -S . -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
-cmake --build build
-ctest --test-dir build --output-on-failure
-```
+如果你要调试词法生成问题：
 
-Generate a lexer:
+1. 先看 [ALGORITHMS.md](./ALGORITHMS.md)
+2. 再看 [API_REFERENCE.md](./API_REFERENCE.md)
+3. 同时参考 [DEPENDENCY_GRAPH.md](./DEPENDENCY_GRAPH.md)
 
-```bash
-./build/seuLex ../resources/minic.l generated_minic.cpp dot
-```
+## 当前模块结论
 
-Run the built-in self-test:
+`seuLex` 当前已经具备如下交付属性：
 
-```bash
-./build/seuLex --self-test
-```
+- 可独立构建
+- 可独立运行
+- 可生成独立 C++ lexer
+- 支持从 `.l` 到最小 DFA 的完整生成链
+- 支持 dot 可视化输出
+- 具备内建自测和 `ctest` 入口
 
-## Entry Path
+## 与 seuYacc 的边界
 
-The executable entry is [`main.cpp`](/Users/llawliet/代码/seuCompiler/seuLex/src/main.cpp). The production generation path is:
+`seuLex` 当前负责：
 
-`main()` -> `seu_lex::SeuLexDriver::generate()` -> parser -> RE expansion -> postfix conversion -> NFA -> DFA -> minimization -> dot/code emission.
+- 读取源代码字符流
+- 识别 token
+- 返回 token 类型
 
-## Core Modules
+`seuLex` 当前不负责：
 
-- [`lex_parser.cpp`](/Users/llawliet/代码/seuCompiler/seuLex/src/lex_parser.cpp): splits Lex files and builds `LexSpecification`.
-- [`nfa_constructor.cpp`](/Users/llawliet/代码/seuCompiler/seuLex/src/nfa_constructor.cpp): owns the report-defined globals, regex normalization, Thompson NFA construction, and subset construction.
-- [`dfa_minimizer.cpp`](/Users/llawliet/代码/seuCompiler/seuLex/src/dfa_minimizer.cpp): minimizes DFA states while preserving action semantics.
-- [`code_generator.cpp`](/Users/llawliet/代码/seuCompiler/seuLex/src/code_generator.cpp): emits standalone C++ lexer code, dot graphs, and self-tests.
-- [`main.cpp`](/Users/llawliet/代码/seuCompiler/seuLex/src/main.cpp): CLI wrapper.
+- 语法分析
+- 语义动作调度
+- AST 构造
 
-## Constraints And Boundaries
+如果要和 `seuYacc` 联调，当前最合适的集成方向是：
 
-- Language standard: C++17.
-- Platform: UNIX/POSIX only.
-- Character domain used by generated transition tables: ASCII 1..127, with `'\0'` reserved as epsilon.
-- The generated lexer embeds `%{...%}`, rule actions, and user subroutines verbatim. The `.l` file is therefore treated as trusted input by design.
-- `{m,n}` repetition bounds are guarded against integer overflow and are capped by the implementation limit in `nfa_constructor.cpp`.
-- The self-test generates `minic` and `c99` lexer sources, but does not compile them because their runtime dependencies are outside the current `seuLex` subtree.
-
-## Reading Guide
-
-- Read [`ALGORITHMS.md`](/Users/llawliet/代码/seuCompiler/seuLex/docs/ALGORITHMS.md) for the end-to-end compiler-theory pipeline.
-- Read [`API_REFERENCE.md`](/Users/llawliet/代码/seuCompiler/seuLex/docs/API_REFERENCE.md) for public and internal function contracts.
-- Read [`DATA_STRUCTURES.md`](/Users/llawliet/代码/seuCompiler/seuLex/docs/DATA_STRUCTURES.md) for report-defined names and ownership notes.
-- Read [`DEPENDENCY_GRAPH.md`](/Users/llawliet/代码/seuCompiler/seuLex/docs/DEPENDENCY_GRAPH.md) for Mermaid dependency views.
-- Read [`DEVELOPMENT_PROCESS.md`](/Users/llawliet/代码/seuCompiler/seuLex/docs/DEVELOPMENT_PROCESS.md) for implementation history and AI usage notes.
+- 保持 `seuLex` 负责 token 识别
+- 让 `seuYacc` 负责消费 token 序列并进行 LR 语法分析

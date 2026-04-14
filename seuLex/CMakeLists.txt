@@ -13,8 +13,12 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 enable_testing()
 
 add_executable(seuLex
+  src/node.cpp
+  src/lex_state.cpp
   src/lex_parser.cpp
+  src/regex_expander.cpp
   src/nfa_constructor.cpp
+  src/dfa_builder.cpp
   src/dfa_minimizer.cpp
   src/code_generator.cpp
   src/main.cpp

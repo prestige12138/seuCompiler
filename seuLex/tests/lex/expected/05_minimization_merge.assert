@@ -1,0 +1,9 @@
+# name: minimization_merge
+analysis|a|1
+analysis|b|1
+tokenize|ab|1,1
+dot_exists|merged_nfa.dot|
+dot_exists|dfa.dot|
+dot_exists|min_dfa.dot|
+state_count|dfa.dot|3
+state_count|min_dfa.dot|2

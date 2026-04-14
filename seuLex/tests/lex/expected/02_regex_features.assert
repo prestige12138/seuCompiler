@@ -1,0 +1,14 @@
+# name: regex_features
+analysis|if|1
+analysis|42|2
+analysis|z|3
+analysis|@|5
+analysis||6
+analysis|e|6
+analysis|fff|7
+analysis|gg|8
+analysis|hhh|9
+analysis|iiiii|10
+dot_exists|merged_nfa.dot|
+dot_exists|dfa.dot|
+dot_exists|min_dfa.dot|

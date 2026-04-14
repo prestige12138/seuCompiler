@@ -4,29 +4,19 @@
 #include <string>
 #include <vector>
 
-#include "dfa.h"
-#include "lex_parser.h"
+#include "dfa_builder.h"
 #include "nfa.h"
+#include "regex_expander.h"
 
 /**
  * @file nfa_constructor.h
- * @brief Regex expansion, NFA construction, and subset construction.
+ * @brief Thompson NFA construction and shared generation-state reset.
+ *
+ * This header keeps the historical include surface stable by re-exporting the
+ * split regex-expansion and DFA-construction interfaces.
  */
 
 namespace seu_lex {
-
-/**
- * @brief Expand extended Lex regular expressions into ordinary RE tokens.
- */
-class REExpander {
- public:
-  /**
-   * @brief Expand one extended RE using `idreTable`.
-   *
-   * Complexity: O(M + K), where M is input length and K is normalized output.
-   */
-  std::string expandRE(const std::string& raw) const;
-};
 
 /**
  * @brief Convert normalized RE to postfix and Thompson NFA.
@@ -58,22 +48,11 @@ class NFABuilder {
 };
 
 /**
- * @brief Determinize an NFA with subset construction.
- */
-class DFABuilder {
- public:
-  /**
-   * @brief Build a DFA from an NFA.
-   *
-   * Complexity: O(2^V * |Sigma|) in the worst case.
-   */
-  dfa subsetConstruct(const nfa& automaton) const;
-};
-
-/**
  * @brief Reset all report-defined global tables and construction state.
  *
  * Complexity: O(S), where S is the total size of stored global state.
+ *
+ * @note All previously returned NFA-state pointers become invalid after reset.
  */
 void resetGlobalTables();
 

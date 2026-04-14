@@ -18,6 +18,8 @@
 
 ## 目录结构
 
+源码与文档：
+
 ```text
 seuLex/
 ├── include/
@@ -25,20 +27,44 @@ seuLex/
 │   ├── nfa.h
 │   ├── dfa.h
 │   ├── lex_parser.h
+│   ├── regex_expander.h
 │   ├── nfa_constructor.h
+│   ├── dfa_builder.h
 │   ├── dfa_minimizer.h
 │   └── code_generator.h
 ├── src/
+│   ├── internal/
+│   │   └── lex_state.h
+│   ├── node.cpp
+│   ├── lex_state.cpp
 │   ├── lex_parser.cpp
+│   ├── regex_expander.cpp
 │   ├── nfa_constructor.cpp
+│   ├── dfa_builder.cpp
 │   ├── dfa_minimizer.cpp
 │   ├── code_generator.cpp
 │   └── main.cpp
+├── docs/
+│   ├── README.md
+│   ├── ARCHITECTURE.md
+│   ├── ALGORITHMS.md
+│   ├── API_REFERENCE.md
+│   ├── DATA_STRUCTURES.md
+│   ├── DEPENDENCY_GRAPH.md
+│   └── DEVELOPMENT_PROCESS.md
 ├── tests/
 │   └── sample_smoke.l
 ├── CMakeLists.txt
 └── README-LEX.md
 ```
+
+运行或构建后还可能出现这些产物：
+
+- `build/`
+- `dot/`
+- `generated_lexer.cpp`
+
+它们不是源码模块的一部分。
 
 ## 功能
 
@@ -83,3 +109,13 @@ ctest --test-dir build --output-on-failure
 - 自测会在 `/tmp` 下创建临时目录，不再把生成产物堆在仓库根目录。
 - `.l` 规格中的 `%{...%}`、规则动作和用户子程序会原样进入生成的 C++，因此本工具只适用于可信的 Lex 输入文件。
 - `{m,n}` 重复次数会做整数溢出检查，并限制在实现上限以内，避免异常大的规则直接拖垮生成过程。
+
+## 文档导航
+
+- [文档总览](./docs/README.md)
+- [模块架构](./docs/ARCHITECTURE.md)
+- [算法说明](./docs/ALGORITHMS.md)
+- [API 参考](./docs/API_REFERENCE.md)
+- [数据结构说明](./docs/DATA_STRUCTURES.md)
+- [依赖图](./docs/DEPENDENCY_GRAPH.md)
+- [开发与验证过程](./docs/DEVELOPMENT_PROCESS.md)

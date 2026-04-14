@@ -1,0 +1,7 @@
+# name: parser_sections
+analysis|alpha|11
+analysis|beta_2|20
+tokenize|alpha beta_2|11,20
+dot_exists|merged_nfa.dot|
+dot_exists|dfa.dot|
+dot_exists|min_dfa.dot|

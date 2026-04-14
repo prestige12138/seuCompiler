@@ -22,8 +22,10 @@
 #include <utility>
 #include <vector>
 
+#include "dfa_builder.h"
 #include "dfa_minimizer.h"
 #include "nfa_constructor.h"
+#include "regex_expander.h"
 
 namespace seu_lex {
 namespace {
@@ -648,6 +650,17 @@ bool SeuLexDriver::runSelfTests(const std::string& workspaceRoot) const {
   expectExpandFailure("a|");
   expectExpandFailure("a||b");
   expectExpandFailure("{MISSING}");
+
+  {
+    resetGlobalTables();
+    DFABuilder localDfaBuilder;
+    const dfa emptyDfa = localDfaBuilder.subsetConstruct(nfa{});
+    const bool emptyOk = emptyDfa.start == nullptr && emptyDfa.nodeVec.empty();
+    std::cout << "[dfa-empty] " << (emptyOk ? "ok" : "failed") << '\n';
+    if (!emptyOk) {
+      allPassed = false;
+    }
+  }
 
   const auto expectLexParseSuccess = [&](const std::string& fileName, const std::string& specText) {
     const std::string casePath = joinPath(tempDir, fileName);

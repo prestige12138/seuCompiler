@@ -1,0 +1,6 @@
+state0_items=5
+A -> . B , 'c'
+B -> . 'b' , 'c'
+B -> . , 'c'
+S -> . A 'c' , $
+__SEU_YACC_AUGMENTED_START__ -> . S , $

@@ -1,181 +1,186 @@
-# Development Process
+# seuLex 开发与验证过程
 
-## 1. Current State Of The Project
+## 1. 当前状态
 
-The current `seuLex` subtree is a modular refactoring of an earlier monolithic implementation. The code now separates:
+当前 `seuLex` 子树已经不再是单文件实验代码，而是一个模块化后的词法分析器生成器。
 
-- parsing
-- regex normalization and NFA/DFA construction
-- DFA minimization
-- code generation and visualization
-- CLI entry
+目前代码已分离为：
 
-The refactoring preserved the original functionality and the report-defined data structure names, while moving implementation details into separate headers and sources.
+- Lex 规格解析
+- 扩展正则规范化
+- NFA 构造
+- DFA 子集构造
+- DFA 最小化
+- 代码生成与可视化
+- CLI 入口
 
-## 2. High-Level Implementation Phases Reflected In The Code
+重构过程中保留了中期报告要求的数据结构名称，没有把课程概念改写成完全不同的工程命名体系。
 
-### Phase A. Modularization
+## 2. 主要实现阶段
 
-The single-file implementation was decomposed into:
+### 阶段 A：模块化拆分
 
-- [`include/node.h`](/Users/llawliet/代码/seuCompiler/seuLex/include/node.h)
-- [`include/nfa.h`](/Users/llawliet/代码/seuCompiler/seuLex/include/nfa.h)
-- [`include/dfa.h`](/Users/llawliet/代码/seuCompiler/seuLex/include/dfa.h)
-- [`include/lex_parser.h`](/Users/llawliet/代码/seuCompiler/seuLex/include/lex_parser.h)
-- [`include/nfa_constructor.h`](/Users/llawliet/代码/seuCompiler/seuLex/include/nfa_constructor.h)
-- [`include/dfa_minimizer.h`](/Users/llawliet/代码/seuCompiler/seuLex/include/dfa_minimizer.h)
-- [`include/code_generator.h`](/Users/llawliet/代码/seuCompiler/seuLex/include/code_generator.h)
-- [`src/lex_parser.cpp`](/Users/llawliet/代码/seuCompiler/seuLex/src/lex_parser.cpp)
-- [`src/nfa_constructor.cpp`](/Users/llawliet/代码/seuCompiler/seuLex/src/nfa_constructor.cpp)
-- [`src/dfa_minimizer.cpp`](/Users/llawliet/代码/seuCompiler/seuLex/src/dfa_minimizer.cpp)
-- [`src/code_generator.cpp`](/Users/llawliet/代码/seuCompiler/seuLex/src/code_generator.cpp)
-- [`src/main.cpp`](/Users/llawliet/代码/seuCompiler/seuLex/src/main.cpp)
+把原先偏单体的实现拆成：
 
-### Phase B. Build System Consolidation
+- `include/node.h`
+- `include/nfa.h`
+- `include/dfa.h`
+- `include/lex_parser.h`
+- `include/regex_expander.h`
+- `include/nfa_constructor.h`
+- `include/dfa_builder.h`
+- `include/dfa_minimizer.h`
+- `include/code_generator.h`
+- `src/internal/lex_state.h`
+- `src/node.cpp`
+- `src/lex_state.cpp`
+- `src/lex_parser.cpp`
+- `src/regex_expander.cpp`
+- `src/nfa_constructor.cpp`
+- `src/dfa_builder.cpp`
+- `src/dfa_minimizer.cpp`
+- `src/code_generator.cpp`
+- `src/main.cpp`
 
-[`CMakeLists.txt`](/Users/llawliet/代码/seuCompiler/seuLex/CMakeLists.txt) formalizes:
+### 阶段 B：构建系统固化
 
-- C++17 compilation
-- UNIX/POSIX-only constraint
-- warning flags for Clang/GNU
-- built-in CTest entry
-- self-test compiler injection via `SEU_LEX_TEST_CXX`
+`CMakeLists.txt` 明确了：
 
-### Phase C. Parser Hardening
+- C++17
+- UNIX / POSIX 约束
+- Clang / GNU 警告级别
+- CTest 入口
+- 自测编译器注入宏 `SEU_LEX_TEST_CXX`
 
-The parser now explicitly handles several cases that previously broke valid Lex files:
+### 阶段 C：Lex 解析器加固
 
-- standalone `%%` detection rather than naive substring search
-- `%%` inside `%{...%}` blocks
-- `%%` inside rule actions
-- braces inside block comments and line comments within multi-line actions
+补强内容包括：
 
-### Phase D. Regex/Runtime Safety Fixes
+- 只把独立 `%%` 视为分段符
+- 避免 `%{...%}` 中的 `%%` 干扰分段
+- 避免动作块中的 `%%` 干扰分段
+- 对字符串、字符常量、注释中的花括号做平衡判断
 
-The current code also added guardrails without changing the intended feature set:
+### 阶段 D：正则和运行期安全性补强
 
-- repetition-bound integer overflow detection
-- repetition-bound implementation limit
-- self-test process execution via `fork/execvp` instead of shelling through `std::system()`
+补强内容包括：
 
-## 3. Key Code Evolution Themes
+- `{m,n}` 重复边界溢出检测
+- 重复上限限制
+- 自测子进程通过 `fork/execvp` 调起，而不是 `std::system()`
 
-### Preserve Report Names, Improve Boundaries
+## 3. 当前设计演化特征
 
-The refactoring deliberately did not rename the report-defined entities. Instead, it contained them inside `namespace seu_lex` and reduced global namespace pollution.
+### 保留报告命名，收束到命名空间
 
-### Separate Public Interface And Implementation
+当前策略不是改掉报告中的命名，而是把它们整体放进 `namespace seu_lex`。
 
-Headers now expose only the external contracts, while helper functions and parser internals remain in anonymous namespaces or internal classes.
+这样做的收益：
 
-### Prefer POSIX Runtime Utilities Over `std::filesystem`
+- 对课程报告和代码审阅更友好
+- 减少全局命名污染
 
-To avoid platform/toolchain issues seen during compilation and editor analysis, the current implementation uses POSIX functions such as:
+### 公开接口和内部实现已经有初步分离
 
-- `mkdir`
-- `mkdtemp`
-- `stat`
-- `getcwd`
-- `fork`
-- `execvp`
-- `waitpid`
+当前头文件只保留主要接口，辅助函数大多放在：
 
-## 4. Verification Process Reflected In The Code
+- 匿名命名空间
+- 内部局部结构
 
-The project currently verifies itself through:
+### 仍保留明显的“共享状态热点”
 
-### Build Verification
+当前最明显的是：
+
+- 报告要求保留的多张全局表
+
+在最近一次重构后：
+
+- `src/regex_expander.cpp` 负责扩展 RE
+- `src/lex_state.cpp` 负责全局状态和 reset
+- `src/node.cpp` 负责基础 `node` 实现
+- `src/nfa_constructor.cpp` 负责中缀转后缀和 Thompson NFA
+- `src/dfa_builder.cpp` 负责确定化
+
+单文件职责已经明显收束，但共享状态仍然决定了几个模块之间的耦合强度。
+
+## 4. 当前验证方式
+
+### 构建验证
 
 ```bash
 cmake -S seuLex -B seuLex/build
 cmake --build seuLex/build
 ```
 
-### Automated Self-Test
+### 自动测试
 
 ```bash
 ctest --test-dir seuLex/build --output-on-failure
 ```
 
-### Manual Self-Test Entry
+### 手动自测入口
 
 ```bash
 cd seuLex
 ./build/seuLex --self-test
 ```
 
-### What `runSelfTests()` Covers
+## 5. `runSelfTests()` 当前覆盖
 
-- generation and compilation of a sample lexer
-- runtime tokenization smoke test
-- direct regex-to-DFA checks
-- invalid regex failure checks
-- parser regression tests for delimiter/comment corner cases
-- generation of `minic` and `c99` lexer outputs
+- 小样例 lexer 的生成和编译
+- 直接 DFA 识别行为验证
+- 非法正则失败验证
+- Lex 解析器边界回归
+- `minic.l` 输出生成
+- `c99.l` 输出生成
 
-## 5. Known Limits In The Current Implementation
+## 6. 当前边界
 
-These are properties of the current code, not future design goals.
+这些是当前实现已经明确的性质，不是未来目标：
 
-- `.l` action blocks and user code are treated as trusted input and embedded verbatim in generated C++.
-- The effective runtime alphabet is ASCII-based.
-- Empty-string token rules remain a constrained runtime case.
-- `resources/minic.l` and `resources/c99.l` are generated in self-test but not compiled there because their surrounding runtime dependencies are outside the local `seuLex` module.
+- `.l` 动作块和用户代码按可信输入处理
+- 运行字符域当前基于 ASCII
+- 空串规则仍是受限运行场景
+- `minic.l` 和 `c99.l` 在自测中会生成，但不会在 `seuLex` 子树内完成最终编译联调
 
-## 6. AI Usage Record
+## 7. 与 seuYacc 的工程成熟度对比
 
-This documentation is based on the current checked-in `seuLex` implementation and the recent AI-assisted refactor history visible from the code structure and commit trail.
+当前结论：
 
-### Main Agent Responsibilities
+- `seuLex` 和 `seuYacc` 的整体质量已经比较接近
+- `seuYacc` 仍在“对象化封装”和“阶段数据传递”上略好
 
-- scanned all current `include/` and `src/` files
-- mapped public interfaces to implementations
-- reconstructed the active generation pipeline from code
-- wrote the documentation set under `seuLex/docs/`
+原因主要在于：
 
-### Supporting Agent Roles Used In The Recent Refactor/Documentation Workflow
+- `seuLex` 的全局共享状态更多
+- `seuLex` 的代码生成与自测辅助仍偏集中
+- `seuYacc` 的文法解析、自动机构造、分析表、代码生成拆分更均匀
 
-- `explorer`
-  - scanned source/module boundaries
-  - summarized major algorithms and caveats
-- `architect`
-  - proposed the documentation outline and section structure
-- `reviewer` / `code-reviewer`
-  - identified parser corner-case regressions and verification gaps during the refactor cycle
-- `security-reviewer`
-  - highlighted trusted-input and process-execution risks
+如果用工程化程度来描述：
 
-### AI-Driven Issues That Were Addressed In The Current Code
+- `seuLex`：模块化已经完成，剩余短板主要是共享状态
+- `seuYacc`：已经更接近“结构清晰的生成器框架”
 
-- removal of `std::filesystem` usage in favor of POSIX APIs
-- namespace and include cleanup during modular refactor
-- parser fixes for `%%` handling and comment-aware brace balancing
-- overflow/bound checks for repetition parsing
-- self-test subprocess handling without shell invocation
+## 8. AI 使用记录
 
-## 7. Documentation Generation Workflow
+这组文档和近期模块整理过程中使用了 AI 辅助，但遵循的原则是：
 
-For this documentation pass, the process was:
+- 先读当前代码，再写文档
+- 文档只能反映现状，不能替代实现
+- 审阅发现的问题必须回到代码层面修复
 
-1. Scan all headers in `include/` to identify official interfaces and report-defined names.
-2. Scan all sources in `src/` to reconstruct hidden helpers and actual control flow.
-3. Cross-check build/test behavior against `CMakeLists.txt` and `README-LEX.md`.
-4. Write:
-   - overview
-   - algorithms
-   - API reference
-   - data structures
-   - development process
-   - dependency graph
-5. Review documentation for consistency with current code only.
+在近期流程中，AI 主要承担：
 
-## 8. Practical Maintenance Guidance
+- 源码结构扫描
+- 模块边界归纳
+- 算法链和全局表关系梳理
+- 文档补写与整理
 
-When updating the code later, the documentation should be revised if any of these change:
+## 9. 后续建议
 
-- report-defined data structure names
-- generation pipeline ordering
-- regex syntax supported by `ExtendedRegexParser`
-- self-test coverage
-- generated lexer runtime API
-- module boundaries under `include/` and `src/`
+如果后面继续提升 `seuLex`，优先建议如下：
+
+1. 进一步收窄共享全局表的写入面
+2. 继续降低全局共享表的直接读写面
+3. 拆分 `code_generator.cpp` 中的自测和运行辅助
+4. 增加更细粒度的回归样例，而不只依赖端到端 smoke test

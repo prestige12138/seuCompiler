@@ -1,0 +1,11 @@
+# name: longest_match_priority
+analysis|if|1
+analysis|ifa|4
+analysis|==|2
+analysis|=|3
+analysis|42|5
+analysis|@|-1
+tokenize|if ifa == = 42 @|1,4,2,3,5,-1
+dot_exists|merged_nfa.dot|
+dot_exists|dfa.dot|
+dot_exists|min_dfa.dot|

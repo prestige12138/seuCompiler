@@ -1,12 +1,14 @@
-# Algorithms
+# seuLex 算法说明
 
-## 1. Lex File Parsing
+## 1. Lex 文件解析
 
-Implemented in [`lex_parser.cpp`](/Users/llawliet/代码/seuCompiler/seuLex/src/lex_parser.cpp).
+实现位置：
 
-### Goal
+- `src/lex_parser.cpp`
 
-Convert a `.l` file into a structured `LexSpecification` containing:
+### 目标
+
+把 `.l` 文件解析为结构化的 `LexSpecification`，其中包含：
 
 - `definitionsSection`
 - `verbatimDefinitions`
@@ -14,342 +16,336 @@ Convert a `.l` file into a structured `LexSpecification` containing:
 - `userSubroutines`
 - `rules`
 
-### Steps
+### 步骤
 
-1. `readWholeFile()` loads the full file into memory.
-2. `findSectionDelimiter()` finds the first and second `%%` separators.
-3. `takeBetweenMarkers()` extracts `%{...%}` blocks from the Definitions section.
-4. `removeRanges()` removes those verbatim blocks before parsing macro definitions.
-5. Definitions are stored into `idreTable`.
-6. Rules are collected line by line into `pendingRule`.
-7. `splitRegexAndAction()` separates the regex from its action.
-8. `isActionBalanced()` keeps accumulating lines until braces are balanced, while ignoring braces inside:
-   - string literals
-   - character literals
-   - block comments
-   - line comments
+1. `readWholeFile()` 一次性读取整个文件
+2. `findSectionDelimiter()` 定位两个独立的 `%%`
+3. `takeBetweenMarkers()` 提取 `%{...%}` verbatim 区块
+4. `removeRanges()` 去掉这些 verbatim 区块后再解析命名定义
+5. Definitions 段写入 `idreTable`
+6. Rules 段逐行累积成规则
+7. `splitRegexAndAction()` 拆分 `regex` 和 `action`
+8. `isActionBalanced()` 判断多行动作块是否闭合
 
-### Notable Parsing Rules
+### 关键规则
 
-- Only a standalone `%%` line is treated as a section delimiter.
-- `%%` inside `%{...%}` or inside rule actions does not split sections.
-- Multi-line actions remain valid as long as braces are balanced.
+- 只有独立一行的 `%%` 才是分段符
+- `%{...%}` 内部的 `%%` 不会切段
+- 规则 action 内部的 `%%` 不会切段
+- 多行动作块在字符串、字符常量、注释中的花括号不会误计数
 
-### Complexity
+### 复杂度
 
-- File load and section split: `O(N)`
-- Definition parsing: `O(N)`
-- Rule parsing: `O(N)`
-- Overall: `O(N)`, where `N` is file size
+- 总体 `O(N)`
+- `N` 为文件长度
 
-## 2. Extended RE Expansion
+## 2. 扩展正则展开
 
-Implemented mainly in [`nfa_constructor.cpp`](/Users/llawliet/代码/seuCompiler/seuLex/src/nfa_constructor.cpp) by `REExpander`, `expandNamedDefinitions()`, and `ExtendedRegexParser`.
+主要实现位置：
 
-### Goal
+- `src/regex_expander.cpp`
 
-Convert Lex-style extended regex syntax into an internal normalized ordinary RE string composed of:
+核心组件：
 
-- literal tokens `ch:<ascii>`
-- epsilon token `eps`
-- explicit concatenation `&`
-- union `|`
-- Kleene star `*`
+- `REExpander`
+- `expandNamedDefinitions()`
+- `ExtendedRegexParser`
 
-### Supported Constructs
+### 目标
 
-- Named definitions: `{DIGIT}`
-- Grouping: `( ... )`
-- Character classes: `[abc]`
-- Negated classes: `[^a-c]`
-- Ranges: `[A-Z]`
-- Wildcard: `.`
-- Quoted strings: `"if"`
-- Escapes: `\n`, `\t`, `\\`, `\"`, `\'`, `\0`
-- Postfix operators: `*`, `+`, `?`
-- Bounded repetition: `{m}`, `{m,n}`, `{m,}`
+把 Lex 风格扩展正则规范化为内部普通正则表示。
 
-### Expansion Strategy
+内部普通表示只保留：
 
-#### Named Definitions
+- 字面量 token `ch:<ascii>`
+- epsilon `eps`
+- 显式连接 `&`
+- 并 `|`
+- 闭包 `*`
 
-`expandNamedDefinitions()` recursively replaces `{NAME}` using `idreTable`.
+### 支持的扩展特性
 
-- Cycles are detected with `recursionGuard`.
-- Undefined names raise exceptions.
+- 命名定义：`{DIGIT}`
+- 分组：`(...)`
+- 字符类：`[abc]`
+- 取反类：`[^a-z]`
+- 区间：`[A-Z]`
+- 通配符：`.`
+- 字符串：`"if"`
+- 转义：`\n`、`\t`、`\\`、`\"`、`\'`、`\0`
+- 后缀运算：`*`、`+`、`?`
+- 有界重复：`{m}`、`{m,n}`、`{m,}`
 
-#### Parsing
+### 命名定义替换
 
-`ExtendedRegexParser` uses recursive descent:
+`expandNamedDefinitions()` 会递归替换 `{NAME}`：
+
+- 若引用未定义，抛异常
+- 若出现循环引用，抛异常
+
+### 解析方式
+
+当前内部用递归下降生成 `RegexAst`：
 
 - `parseUnion()`
 - `parseConcat()`
 - `parseRepeat()`
 - `parsePrimary()`
 
-This produces an internal `RegexAst`.
+### 复杂度
 
-#### Normalization
+- 常见情况下近似线性
+- 但 `{m,n}` 展开会带来 AST 复制成本
 
-`serializeAst()` turns the AST into a flat token stream with explicit concatenation.
+## 3. 中缀转后缀
 
-Example:
+实现位置：
 
-```text
-"if" -> ( ch:105 & ch:102 )
-```
+- `NFABuilder::toPostfix()`
 
-### Complexity
+### 目标
 
-- Named expansion: `O(M + K)` in the common case
-- Recursive parsing: `O(T)`
-- Serialization: `O(T)`
-- Overall: linear in regex size after expansion, excluding repeated AST cloning for bounded repetition
+把规范化中缀表达式转成后缀表达式，以便用栈驱动 Thompson 构造。
 
-## 3. Infix To Postfix Conversion
-
-Implemented by `NFABuilder::toPostfix()`.
-
-### Goal
-
-Convert the normalized infix expression into postfix form so Thompson construction can be stack-driven.
-
-### Operators
+### 运算符
 
 - `|`
 - `&`
 - `*`
-- parentheses
+- 括号
 
-### Method
+### 方法
 
-A standard operator-stack algorithm is used:
+使用标准运算符栈算法：
 
-- operands go directly to output
-- `*` is emitted directly because the normalized stream already treats it as postfix
-- `|` and `&` use precedence
-- parentheses control grouping
+- 操作数直接输出
+- `*` 在当前内部表示下是后缀运算符
+- `|` 和 `&` 按优先级处理
+- 括号控制结合范围
 
-### Complexity
+### 复杂度
 
-`O(T)`, where `T` is the number of normalized tokens.
+- `O(T)`
+- `T` 为 token 数
 
-## 4. Thompson NFA Construction
+## 4. Thompson NFA 构造
 
-Implemented by `NFABuilder::buildNFA()`.
+实现位置：
 
-### Goal
+- `NFABuilder::buildNFA()`
 
-Construct a single-rule NFA from postfix RE.
+### 目标
 
-### Internal Representation
+从单条规则的后缀正则构造一个 NFA。
+
+### 内部表示
 
 - `Fragment { start, accept }`
-- `node` objects stored in the internal arena `g_nodeArena`
-- epsilon edge encoded as `'\0'`
+- `node` 由内部 arena 分配
+- `'\0'` 表示 epsilon
 
-### Construction Rules
+### 构造规则
 
-- `eps`: create start -> epsilon -> accept
-- `ch:x`: create start -x-> accept
-- `&`: concatenate two fragments
-- `|`: create new split start and join accept
-- `*`: create loop and epsilon bypass
+- `eps`
+  - 生成 `start --eps--> accept`
+- `ch:x`
+  - 生成 `start --x--> accept`
+- `&`
+  - 拼接两个 fragment
+- `|`
+  - 生成新分叉起点和汇合终点
+- `*`
+  - 生成回路和 epsilon 旁路
 
-### Action Binding
+### 词法动作绑定
 
-The accept state of each rule NFA is recorded in:
+每条规则的接受态会记录到：
 
 - `nfaterstatetoaction`
-- `g_nfaPriorityTable`
+- `nfaPriorityTableInternal`
 
-This preserves Lex rule priority during DFA construction.
+目的是保留 Lex 的“前面规则优先”语义。
 
-### Complexity
+### 复杂度
 
-`O(T + E)` where `T` is postfix token count and `E` is the number of created edges.
+- `O(T + E)`
 
-## 5. NFA Merge
+## 5. 多个 NFA 合并
 
-Implemented by `NFABuilder::mergeNFA()`.
+实现位置：
 
-### Goal
+- `NFABuilder::mergeNFA()`
 
-Combine all rule NFAs into one automaton.
+### 目标
 
-### Method
+把所有规则 NFA 合并为一个总 NFA。
 
-- create one fresh global start node
-- add epsilon edges from that node to each rule-NFA start
-- append all rule terminal states to the merged terminal list
+### 方法
 
-### Complexity
+1. 创建新的全局起点
+2. 从全局起点向每个规则 NFA 的起点连 epsilon 边
+3. 汇总所有终态
 
-`O(R)` where `R` is the number of rule NFAs.
+### 复杂度
 
-## 6. DFA Determinization
+- `O(R)`
+- `R` 为规则数
 
-Implemented by:
+## 6. DFA 子集构造
 
+实现位置：
+
+- `src/dfa_builder.cpp`
 - `dfa::Eclosure()`
 - `DFABuilder::subsetConstruct()`
 
-### Goal
+### 目标
 
-Convert the merged NFA into a DFA by subset construction.
+把合并后的 NFA 确定化为 DFA。
 
-### Algorithm
+### 算法
 
-1. Compute epsilon-closure of `{nfa.start}`.
-2. Treat each unique NFA-state subset as one DFA state.
-3. For each symbol in `char_set`, compute move + epsilon-closure.
-4. Intern subsets using a canonical string key from sorted NFA state IDs.
-5. Mark DFA states as accepting if any member NFA state is accepting.
+0. 若输入 NFA 没有起始状态，直接返回空 DFA
+1. 计算 `{nfa.start}` 的 epsilon-closure
+2. 每个不同的 NFA 状态子集映射为一个 DFA 状态
+3. 对 `char_set` 中每个字符做 move + closure
+4. 使用排序后的 NFA 状态编号串做状态去重 key
+5. 若子集包含接受态，则把该 DFA 状态标记为接受态
 
-### Priority Preservation
+### 动作优先级保持
 
-`pickActionFromSet()` chooses the action associated with the accepting NFA state that has the smallest rule priority. This preserves “first rule wins” among matching rules.
+`pickActionFromSet()` 会从接受态集合中选出优先级最小的规则动作，保持：
 
-### Complexity
+- 最长匹配之外的规则优先级
+- “先写先匹配”的 Lex 语义
 
-Worst case:
+### 复杂度
 
-`O(2^V * |Sigma|)`
+最坏情况下：
 
-where:
+- `O(2^V * |Sigma|)`
 
-- `V` is the number of NFA states
-- `|Sigma|` is the number of input symbols in `char_set`
+其中：
 
-## 7. DFA Minimization
+- `V` 为 NFA 状态数
+- `|Sigma|` 为字母表大小
 
-Implemented by `DFAMinimizer::minimizeDFA()` in [`dfa_minimizer.cpp`](/Users/llawliet/代码/seuCompiler/seuLex/src/dfa_minimizer.cpp).
+## 7. DFA 最小化
 
-### Goal
+实现位置：
 
-Reduce DFA state count while preserving transition behavior and accepting actions.
+- `src/dfa_minimizer.cpp`
 
-### Key Difference From Basic Minimization
+### 目标
 
-Accepting states are partitioned by action string, not merely by “accepting vs non-accepting”. This is necessary because two accepting states with different actions cannot be merged safely.
+在不改变识别行为和接受动作的前提下压缩 DFA 状态数。
 
-### Algorithm
+### 与教科书基础版的差异
 
-1. Initial partitions:
-   - one partition for non-accepting states
-   - one partition per distinct accepting action
-2. Repeatedly refine partitions using state signatures:
-   - current partition ID
-   - action string
-   - target partition for each symbol in `char_set`
-3. Stop when no partition splits further.
-4. Build a new minimized DFA from partition representatives.
+不能仅按“接受 / 不接受”划分状态，因为：
 
-### Complexity
+- 不同接受态可能绑定不同动作
+- 这些状态若合并会破坏词法语义
 
-`O(P * V * |Sigma|)`
+因此当前实现对接受态按 action 字符串进一步分组。
 
-where:
+### 算法步骤
 
-- `P` is the number of refinement rounds
-- `V` is the number of DFA states
-- `|Sigma|` is the alphabet size
+1. 初始划分：
+   - 一个非接受态分区
+   - 若干按 action 区分的接受态分区
+2. 重复细化分区：
+   - 当前分区号
+   - action 字符串
+   - 每个字符转移到的目标分区
+3. 直到不再发生分裂
+4. 用分区代表构造最小 DFA
 
-## 8. Lexer Code Generation
+### 复杂度
 
-Implemented by `CodeGenerator::emitLexer()`.
+- `O(P * V * |Sigma|)`
 
-### Goal
+其中：
 
-Emit a self-contained C++ lexer source file from the minimized DFA and parsed Lex specification.
+- `P` 为分裂轮数
+- `V` 为 DFA 状态数
+- `|Sigma|` 为字母表大小
 
-### Generated Components
+## 8. 代码生成
 
-- static transition table `kTransitions`
-- accept bitmap `kAcceptStates`
-- embedded `%{...%}` content
-- embedded user subroutines
-- `dispatch_action(int state)`
-- `reset_source(const std::string&)`
-- `int analysis(std::string yytext)`
-- `int next_token()`
-- `std::vector<int> tokenize(const std::string&)`
-- `int input()`
+实现位置：
 
-### Runtime Strategy
+- `CodeGenerator::emitLexer()`
 
-- `analysis()` evaluates one lexeme directly against the DFA.
-- `next_token()` performs longest-prefix scanning over `yy_source`.
-- `dispatch_action()` executes the action for an accepting state.
-- blank or `;` actions return `0` and behave as skip rules.
+### 目标
 
-### Complexity
+把最小 DFA 输出为可独立编译的 C++ 词法分析器源码。
 
-- Table generation: `O(V * |Sigma|)`
-- Action emission: `O(A)` where `A` is total action text size
-- Overall emission: `O(V * |Sigma| + A)`
+### 生成内容
 
-## 9. Dot Visualization
+- 状态转移表
+- 接受态动作表
+- `analysis(std::string yytext)`
+- `input()`
+- `next_token()`
+- `tokenize(const std::string& source)`
+- verbatim definitions
+- 规则动作
+- 用户子程序
 
-Implemented by `Visualizer::dumpNFA()` and `Visualizer::dumpDFA()`.
+### 设计特点
 
-### Goal
+- 生成器直接嵌入 `%{...%}` 和用户代码
+- 因此输入 `.l` 被视为可信源
 
-Export Graphviz dot graphs for inspection and debugging.
+## 9. dot 可视化输出
 
-### Method
+实现位置：
 
-- NFA export uses BFS from the NFA start node.
-- DFA export iterates through `nodeVec`.
-- Accepting states use `doublecircle`.
-- `escapeDotLabel()` prints readable labels for special characters and epsilon.
+- `Visualizer::dumpNFA()`
+- `Visualizer::dumpDFA()`
 
-### Complexity
+### 目标
 
-`O(V + E)`
+输出 Graphviz dot 文件，便于：
 
-## 10. Self-Test Algorithm
+- 审阅自动机构造结果
+- 调试规则和状态转移
 
-Implemented by `SeuLexDriver::runSelfTests()`.
+### 当前输出
 
-### Coverage Provided By Current Code
+- `merged_nfa.dot`
+- `dfa.dot`
+- `min_dfa.dot`
 
-- sample lexer generation and compilation
-- runtime validation of `analysis()` and `tokenize()`
-- regex-level evaluation using minimized DFA
-- parser regression tests for:
-  - `%%` inside rule actions
-  - braces inside comments in multi-line actions
-- generation of `minic` and `c99` lexer outputs
+## 10. 自测策略
 
-### Process
+实现位置：
 
-1. Create a temporary directory under `/tmp`.
-2. Write a sample `.l` file.
-3. Generate and compile a sample lexer and driver.
-4. Execute the produced binary with `fork/execvp`.
-5. Re-run internal DFA-based checks directly.
-6. Generate `minic` and `c99` lexer outputs.
+- `SeuLexDriver::runSelfTests()`
 
-### Complexity
+### 当前覆盖
 
-Dominated by:
+- 生成并编译一个小样例 lexer
+- 直接验证 DFA 对若干词素的识别结果
+- 校验若干非法正则应正确失败
+- 验证 Lex 解析器在分隔符、注释、多行动作上的边界情况
+- 生成 `resources/minic.l`
+- 生成 `resources/c99.l`
 
-- one full generation pipeline
-- one external compile
-- several smaller regex/DFA checks
+### 边界
 
-## 11. End-To-End Pipeline Summary
+当前自测会生成 `minic` 和 `c99` 词法器，但不在 `seuLex` 子树内编译它们，因为它们依赖的运行时环境超出了当前模块目录。
 
-```text
-Lex file
-  -> LexParser::parseLexFile
-  -> REExpander::expandRE
-  -> NFABuilder::toPostfix
-  -> NFABuilder::buildNFA
-  -> NFABuilder::mergeNFA
-  -> DFABuilder::subsetConstruct
-  -> DFAMinimizer::minimizeDFA
-  -> Visualizer::dumpNFA / dumpDFA
-  -> CodeGenerator::emitLexer
-```
+## 11. 复杂度总结
+
+| 阶段 | 复杂度 |
+|---|---|
+| `.l` 解析 | `O(N)` |
+| 扩展正则展开 | 近似线性，受重复展开影响 |
+| 中缀转后缀 | `O(T)` |
+| Thompson NFA | `O(T + E)` |
+| NFA 合并 | `O(R)` |
+| DFA 子集构造 | 最坏 `O(2^V * |Sigma|)` |
+| DFA 最小化 | `O(P * V * |Sigma|)` |
+| 代码生成 | 与状态数和动作文本总量线性相关 |

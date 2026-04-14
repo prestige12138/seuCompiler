@@ -1,0 +1,3 @@
+%token ID
+%%
+S : ID ;

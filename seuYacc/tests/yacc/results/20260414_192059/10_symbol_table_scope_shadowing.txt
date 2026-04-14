@@ -1,5 +1,0 @@
-outer_x=int
-inner_x=char
-inner_y=float
-after_exit_x=int
-after_all_missing=yes

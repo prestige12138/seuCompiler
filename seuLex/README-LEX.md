@@ -53,7 +53,12 @@ seuLex/
 │   ├── DEPENDENCY_GRAPH.md
 │   └── DEVELOPMENT_PROCESS.md
 ├── tests/
-│   └── sample_smoke.l
+│   └── lex/
+│       ├── test_cases/
+│       ├── expected/
+│       ├── results/
+│       ├── run_lex_tests.sh
+│       └── LEX_TEST_REPORT.md
 ├── CMakeLists.txt
 └── README-LEX.md
 ```
@@ -105,7 +110,18 @@ ctest --test-dir build --output-on-failure
   - `int analysis(std::string yytext)`
   - `int next_token()`
   - `std::vector<int> tokenize(const std::string& source)`
+  - `std::vector<SeuLexToken> tokenize_detailed(const std::string& source)`
   - `int input()`
+- `SeuLexToken` 是面向整链路联通新增的稳定桥接结构，至少包含：
+  - `type`
+  - `lexeme`
+  - `line`
+  - `column`
+- 生成出的 scanner 现在还导出经典运行时符号：
+  - `char yytext[]`
+  - `int yylineno`
+  - `int column`
+- `yytext` 当前实现容量为 1 MiB；若单个匹配词素超出上限，scanner 会抛出运行时异常，而不是静默截断
 - 自测会在 `/tmp` 下创建临时目录，不再把生成产物堆在仓库根目录。
 - `.l` 规格中的 `%{...%}`、规则动作和用户子程序会原样进入生成的 C++，因此本工具只适用于可信的 Lex 输入文件。
 - `{m,n}` 重复次数会做整数溢出检查，并限制在实现上限以内，避免异常大的规则直接拖垮生成过程。

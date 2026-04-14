@@ -55,3 +55,7 @@
 - 可选的语义值 `YYSTYPE semantic`
 
 因此整链路接入时，`seuLex` 或手写 lexer 的职责是构造 `std::vector<Token>`，`seuYacc` 的职责是消费它并完成语法分析。
+
+当前仓库内的最小正式联通样例位于：
+
+- [integration/tests/pipeline/run_pipeline_test.sh](/Users/llawliet/代码/seuCompiler/integration/tests/pipeline/run_pipeline_test.sh)

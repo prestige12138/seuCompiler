@@ -1,3 +1,0 @@
-exit_code=1
-stdout=
-stderr=seuYacc error: unterminated action block in grammar section

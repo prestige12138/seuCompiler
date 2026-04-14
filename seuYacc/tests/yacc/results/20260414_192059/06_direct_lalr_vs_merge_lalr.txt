@@ -1,6 +1,0 @@
-canonical_states=22
-merged_lalr_states=12
-direct_lalr_states=12
-merged_conflicts=0
-direct_conflicts=0
-table_equal=yes

@@ -29,4 +29,4 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
 endif()
 
 add_test(NAME seuYacc_self_test COMMAND seuYacc --self-test)
-set_tests_properties(seuYacc_self_test PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/..)
+set_tests_properties(seuYacc_self_test PROPERTIES WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..)

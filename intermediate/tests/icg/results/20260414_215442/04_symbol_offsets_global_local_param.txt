@@ -1,7 +1,0 @@
-global_g.offset=0
-global_flag.offset=4
-param_lhs.offset=0
-param_rhs.offset=8
-local_tmp.offset=0
-local_acc.offset=2
-scope_level=1

@@ -27,4 +27,4 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
 endif()
 
 add_test(NAME seuIntermediate_self_test COMMAND seuIntermediate --self-test)
-set_tests_properties(seuIntermediate_self_test PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+set_tests_properties(seuIntermediate_self_test PROPERTIES WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})

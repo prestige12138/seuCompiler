@@ -1,6 +1,0 @@
-FIRST(S)={'a','b',<epsilon>}
-FOLLOW(S)={$}
-FIRST(A)={'a',<epsilon>}
-FOLLOW(A)={$,'b'}
-FIRST(B)={'b',<epsilon>}
-FOLLOW(B)={$}

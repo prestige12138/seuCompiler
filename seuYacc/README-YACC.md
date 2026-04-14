@@ -7,8 +7,8 @@
 - `operators`
 - `produce`
 - `ITEM`
-- `node`
-- `PDA`
+- `LRnode`
+- `LRPDA`
 - `parse_table_item`
 - 全局表 `ops`、`terminals`、`nonterminals`、`producers`
 
@@ -117,6 +117,8 @@ ctest --test-dir build --output-on-failure
   - `Token`
   - `yyparse` 声明
 
+生成出的 `.cpp` 现在使用相对路径 include 生成头文件，不再把工作区绝对路径写入产物，便于移动、worktree 和顶层构建。
+
 ## 模块职责
 
 - `yacc_parser.*`
@@ -162,4 +164,6 @@ ctest --test-dir build --output-on-failure
 - 需要 UNIX / POSIX 环境
 - 需要可用的 C++17 编译器
 - 生成器内部自测会调用外部编译器，并设置 60 秒超时
-- 生成出的 parser 当前接口是批量 token 输入，不直接驱动 lex 文件
+- 生成出的 parser 当前接口仍是批量 token 输入，不直接驱动 `lex` 文件
+- 与 `seuLex` 联通时，推荐使用 `seuLex` 新增的 `tokenize_detailed(...)` 结果，经桥接层转换成 `Token`
+- 该桥接层除复制 `type/lexeme/line/column` 外，还需要按文法需求补全 `YYSTYPE semantic`

@@ -1,3 +1,0 @@
-exit_code=1
-stdout=
-stderr=seuYacc error: missing second %% section delimiter

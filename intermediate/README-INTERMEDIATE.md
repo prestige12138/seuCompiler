@@ -25,6 +25,14 @@ intermediate/
 │   ├── tri_addr_generator.cpp
 │   ├── intermediate_code.cpp
 │   └── main.cpp
+├── docs/
+│   ├── README.md
+│   ├── ARCHITECTURE.md
+│   ├── ALGORITHMS.md
+│   ├── API_REFERENCE.md
+│   ├── DATA_STRUCTURES.md
+│   ├── DEPENDENCY_GRAPH.md
+│   └── DEVELOPMENT_PROCESS.md
 ├── CMakeLists.txt
 └── README-INTERMEDIATE.md
 ```
@@ -119,6 +127,14 @@ translation_unit
 5. `IntermediateCode code = generator.generate(root);`
 6. `dumpIntermediateCode(code, std::cout);`
 
+如果需要完整三模块联通，推荐链路是：
+
+1. `seuLex` 的 `tokenize_detailed(source)`
+2. 轻量桥接层转换到 `seuYacc` 生成的 `Token`
+3. `yyparse(tokens)`
+4. `releaseParseRoot()`
+5. `TriAddrGenerator::generate(root)`
+
 ## AST 约定
 
 由于中期报告中的 `ASTNodeType` 没有单独定义块节点或参数列表节点，当前实现约定：
@@ -177,3 +193,13 @@ translation_unit
 - 当前模块默认 AST 已经由上游语义动作或适配层构建完成
 - 当前模块没有扩展报告之外的 IR 操作符，例如专门的 `LABEL`、`PARAM`、`FUNC_BEGIN`
 - 条件表达式当前以文本条件直接挂到 `OP_IF_GOTO.arg1`
+
+## 文档导航
+
+- [文档总览](./docs/README.md)
+- [模块架构](./docs/ARCHITECTURE.md)
+- [算法说明](./docs/ALGORITHMS.md)
+- [API 参考](./docs/API_REFERENCE.md)
+- [数据结构说明](./docs/DATA_STRUCTURES.md)
+- [依赖图](./docs/DEPENDENCY_GRAPH.md)
+- [开发与验证过程](./docs/DEVELOPMENT_PROCESS.md)

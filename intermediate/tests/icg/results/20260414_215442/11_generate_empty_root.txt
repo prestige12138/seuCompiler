@@ -1,4 +1,0 @@
-null_stmt_count=0
-null_text_empty=yes
-empty_program_stmt_count=0
-empty_program_text_empty=yes

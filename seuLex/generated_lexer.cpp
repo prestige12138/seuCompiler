@@ -1,6 +1,7 @@
 #include <array>
 #include <cstddef>
 #include <iostream>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -36,10 +37,20 @@ scope	= symtab_open(0);	/* open topmost scope */
 
 
 
+struct SeuLexToken {
+  int type = 0;
+  std::string lexeme;
+  int line = 0;
+  int column = 0;
+};
+
+static constexpr std::size_t kYYTextCapacity = 1u << 20;
 static std::string yytext_storage;
-static char* yytext = nullptr;
+char yytext[kYYTextCapacity] = {0};
 static std::string yy_source;
 static std::size_t yy_cursor = 0;
+int yylineno = 1;
+int column = 1;
 #ifndef ECHO
 #define ECHO do { std::cout << yytext; } while (0)
 #endif
@@ -49,11 +60,33 @@ static std::size_t yy_cursor = 0;
 #define SEU_LEX_CALL_USER_INIT() do {} while (false)
 #endif
 
+static void sync_yytext() {
+  if (yytext_storage.size() >= kYYTextCapacity) {
+    throw std::runtime_error("matched lexeme exceeds yytext capacity");
+  }
+  for (std::size_t index = 0; index < yytext_storage.size(); ++index) {
+    yytext[index] = yytext_storage[index];
+  }
+  yytext[yytext_storage.size()] = '\0';
+}
+
+static void advance_position(unsigned char ch, int* line, int* current_column) {
+  if (ch == '\n') {
+    ++(*line);
+    *current_column = 1;
+    return;
+  }
+  ++(*current_column);
+}
+
 int input() {
   if (yy_cursor >= yy_source.size()) {
     return 0;
   }
-  return static_cast<unsigned char>(yy_source[yy_cursor++]);
+  const unsigned char ch = static_cast<unsigned char>(yy_source[yy_cursor]);
+  ++yy_cursor;
+  advance_position(ch, &yylineno, &column);
+  return ch;
 }
 
 static const int kStartState = 0;
@@ -420,12 +453,16 @@ static int dispatch_action(int state) {
 static void reset_source(const std::string& source) {
   yy_source = source;
   yy_cursor = 0;
+  yytext_storage.clear();
+  yytext[0] = '\0';
+  yylineno = 1;
+  column = 1;
   SEU_LEX_CALL_USER_INIT();
 }
 
-int analysis(std::string yytext) {
-  yytext_storage = yytext;
-  ::yytext = yytext_storage.data();
+int analysis(std::string yytext_input) {
+  yytext_storage = yytext_input;
+  sync_yytext();
   int state = kStartState;
   for (unsigned char ch : yytext_storage) {
     if (ch >= 128) {
@@ -439,15 +476,21 @@ int analysis(std::string yytext) {
   return dispatch_action(state);
 }
 
-int next_token() {
+static int lex_one(SeuLexToken* token_out) {
   if (yy_cursor >= yy_source.size()) {
     return 0;
   }
   const std::size_t start = yy_cursor;
+  const int start_line = yylineno;
+  const int start_column = column;
   std::size_t pos = yy_cursor;
+  int scan_line = yylineno;
+  int scan_column = column;
   int state = kStartState;
   int last_accept_state = kAcceptStates[state] != 0 ? state : -1;
   std::size_t last_accept_pos = start;
+  int last_accept_line = start_line;
+  int last_accept_column = start_column;
   while (pos < yy_source.size()) {
     const unsigned char ch = static_cast<unsigned char>(yy_source[pos]);
     if (ch >= 128) {
@@ -459,36 +502,73 @@ int next_token() {
     }
     state = next;
     ++pos;
+    advance_position(ch, &scan_line, &scan_column);
     if (kAcceptStates[state] != 0) {
       last_accept_state = state;
       last_accept_pos = pos;
+      last_accept_line = scan_line;
+      last_accept_column = scan_column;
     }
   }
   if (last_accept_state < 0) {
     yytext_storage = yy_source.substr(start, 1);
-    yytext = yytext_storage.data();
-    ++yy_cursor;
+    sync_yytext();
+    if (token_out != nullptr) {
+      token_out->type = -1;
+      token_out->lexeme = yytext_storage;
+      token_out->line = start_line;
+      token_out->column = start_column;
+    }
+    if (yy_cursor < yy_source.size()) {
+      const unsigned char ch = static_cast<unsigned char>(yy_source[yy_cursor]);
+      ++yy_cursor;
+      advance_position(ch, &yylineno, &column);
+    }
     return -1;
   }
   yytext_storage = yy_source.substr(start, last_accept_pos - start);
-  yytext = yytext_storage.data();
+  sync_yytext();
   if (last_accept_pos == start && yy_cursor < yy_source.size()) {
+    const unsigned char ch = static_cast<unsigned char>(yy_source[yy_cursor]);
     ++yy_cursor;
+    advance_position(ch, &yylineno, &column);
   } else {
     yy_cursor = last_accept_pos;
+    yylineno = last_accept_line;
+    column = last_accept_column;
   }
-  return dispatch_action(last_accept_state);
+  const int token = dispatch_action(last_accept_state);
+  if (token_out != nullptr) {
+    token_out->type = token;
+    token_out->lexeme = yytext_storage;
+    token_out->line = start_line;
+    token_out->column = start_column;
+  }
+  return token;
 }
 
-std::vector<int> tokenize(const std::string& source) {
+int next_token() {
+  return lex_one(nullptr);
+}
+
+std::vector<SeuLexToken> tokenize_detailed(const std::string& source) {
   reset_source(source);
-  std::vector<int> tokens;
+  std::vector<SeuLexToken> tokens;
   while (yy_cursor < yy_source.size()) {
-    const int token = next_token();
-    if (token == 0) {
+    SeuLexToken token;
+    lex_one(&token);
+    if (token.type == 0) {
       continue;
     }
     tokens.push_back(token);
+  }
+  return tokens;
+}
+
+std::vector<int> tokenize(const std::string& source) {
+  std::vector<int> tokens;
+  for (const SeuLexToken& token : tokenize_detailed(source)) {
+    tokens.push_back(token.type);
   }
   return tokens;
 }

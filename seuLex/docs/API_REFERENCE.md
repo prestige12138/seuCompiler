@@ -360,9 +360,22 @@
 - `analysis(std::string yytext)`
 - `next_token()`
 - `tokenize(const std::string& source)`
+- `tokenize_detailed(const std::string& source)`
 - `input()`
 - verbatim definitions
 - 用户动作和子程序
+
+补充运行时接口：
+
+- `struct SeuLexToken`
+  - `type`
+  - `lexeme`
+  - `line`
+  - `column`
+- `char yytext[]`
+- `int yylineno`
+- `int column`
+- 若单个词素长度超过实现上限 1 MiB，生成的 scanner 会在动作执行前抛出运行时异常，避免静默截断 `yytext`
 
 ## 14. `Visualizer`
 

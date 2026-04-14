@@ -1,3 +1,0 @@
-generate_exit=0
-compile_exit=0
-mode=lr1

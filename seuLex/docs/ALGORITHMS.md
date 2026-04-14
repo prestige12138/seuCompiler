@@ -289,6 +289,8 @@
 - `input()`
 - `next_token()`
 - `tokenize(const std::string& source)`
+- `tokenize_detailed(const std::string& source)`
+- `SeuLexToken`
 - verbatim definitions
 - 规则动作
 - 用户子程序
@@ -297,6 +299,8 @@
 
 - 生成器直接嵌入 `%{...%}` 和用户代码
 - 因此输入 `.l` 被视为可信源
+- 运行时统一维护 `yytext`、`yylineno`、`column`
+- 详细 token 输出为后续 `seuYacc` 联通提供稳定桥接面
 
 ## 9. dot 可视化输出
 

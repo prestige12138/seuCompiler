@@ -1,6 +1,0 @@
-FIRST(E)={'(',ID}
-FOLLOW(E)={$,')','+'}
-FIRST(T)={'(',ID}
-FOLLOW(T)={$,')','*','+'}
-FIRST(F)={'(',ID}
-FOLLOW(F)={$,')','*','+'}

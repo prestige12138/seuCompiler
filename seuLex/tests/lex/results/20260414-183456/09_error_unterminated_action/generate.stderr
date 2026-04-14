@@ -1,2 +1,0 @@
-seuLex error: unterminated or malformed Lex rule near: "a" {
-  return 1;

@@ -162,6 +162,8 @@
 9. 语义动作执行函数
 10. `yyparse(const std::vector<Token>&)`
 
+生成出的 `.cpp` 现在对生成头使用相对路径 include，避免产物绑定到某个绝对工作区。
+
 生成出的 `.h` 包含：
 
 1. `YYSTYPE`
@@ -186,6 +188,8 @@ bool yyparse(const std::vector<Token>& tokens);
 - `semantic`
 
 这意味着 `seuLex` 的职责是把输入源程序先转成 token 序列，`seuYacc` 生成的 parser 再消费这批 token。
+
+当前推荐桥接方式是使用 `seuLex` 生成 scanner 的 `tokenize_detailed(...)` 结果，再映射到 parser 命名空间下的 `Token`。
 
 ## 7. 自测架构
 

@@ -1,6 +1,0 @@
-1: t1 = a + b
-2: c = t1
-3: return c
-function_declared=yes
-local_c_visible_after_exit=no
-param_a_visible_after_exit=no

@@ -1,4 +1,4 @@
-#include "/Users/llawliet/代码/seuCompiler/seuYacc/generated_tokens.h"
+#include "generated_tokens.h"
 
 #include <algorithm>
 #include <iostream>

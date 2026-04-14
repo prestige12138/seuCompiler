@@ -145,14 +145,93 @@ std::string joinPath(const std::string& left, const std::string& right) {
 }
 
 std::string absolutePath(const std::string& path) {
-  if (path.empty() || path.front() == '/') {
-    return path;
-  }
   char buffer[4096];
   if (::getcwd(buffer, sizeof(buffer)) == nullptr) {
     throw std::runtime_error("failed to resolve current working directory");
   }
+  if (path.empty()) {
+    return std::string(buffer);
+  }
+  if (path.front() == '/') {
+    return path;
+  }
   return joinPath(std::string(buffer), path);
+}
+
+std::string canonicalizeDirectory(const std::string& path) {
+  const std::string absolute = absolutePath(path);
+  char buffer[4096];
+  if (::realpath(absolute.c_str(), buffer) != nullptr) {
+    return std::string(buffer);
+  }
+  return absolute;
+}
+
+std::string canonicalizeFilePath(const std::string& path) {
+  const std::string absolute = absolutePath(path);
+  const std::string directory = dirnameOf(absolute);
+  const std::string base = basenameOf(absolute);
+  return joinPath(canonicalizeDirectory(directory.empty() ? "." : directory), base);
+}
+
+std::vector<std::string> splitPath(const std::string& path) {
+  std::vector<std::string> parts;
+  std::string current;
+  for (char ch : path) {
+    if (ch == '/') {
+      if (!current.empty() && current != ".") {
+        if (current == "..") {
+          if (!parts.empty()) {
+            parts.pop_back();
+          }
+        } else {
+          parts.push_back(current);
+        }
+      }
+      current.clear();
+      continue;
+    }
+    current.push_back(ch);
+  }
+  if (!current.empty() && current != ".") {
+    if (current == "..") {
+      if (!parts.empty()) {
+        parts.pop_back();
+      }
+    } else {
+      parts.push_back(current);
+    }
+  }
+  return parts;
+}
+
+std::string relativeIncludePath(const std::string& from_path, const std::string& to_path) {
+  const std::string from_dir = dirnameOf(from_path);
+  const std::vector<std::string> from_parts =
+      splitPath(canonicalizeDirectory(from_dir.empty() ? "." : from_dir));
+  const std::vector<std::string> to_parts = splitPath(canonicalizeFilePath(to_path));
+
+  std::size_t common = 0;
+  while (common < from_parts.size() && common < to_parts.size() &&
+         from_parts[common] == to_parts[common]) {
+    ++common;
+  }
+
+  std::string relative;
+  for (std::size_t index = common; index < from_parts.size(); ++index) {
+    relative += "../";
+  }
+  for (std::size_t index = common; index < to_parts.size(); ++index) {
+    relative += to_parts[index];
+    if (index + 1 != to_parts.size()) {
+      relative += '/';
+    }
+  }
+
+  if (relative.empty()) {
+    return basenameOf(to_path);
+  }
+  return relative;
 }
 
 std::string resolveRepoRoot(const std::string& workspace_root) {
@@ -664,7 +743,7 @@ void ParserCodeGenerator::emitParser(const std::vector<parse_table_item>& table,
   ensureDirectory(dirnameOf(out_header_path));
 
   const std::string name_space = parserNamespace(out_cpp_path);
-  const std::string header_include = absolutePath(out_header_path);
+  const std::string header_include = relativeIncludePath(out_cpp_path, out_header_path);
   const bool has_semantic_union = !specification.semanticUnion.empty();
 
   std::ofstream header(out_header_path);
@@ -1182,6 +1261,38 @@ bool SeuYaccDriver::runSelfTests(const std::string& workspace_root) const {
   if (runProcess(kSelfTestCompiler, {"-std=c++17", "-c", c99_parser_cpp, "-o", c99_parser_obj}) != 0) {
     throw std::runtime_error("generated c99 parser failed to compile");
   }
+
+  char original_cwd[4096];
+  if (::getcwd(original_cwd, sizeof(original_cwd)) == nullptr) {
+    throw std::runtime_error("failed to snapshot current working directory");
+  }
+  if (::chdir(temp_dir.c_str()) != 0) {
+    throw std::runtime_error("failed to enter temporary directory for relative include self-test");
+  }
+  try {
+    const std::string mixed_parser_cpp = "relative_parser.cpp";
+    const std::string mixed_parser_h = joinPath(temp_dir, "relative_tokens.h");
+    const std::string mixed_parser_obj = joinPath(temp_dir, "relative_parser.o");
+    generate(grammar_path, mixed_parser_cpp, mixed_parser_h, "lalr");
+    if (runProcess(kSelfTestCompiler, {"-std=c++17", "-c", mixed_parser_cpp, "-o", mixed_parser_obj}) != 0) {
+      throw std::runtime_error("generated parser with relative cpp / absolute header failed to compile");
+    }
+
+    const std::string mirrored_parser_cpp = joinPath(temp_dir, "absolute_parser.cpp");
+    const std::string mirrored_parser_h = "absolute_tokens.h";
+    const std::string mirrored_parser_obj = joinPath(temp_dir, "absolute_parser.o");
+    generate(grammar_path, mirrored_parser_cpp, mirrored_parser_h, "lalr");
+    if (runProcess(kSelfTestCompiler, {"-std=c++17", "-c", mirrored_parser_cpp, "-o", mirrored_parser_obj}) != 0) {
+      throw std::runtime_error("generated parser with absolute cpp / relative header failed to compile");
+    }
+  } catch (...) {
+    ::chdir(original_cwd);
+    throw;
+  }
+  if (::chdir(original_cwd) != 0) {
+    throw std::runtime_error("failed to restore working directory after relative include self-test");
+  }
+
   std::cout << "[self-test] generated sample parser: " << parser_cpp << '\n';
   std::cout << "[self-test] generated semantic parser: " << action_parser_cpp << '\n';
   std::cout << "[self-test] generated c99 parser: " << c99_parser_cpp << '\n';

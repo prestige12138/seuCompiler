@@ -3,13 +3,14 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+REPO_ROOT="$(cd "$ROOT_DIR/.." && pwd)"
 TEST_ROOT="$ROOT_DIR/tests/lex"
 CASE_ROOT="$TEST_ROOT/test_cases"
 EXPECT_ROOT="$TEST_ROOT/expected"
 RESULTS_ROOT="$TEST_ROOT/results"
 RUN_ID="$(date '+%Y%m%d-%H%M%S')"
 RUN_DIR="$RESULTS_ROOT/$RUN_ID"
-SEULEX_DIR="$ROOT_DIR/seuLex"
+SEULEX_DIR="$ROOT_DIR"
 SEULEX_BIN="$SEULEX_DIR/build/seuLex"
 CXX_BIN="${CXX:-c++}"
 FAILURES=0
@@ -453,11 +454,11 @@ run_error_case "09_error_unterminated_action" \
   "$EXPECT_ROOT/09_error_unterminated_action.error" || FAILURES=$((FAILURES + 1))
 
 run_generate_only_case "10_regression_minic_generate" \
-  "$ROOT_DIR/resources/minic.l" \
+  "$REPO_ROOT/resources/minic.l" \
   30 || FAILURES=$((FAILURES + 1))
 
 run_generate_only_case "11_regression_c99_generate" \
-  "$ROOT_DIR/resources/c99.l" \
+  "$REPO_ROOT/resources/c99.l" \
   60 || FAILURES=$((FAILURES + 1))
 
 run_runtime_perf_case "12_runtime_perf_long_stream" \

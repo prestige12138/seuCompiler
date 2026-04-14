@@ -1,0 +1,15 @@
+block_count=4
+leaders=1,2,3,5
+B1 [leader=1, stmts=[1], successors=B3, B2]
+1: if x > 0 goto 3
+
+B2 [leader=2, stmts=[2], successors=B4]
+2: goto 5
+
+B3 [leader=3, stmts=[3,4], successors=none]
+3: y = 1
+4: return y
+
+B4 [leader=5, stmts=[5,6], successors=none]
+5: y = 0
+6: return y

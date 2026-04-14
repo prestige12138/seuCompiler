@@ -5,8 +5,8 @@
 最小整链路如下：
 
 1. `seuLex` 根据 `.l` 生成 scanner
-2. scanner 对源串执行 `tokenize_detailed(source)`
-3. 桥接层把 `SeuLexToken` 转成 `seuYacc` 生成头里的 `Token`
+2. `seuYacc` 根据 `.y` 生成 parser 和 token ABI 头
+3. scanner 在 `--token-header <generated_tokens.h>` 模式下执行 `tokenize_for_parser(source)`
 4. `seuYacc` 生成的 `yyparse(tokens)` 执行语义动作并构建 AST
 5. 开始符号归约完成时通过 `seu_icg::setParseRoot(...)` 导出根节点
 6. 外层驱动通过 `seu_icg::releaseParseRoot()` 取得 AST
@@ -37,14 +37,30 @@ struct Token {
 };
 ```
 
-映射规则：
+统一 ABI 规则：
 
 - 命名 token：使用 `generated_tokens.h` 中的枚举值
 - 单字符终结符：直接使用 ASCII
 - EOF：`0`
-- `lexeme/line/column` 原样透传
-- `semantic` 由桥接层按 grammar 需要填充；`SeuLexToken` 本身不携带 `YYSTYPE`
-- 因此当前联通能力是“词法 token + 位置 + 词素”层面的稳定契约，不是零转换的统一 token ABI
+- `lexeme/line/column` 由 generated lexer 原样填入 parser `Token`
+- `semantic` 通过 `.l` 动作中的 `yylval` 直接传入 parser `Token`
+- `generated_tokens.h` 稳定导出：
+  - `SEU_YACC_TOKEN_NAMESPACE`
+  - `SEU_YACC_TOKEN_TYPE`
+  - `SEU_YACC_SEMANTIC_TYPE`
+- 对需要把指针语义绑定到最终 token 存储的规则，可在 `.l` 中定义 `SEU_LEX_FINALIZE_PARSER_TOKEN(token_ref, lex_token_ref)`
+
+典型直连接口：
+
+```cpp
+void begin_lexing(const std::string& source);
+std::vector<parser_ns::Token> tokenize_for_parser(const std::string& source);
+bool yyparse(const std::vector<parser_ns::Token>& tokens);
+```
+
+若使用逐 token API，则先调用 `begin_lexing(source)`，再调用 `lex_one_parser_token(...)` 或 `next_token()`。
+若在 `.l` 中定义 `SEU_LEX_FINALIZE_PARSER_TOKEN(token_ref, token_view_ref)`，第二个参数只保证暴露稳定的 `type/lexeme/line/column` 视图；
+批量模式下它可能是最终存储中的 parser token，而不是原始 `SeuLexToken` 局部对象。
 
 ## AST 交接
 
@@ -61,6 +77,7 @@ seu_icg::ASTNode* root = seu_icg::releaseParseRoot();
 ## 生成产物约定
 
 - `seuYacc` 生成的 parser `.cpp` 现在对生成头使用相对 include
+- `seuLex` 可在 ABI 模式下对 parser token 头使用相对 include
 - 集成样例产物统一落在临时结果目录，而不是源码树根目录
 - 顶层 `CMakeLists.txt` 已把三模块和整链路测试纳入统一入口
 

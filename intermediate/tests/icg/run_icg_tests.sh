@@ -161,6 +161,12 @@ run_probe_case "08_ir_function_call_and_control_flow" ir-control-flow
 run_probe_case "09_ir_function_body" ir-function
 run_probe_case "10_error_unsupported_operator" ir-unsupported-op
 run_probe_case "11_generate_empty_root" generate-empty
+run_probe_case "14_basic_block_empty_code" basic-block-empty
+run_probe_case "15_basic_block_linear_fallthrough" basic-block-linear
+run_probe_case "16_basic_block_conditional_branch" basic-block-conditional
+run_probe_case "17_basic_block_mixed_control_flow" basic-block-mixed
+run_probe_case "18_basic_block_sparse_stmt_numbers" basic-block-sparse
+run_probe_case "19_basic_block_invalid_target" basic-block-invalid-target
 run_cli_self_test
 run_perf_case
 

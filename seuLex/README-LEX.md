@@ -107,16 +107,22 @@ ctest --test-dir build --output-on-failure
 
 - 当前实现依赖 UNIX/POSIX 环境。
 - 生成器输出包含：
+  - `void begin_lexing(const std::string& source)`
   - `int analysis(std::string yytext)`
   - `int next_token()`
   - `std::vector<int> tokenize(const std::string& source)`
   - `std::vector<SeuLexToken> tokenize_detailed(const std::string& source)`
+  - `std::vector<ParserToken> tokenize_for_parser(const std::string& source)`，当生成时传入 `--token-header`
   - `int input()`
-- `SeuLexToken` 是面向整链路联通新增的稳定桥接结构，至少包含：
+- `SeuLexToken` 是面向生成 scanner 的稳定详细 token 结构，至少包含：
   - `type`
   - `lexeme`
   - `line`
   - `column`
+- ABI 模式下，generated lexer 会直接包含 `seuYacc` 生成的 token 头，并把 `.l` 动作里的 `yylval` 写入 parser `Token.semantic`
+- 若 `.l` 需要把指针语义绑定到最终 token 存储，可定义 `SEU_LEX_FINALIZE_PARSER_TOKEN(token_ref, token_view_ref)`
+- `token_view_ref` 只保证提供稳定的 `type/lexeme/line/column` 视图；批量模式下它可能是最终 parser token 本身
+- 若要逐 token 拉取输入，先调用 `begin_lexing(source)`，再调用 `next_token()` 或 `lex_one_parser_token(...)`
 - 生成出的 scanner 现在还导出经典运行时符号：
   - `char yytext[]`
   - `int yylineno`

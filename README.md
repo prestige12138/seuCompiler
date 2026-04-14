@@ -72,8 +72,8 @@ ctest --test-dir intermediate/build --output-on-failure
 该脚本会：
 
 1. 生成 `pipeline_tokens.h` 和 `pipeline_parser.cpp`
-2. 生成 `pipeline_lexer.cpp`
-3. 编译一个桥接 driver
+2. 以 `pipeline_tokens.h` 作为 ABI 真源生成 `pipeline_lexer.cpp`
+3. 编译一个直接联通 driver
 4. 执行 `Lex -> Yacc -> AST -> IR`
 5. 校验输出 IR
 
@@ -106,10 +106,12 @@ ctest --test-dir intermediate/build --output-on-failure
 
 `seuLex` 生成的 scanner 现在同时导出：
 
+- `void begin_lexing(const std::string& source)`
 - `int analysis(std::string yytext)`
 - `int next_token()`
 - `std::vector<int> tokenize(const std::string& source)`
 - `std::vector<SeuLexToken> tokenize_detailed(const std::string& source)`
+- `std::vector<ParserToken> tokenize_for_parser(const std::string& source)`，当生成时传入 `--token-header <generated_tokens.h>`
 
 其中 `SeuLexToken` 至少包含：
 
@@ -124,9 +126,17 @@ ctest --test-dir intermediate/build --output-on-failure
 bool yyparse(const std::vector<Token>& tokens);
 ```
 
-当前桥接层需要把 `SeuLexToken` 转成 parser 命名空间里的 `Token`，并按文法需求补全 `YYSTYPE semantic`。
-对 `NUMBER`、`IDENTIFIER` 这类可从 `lexeme` 直接恢复语义值的 token，可直接在桥接层回填。
-如果词法动作生成了无法从 `lexeme` 反推的语义信息，则需要自定义更强的 Lex→Yacc 语义传递约定。
+`seuYacc` 生成的 token 头现在会稳定导出：
+
+- `SEU_YACC_TOKEN_NAMESPACE`
+- `SEU_YACC_TOKEN_TYPE`
+- `SEU_YACC_SEMANTIC_TYPE`
+
+因此 `seuLex` 可以在 ABI 模式下直接生成 parser 兼容 token：
+
+- `.l` 动作继续用 `yylval` 填语义值
+- 如需把 `semantic.str` 绑定到最终 token 的 `lexeme`，可在 `.l` 中定义 `SEU_LEX_FINALIZE_PARSER_TOKEN(...)`
+- integration pipeline 已切到这条统一 ABI 链路，不再手工桥接 `semantic`
 
 ### Yacc -> Intermediate
 

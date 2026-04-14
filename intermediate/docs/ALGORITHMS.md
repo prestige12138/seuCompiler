@@ -16,3 +16,13 @@
 - 算术运算生成临时变量
 - `if/while` 通过 `OP_IF_GOTO` 和 `OP_GOTO` 回填目标语句号
 - `return` 直接输出 `OP_RETURN`
+
+## 基本块划分
+
+- leader 规则：
+  - 第一条语句
+  - `OP_GOTO` / `OP_IF_GOTO` 的目标语句
+  - `OP_GOTO` / `OP_IF_GOTO` / `OP_RETURN` 的后继语句
+- `splitBasicBlocks(...)` 按 leader 把现有 `IntermediateCode` 切成块视图
+- `formatBasicBlocks(...)` 进一步给出稳定文本形式和块后继关系
+- 非法跳转目标不会生成新 leader，格式化时固定显示为 `invalid(<stmtNo>)`

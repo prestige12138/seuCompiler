@@ -59,6 +59,14 @@ std::string dirnameOf(const std::string& path) {
   return path.substr(0, slash);
 }
 
+std::string basenameOf(const std::string& path) {
+  const std::size_t slash = path.find_last_of("/\\");
+  if (slash == std::string::npos) {
+    return path;
+  }
+  return path.substr(slash + 1);
+}
+
 std::string joinPath(const std::string& left, const std::string& right) {
   if (left.empty()) {
     return right;
@@ -67,6 +75,96 @@ std::string joinPath(const std::string& left, const std::string& right) {
     return left + right;
   }
   return left + "/" + right;
+}
+
+std::string absolutePath(const std::string& path) {
+  char buffer[4096];
+  if (::getcwd(buffer, sizeof(buffer)) == nullptr) {
+    throw std::runtime_error("failed to resolve current working directory");
+  }
+  if (path.empty()) {
+    return std::string(buffer);
+  }
+  if (path.front() == '/') {
+    return path;
+  }
+  return joinPath(std::string(buffer), path);
+}
+
+std::string canonicalizeDirectory(const std::string& path) {
+  const std::string absolute = absolutePath(path);
+  char buffer[4096];
+  if (::realpath(absolute.c_str(), buffer) != nullptr) {
+    return std::string(buffer);
+  }
+  return absolute;
+}
+
+std::string canonicalizeFilePath(const std::string& path) {
+  const std::string absolute = absolutePath(path);
+  const std::string directory = dirnameOf(absolute);
+  const std::string base = basenameOf(absolute);
+  return joinPath(canonicalizeDirectory(directory.empty() ? "." : directory), base);
+}
+
+std::vector<std::string> splitPath(const std::string& path) {
+  std::vector<std::string> parts;
+  std::string current;
+  for (char ch : path) {
+    if (ch == '/') {
+      if (!current.empty() && current != ".") {
+        if (current == "..") {
+          if (!parts.empty()) {
+            parts.pop_back();
+          }
+        } else {
+          parts.push_back(current);
+        }
+      }
+      current.clear();
+      continue;
+    }
+    current.push_back(ch);
+  }
+  if (!current.empty() && current != ".") {
+    if (current == "..") {
+      if (!parts.empty()) {
+        parts.pop_back();
+      }
+    } else {
+      parts.push_back(current);
+    }
+  }
+  return parts;
+}
+
+std::string relativeIncludePath(const std::string& from_path, const std::string& to_path) {
+  const std::string from_dir = dirnameOf(from_path);
+  const std::vector<std::string> from_parts =
+      splitPath(canonicalizeDirectory(from_dir.empty() ? "." : from_dir));
+  const std::vector<std::string> to_parts = splitPath(canonicalizeFilePath(to_path));
+
+  std::size_t common = 0;
+  while (common < from_parts.size() && common < to_parts.size() &&
+         from_parts[common] == to_parts[common]) {
+    ++common;
+  }
+
+  std::string relative;
+  for (std::size_t index = common; index < from_parts.size(); ++index) {
+    relative += "../";
+  }
+  for (std::size_t index = common; index < to_parts.size(); ++index) {
+    relative += to_parts[index];
+    if (index + 1 != to_parts.size()) {
+      relative += '/';
+    }
+  }
+
+  if (relative.empty()) {
+    return basenameOf(to_path);
+  }
+  return relative;
 }
 
 void ensureDirectory(const std::string& path) {
@@ -133,6 +231,33 @@ std::string escapeDotLabel(char ch) {
           << static_cast<int>(static_cast<unsigned char>(ch));
       return oss.str();
   }
+}
+
+std::string escapeCppString(const std::string& raw) {
+  std::ostringstream oss;
+  for (char ch : raw) {
+    switch (ch) {
+      case '\\':
+        oss << "\\\\";
+        break;
+      case '"':
+        oss << "\\\"";
+        break;
+      case '\n':
+        oss << "\\n";
+        break;
+      case '\r':
+        oss << "\\r";
+        break;
+      case '\t':
+        oss << "\\t";
+        break;
+      default:
+        oss << ch;
+        break;
+    }
+  }
+  return oss.str();
 }
 
 std::string actionForState(int stateId) {
@@ -247,11 +372,15 @@ int runProcess(const std::string& program, const std::vector<std::string>& args)
 
 void CodeGenerator::emitLexer(const dfa& automaton,
                               const LexSpecification& specification,
-                              const std::string& outPath) const {
+                              const std::string& outPath,
+                              const std::string& tokenHeaderPath) const {
   if (automaton.start == nullptr) {
     throw std::runtime_error("cannot emit lexer from an empty DFA");
   }
   ensureDirectory(dirnameOf(outPath));
+  const bool emitParserAbi = !tokenHeaderPath.empty();
+  const std::string parserHeaderInclude =
+      emitParserAbi ? relativeIncludePath(outPath, tokenHeaderPath) : "";
 
   std::vector<std::array<int, kAsciiLimit>> table(automaton.nodeVec.size());
   for (auto& row : table) {
@@ -274,14 +403,37 @@ void CodeGenerator::emitLexer(const dfa& automaton,
          << "#include <iostream>\n"
          << "#include <stdexcept>\n"
          << "#include <string>\n"
-         << "#include <vector>\n\n"
-         << specification.verbatimDefinitions << '\n'
+         << "#include <vector>\n";
+  if (emitParserAbi) {
+    output << "#include \"" << escapeCppString(parserHeaderInclude) << "\"\n";
+  }
+  output << '\n';
+  if (emitParserAbi) {
+    output << "#ifndef SEU_YACC_TOKEN_NAMESPACE\n"
+           << "#error \"parser token header must define SEU_YACC_TOKEN_NAMESPACE\"\n"
+           << "#endif\n"
+           << "#ifndef SEU_YACC_TOKEN_TYPE\n"
+           << "#error \"parser token header must define SEU_YACC_TOKEN_TYPE\"\n"
+           << "#endif\n"
+           << "#ifndef SEU_YACC_SEMANTIC_TYPE\n"
+           << "#error \"parser token header must define SEU_YACC_SEMANTIC_TYPE\"\n"
+           << "#endif\n\n";
+  }
+  output << specification.verbatimDefinitions << '\n'
          << "struct SeuLexToken {\n"
          << "  int type = 0;\n"
          << "  std::string lexeme;\n"
          << "  int line = 0;\n"
          << "  int column = 0;\n"
-         << "};\n\n"
+         << "};\n\n";
+  if (emitParserAbi) {
+    output << "using SeuLexParserToken = SEU_YACC_TOKEN_TYPE;\n"
+           << "using SeuLexParserSemantic = SEU_YACC_SEMANTIC_TYPE;\n"
+           << "static SeuLexParserSemantic yylval{};\n\n";
+  }
+  output << "#ifndef SEU_LEX_FINALIZE_PARSER_TOKEN\n"
+         << "#define SEU_LEX_FINALIZE_PARSER_TOKEN(token_ref, lex_token_ref) do {} while (false)\n"
+         << "#endif\n\n"
          << "static constexpr std::size_t kYYTextCapacity = 1u << 20;\n"
          << "static std::string yytext_storage;\n"
          << "char yytext[kYYTextCapacity] = {0};\n"
@@ -305,7 +457,24 @@ void CodeGenerator::emitLexer(const dfa& automaton,
          << "    yytext[index] = yytext_storage[index];\n"
          << "  }\n"
          << "  yytext[yytext_storage.size()] = '\\0';\n"
-         << "}\n\n"
+         << "}\n\n";
+  if (emitParserAbi) {
+    output << "static void reset_yylval() {\n"
+           << "  yylval = SeuLexParserSemantic{};\n"
+           << "}\n\n"
+           << "static void fill_parser_token(SeuLexParserToken* parser_token,\n"
+           << "                              const SeuLexToken& lex_token) {\n"
+           << "  if (parser_token == nullptr) {\n"
+           << "    return;\n"
+           << "  }\n"
+           << "  parser_token->type = lex_token.type;\n"
+           << "  parser_token->lexeme = lex_token.lexeme;\n"
+           << "  parser_token->line = lex_token.line;\n"
+           << "  parser_token->column = lex_token.column;\n"
+           << "  parser_token->semantic = yylval;\n"
+           << "}\n\n";
+  }
+  output
          << "static void advance_position(unsigned char ch, int* line, int* current_column) {\n"
          << "  if (ch == '\\n') {\n"
          << "    ++(*line);\n"
@@ -380,6 +549,9 @@ void CodeGenerator::emitLexer(const dfa& automaton,
          << "  yylineno = 1;\n"
          << "  column = 1;\n"
          << "  SEU_LEX_CALL_USER_INIT();\n"
+         << "}\n\n"
+         << "void begin_lexing(const std::string& source) {\n"
+         << "  reset_source(source);\n"
          << "}\n\n"
          << "int analysis(std::string yytext_input) {\n"
          << "  yytext_storage = yytext_input;\n"
@@ -468,7 +640,24 @@ void CodeGenerator::emitLexer(const dfa& automaton,
          << "}\n\n"
          << "int next_token() {\n"
          << "  return lex_one(nullptr);\n"
-         << "}\n\n"
+         << "}\n\n";
+  if (emitParserAbi) {
+    output << "int lex_one_parser_token(SeuLexParserToken* token_out) {\n"
+           << "  while (true) {\n"
+           << "    reset_yylval();\n"
+           << "    SeuLexToken lex_token;\n"
+           << "    const int token = lex_one(&lex_token);\n"
+           << "    fill_parser_token(token_out, lex_token);\n"
+           << "    if (token_out != nullptr) {\n"
+           << "      SEU_LEX_FINALIZE_PARSER_TOKEN(*token_out, lex_token);\n"
+           << "    }\n"
+           << "    if (token != 0 || yy_cursor >= yy_source.size()) {\n"
+           << "      return token;\n"
+           << "    }\n"
+           << "  }\n"
+           << "}\n\n";
+  }
+  output
          << "std::vector<SeuLexToken> tokenize_detailed(const std::string& source) {\n"
          << "  reset_source(source);\n"
          << "  std::vector<SeuLexToken> tokens;\n"
@@ -483,12 +672,44 @@ void CodeGenerator::emitLexer(const dfa& automaton,
          << "  return tokens;\n"
          << "}\n\n"
          << "std::vector<int> tokenize(const std::string& source) {\n"
-          << "  std::vector<int> tokens;\n"
+         << "  std::vector<int> tokens;\n"
          << "  for (const SeuLexToken& token : tokenize_detailed(source)) {\n"
          << "    tokens.push_back(token.type);\n"
          << "  }\n"
          << "  return tokens;\n"
          << "}\n";
+  if (emitParserAbi) {
+    output << "\nstd::vector<SeuLexParserToken> tokenize_for_parser(const std::string& source) {\n"
+           << "  reset_source(source);\n"
+           << "  std::vector<SeuLexToken> lex_tokens;\n"
+           << "  std::vector<SeuLexParserSemantic> semantic_values;\n"
+           << "  while (yy_cursor < yy_source.size()) {\n"
+           << "    reset_yylval();\n"
+           << "    SeuLexToken lex_token;\n"
+           << "    lex_one(&lex_token);\n"
+           << "    if (lex_token.type == 0) {\n"
+           << "      continue;\n"
+           << "    }\n"
+           << "    lex_tokens.push_back(lex_token);\n"
+           << "    semantic_values.push_back(yylval);\n"
+           << "  }\n"
+           << "  std::vector<SeuLexParserToken> tokens;\n"
+           << "  tokens.reserve(lex_tokens.size());\n"
+           << "  for (std::size_t index = 0; index < lex_tokens.size(); ++index) {\n"
+           << "    SeuLexParserToken token;\n"
+           << "    token.type = lex_tokens[index].type;\n"
+           << "    token.lexeme = lex_tokens[index].lexeme;\n"
+           << "    token.line = lex_tokens[index].line;\n"
+           << "    token.column = lex_tokens[index].column;\n"
+           << "    token.semantic = semantic_values[index];\n"
+           << "    tokens.push_back(token);\n"
+           << "  }\n"
+           << "  for (SeuLexParserToken& token : tokens) {\n"
+           << "    SEU_LEX_FINALIZE_PARSER_TOKEN(token, token);\n"
+           << "  }\n"
+           << "  return tokens;\n"
+           << "}\n";
+  }
 }
 
 void Visualizer::dumpNFA(const nfa& automaton, const std::string& path) const {
@@ -540,7 +761,8 @@ void Visualizer::dumpDFA(const dfa& automaton, const std::string& path) const {
 
 void SeuLexDriver::generate(const std::string& lexPath,
                             const std::string& outCppPath,
-                            const std::string& dotDir) const {
+                            const std::string& dotDir,
+                            const std::string& tokenHeaderPath) const {
   resetGlobalTables();
 
   LexParser parser;
@@ -566,7 +788,7 @@ void SeuLexDriver::generate(const std::string& lexPath,
   visualizer.dumpNFA(mergedNfa, joinPath(dotDir, "merged_nfa.dot"));
   visualizer.dumpDFA(rawDfa, joinPath(dotDir, "dfa.dot"));
   visualizer.dumpDFA(minDfa, joinPath(dotDir, "min_dfa.dot"));
-  generator.emitLexer(minDfa, spec, outCppPath);
+  generator.emitLexer(minDfa, spec, outCppPath, tokenHeaderPath);
 }
 
 bool SeuLexDriver::runSelfTests(const std::string& workspaceRoot) const {
@@ -678,6 +900,114 @@ bool SeuLexDriver::runSelfTests(const std::string& workspaceRoot) const {
   }
   if (runProcess(overflowBinaryPath, {}) != 0) {
     throw std::runtime_error("generated overflow lexer failed overflow validation");
+  }
+
+  const std::string abiSpecPath = joinPath(tempDir, "abi_sample.l");
+  const std::string abiHeaderPath = joinPath(tempDir, "abi_tokens.h");
+  const std::string abiOutPath = joinPath(tempDir, "generated_abi_lexer.cpp");
+  const std::string abiDriverPath = joinPath(tempDir, "generated_abi_driver.cpp");
+  const std::string abiBinaryPath = joinPath(tempDir, "generated_abi_driver");
+  const std::string abiSpec =
+      "%{\n"
+      "#include <cstdlib>\n"
+      "#define SEU_LEX_FINALIZE_PARSER_TOKEN(token_ref, lex_token_ref) \\\n"
+      "  do { \\\n"
+      "    (void)(lex_token_ref); \\\n"
+      "    if ((token_ref).type == SEU_YACC_TOKEN_NAMESPACE::IDENTIFIER) { \\\n"
+      "      (token_ref).semantic.str = (token_ref).lexeme.c_str(); \\\n"
+      "    } \\\n"
+      "  } while (false)\n"
+      "%}\n"
+      "%%\n"
+      "\"answer\"                  { yylval.ival = 42; return SEU_YACC_TOKEN_NAMESPACE::MAGIC; }\n"
+      "\"+\"                       { return '+'; }\n"
+      "[0-9]+                    { yylval.ival = std::atoi(yytext); return SEU_YACC_TOKEN_NAMESPACE::NUMBER; }\n"
+      "[A-Za-z_][A-Za-z0-9_]*    { return SEU_YACC_TOKEN_NAMESPACE::IDENTIFIER; }\n"
+      "[ \\t\\n]+                ;\n"
+      "%%\n"
+      "int yywrap() { return 1; }\n";
+  const std::string abiHeader =
+      "#pragma once\n"
+      "#include <string>\n\n"
+      "namespace sample_parser {\n\n"
+      "union YYSTYPE {\n"
+      "  int ival;\n"
+      "  const char* str;\n"
+      "};\n\n"
+      "enum TokenKind {\n"
+      "  YYEOF_TOKEN = 0,\n"
+      "  NUMBER = 256,\n"
+      "  IDENTIFIER = 257,\n"
+      "  MAGIC = 258,\n"
+      "};\n\n"
+      "struct Token {\n"
+      "  int type = 0;\n"
+      "  std::string lexeme;\n"
+      "  int line = 0;\n"
+      "  int column = 0;\n"
+      "  YYSTYPE semantic{};\n"
+      "};\n\n"
+      "}  // namespace sample_parser\n\n"
+      "#define SEU_YACC_TOKEN_NAMESPACE sample_parser\n"
+      "#define SEU_YACC_TOKEN_TYPE sample_parser::Token\n"
+      "#define SEU_YACC_SEMANTIC_TYPE sample_parser::YYSTYPE\n";
+  {
+    std::ofstream abiSpecFile(abiSpecPath);
+    abiSpecFile << abiSpec;
+  }
+  {
+    std::ofstream abiHeaderFile(abiHeaderPath);
+    abiHeaderFile << abiHeader;
+  }
+  generate(abiSpecPath, abiOutPath, dotDir, abiHeaderPath);
+  {
+    std::ofstream abiDriverFile(abiDriverPath);
+    abiDriverFile
+        << "#include <string>\n"
+        << "#include <vector>\n"
+        << "#include \"abi_tokens.h\"\n"
+        << "void begin_lexing(const std::string& source);\n"
+        << "int lex_one_parser_token(sample_parser::Token* token_out);\n"
+        << "std::vector<sample_parser::Token> tokenize_for_parser(const std::string& source);\n"
+        << "int main() {\n"
+        << "  const auto tokens = tokenize_for_parser(\"answer foo 5\");\n"
+        << "  if (tokens.size() != 3) {\n"
+        << "    return 1;\n"
+        << "  }\n"
+        << "  if (tokens[0].type != sample_parser::MAGIC || tokens[0].semantic.ival != 42) {\n"
+        << "    return 1;\n"
+        << "  }\n"
+        << "  if (tokens[1].type != sample_parser::IDENTIFIER || tokens[1].lexeme != \"foo\") {\n"
+        << "    return 1;\n"
+        << "  }\n"
+        << "  if (tokens[1].semantic.str == nullptr || std::string(tokens[1].semantic.str) != \"foo\") {\n"
+        << "    return 1;\n"
+        << "  }\n"
+        << "  if (tokens[2].type != sample_parser::NUMBER || tokens[2].semantic.ival != 5) {\n"
+        << "    return 1;\n"
+        << "  }\n"
+        << "  begin_lexing(\"answer + 5\");\n"
+        << "  sample_parser::Token direct0{};\n"
+        << "  sample_parser::Token direct1{};\n"
+        << "  sample_parser::Token direct2{};\n"
+        << "  if (lex_one_parser_token(&direct0) != sample_parser::MAGIC || direct0.semantic.ival != 42) {\n"
+        << "    return 1;\n"
+        << "  }\n"
+        << "  if (lex_one_parser_token(&direct1) != '+' || direct1.semantic.ival != 0) {\n"
+        << "    return 1;\n"
+        << "  }\n"
+        << "  if (lex_one_parser_token(&direct2) != sample_parser::NUMBER || direct2.semantic.ival != 5) {\n"
+        << "    return 1;\n"
+        << "  }\n"
+        << "  return 0;\n"
+        << "}\n";
+  }
+  if (runProcess(kSelfTestCompiler,
+                 {"-std=c++17", abiOutPath, abiDriverPath, "-o", abiBinaryPath}) != 0) {
+    throw std::runtime_error("generated ABI lexer failed to compile");
+  }
+  if (runProcess(abiBinaryPath, {}) != 0) {
+    throw std::runtime_error("generated ABI lexer failed runtime validation");
   }
 
   resetGlobalTables();

@@ -1,0 +1,29 @@
+block_count=8
+leaders=1,2,3,6,7,8,9,12
+B1 [leader=1, stmts=[1], successors=B3, B2]
+1: if x > 0 goto 3
+
+B2 [leader=2, stmts=[2], successors=B4]
+2: goto 6
+
+B3 [leader=3, stmts=[3,4,5], successors=B5]
+3: t1 = call foo(x, 1)
+4: x = t1
+5: goto 7
+
+B4 [leader=6, stmts=[6], successors=B5]
+6: x = 0
+
+B5 [leader=7, stmts=[7], successors=B7, B6]
+7: if x < 10 goto 9
+
+B6 [leader=8, stmts=[8], successors=B8]
+8: goto 12
+
+B7 [leader=9, stmts=[9,10,11], successors=B5]
+9: t2 = x + 1
+10: x = t2
+11: goto 7
+
+B8 [leader=12, stmts=[12], successors=none]
+12: return x

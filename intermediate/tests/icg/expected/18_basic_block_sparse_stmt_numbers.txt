@@ -1,0 +1,6 @@
+block_count=1
+leaders=10
+B1 [leader=10, stmts=[10,20,30], successors=none]
+10: x = 1
+20: t1 = x + 2
+30: return t1

@@ -7,10 +7,10 @@
 - 辅助探针：[icg_probe.cpp](icg_probe.cpp)
 - 用例目录：[test_cases/](test_cases)
 - 预期基线目录：[expected/](expected)
-- 本次实际运行结果目录：[results/20260414_215442](results/20260414_215442)
+- 本次实际运行结果目录：[results/20260415_002706](results/20260415_002706)
 - 最新运行指针：[results/LATEST.txt](results/LATEST.txt)
-- 汇总结果：[SUMMARY.md](results/20260414_215442/SUMMARY.md)
-- 实际执行结果：共 `13` 条测试，`13` 条通过，`0` 条失败。
+- 汇总结果：[SUMMARY.md](results/20260415_002706/SUMMARY.md)
+- 实际执行结果：共 `17` 条测试，`17` 条通过，`0` 条失败。
 - 额外验证：执行 `ctest --test-dir build --output-on-failure`，结果为 `1/1` 通过。
 
 本套测试覆盖了以下能力面：
@@ -23,12 +23,13 @@
 - 函数体生成与函数作用域退出后的局部符号回收
 - 错误路径：不支持运算符异常
 - 边界路径：空根节点与空程序块
+- 基本块 leader 识别、块范围切分、后继块格式化
 - 官方入口 `seuIntermediate --self-test`
 - 重复生成 `2000` 次的性能烟雾测试与原始耗时记录
 
 当前实现的两个边界也被明确纳入测试口径：
 
-- 当前模块输入是上游语义动作构造出的 AST，而不是直接读取 `.y` / token 流，因此测试以“AST/parse-root 契约”为主，而不是 Lex/Yacc 端到端联调。
+- 当前模块输入是上游语义动作构造出的 AST，而不是直接读取 `.y` / token 流，因此模块测试仍以“AST/parse-root 契约”为主；三模块端到端联调已由根目录 pipeline 集成测试承担。
 - 当前性能测试记录原始耗时，但不设置强阈值，避免不同机器或沙箱环境导致误判；性能回归主要通过固定规模下的功能稳定性与时间日志观察。
 
 ## 2. 详细测试记录
@@ -43,7 +44,7 @@
   2. 运行 `./icg_probe ast-shape`。
   3. 将结果与 [01_ast_construction_basic.txt](expected/01_ast_construction_basic.txt) 做精确比对。
 - 预期输出：根节点为 `NODE_PROGRAM`，赋值节点的 `type` 为 `int`，子树结构与手工构造一致。
-- 实际结果：[01_ast_construction_basic.txt](results/20260414_215442/01_ast_construction_basic.txt)，与预期完全一致。
+- 实际结果：[01_ast_construction_basic.txt](results/20260415_002706/01_ast_construction_basic.txt)，与预期完全一致。
 - 结论分析：AST 构造辅助接口稳定，可直接作为 Yacc 语义动作的节点工厂。
 
 ### 02. `parse_root_handoff`
@@ -56,7 +57,7 @@
   2. 检查首次观察、首次释放、释放后清空、二次释放四个字段。
   3. 与 [02_parse_root_handoff.txt](expected/02_parse_root_handoff.txt) 比对。
 - 预期输出：四个字段均为 `yes`。
-- 实际结果：[02_parse_root_handoff.txt](results/20260414_215442/02_parse_root_handoff.txt)，全部满足预期。
+- 实际结果：[02_parse_root_handoff.txt](results/20260415_002706/02_parse_root_handoff.txt)，全部满足预期。
 - 结论分析：当前 `seuYacc -> seuIntermediate` 的 parse-root 交接契约是可用的。
 
 ### 03. `symbol_scope_shadowing`
@@ -69,7 +70,7 @@
   2. 检查全局声明、内层声明、重复拒绝、遮蔽类型、退栈结果。
   3. 与 [03_symbol_scope_shadowing.txt](expected/03_symbol_scope_shadowing.txt) 比对。
 - 预期输出：内层 `x` 为 `char`、作用域为 `1`，退出作用域后 `x` 恢复为全局 `int`，`y` 消失。
-- 实际结果：[03_symbol_scope_shadowing.txt](results/20260414_215442/03_symbol_scope_shadowing.txt)，字段全部匹配。
+- 实际结果：[03_symbol_scope_shadowing.txt](results/20260415_002706/03_symbol_scope_shadowing.txt)，字段全部匹配。
 - 结论分析：符号表作用域栈行为正确，满足局部变量遮蔽的基本需求。
 
 ### 04. `symbol_offsets_global_local_param`
@@ -82,7 +83,7 @@
   2. 读取全局、参数、局部符号的偏移值。
   3. 与 [04_symbol_offsets_global_local_param.txt](expected/04_symbol_offsets_global_local_param.txt) 比对。
 - 预期输出：偏移分别为 `0/4`、`0/8`、`0/2`。
-- 实际结果：[04_symbol_offsets_global_local_param.txt](results/20260414_215442/04_symbol_offsets_global_local_param.txt)，与预期一致。
+- 实际结果：[04_symbol_offsets_global_local_param.txt](results/20260415_002706/04_symbol_offsets_global_local_param.txt)，与预期一致。
 - 结论分析：当前实现虽未做对齐优化，但偏移累计规则稳定且可预测。
 
 ### 05. `format_helpers`
@@ -95,7 +96,7 @@
   2. 检查 AST 节点名、操作名、单语句格式和整体 IR 转储。
   3. 与 [05_format_helpers.txt](expected/05_format_helpers.txt) 比对。
 - 预期输出：`NODE_WHILE`、`OP_FUNC_CALL` 和 `7: t3 = call foo(x, 1)` 等文本固定。
-- 实际结果：[05_format_helpers.txt](results/20260414_215442/05_format_helpers.txt)，完全匹配。
+- 实际结果：[05_format_helpers.txt](results/20260415_002706/05_format_helpers.txt)，完全匹配。
 - 结论分析：格式化接口可安全用于文档输出、调试打印和教学展示。
 
 ### 06. `ir_constant_assignment`
@@ -108,7 +109,7 @@
   2. 检查赋值和返回两条语句。
   3. 与 [06_ir_constant_assignment.txt](expected/06_ir_constant_assignment.txt) 比对。
 - 预期输出：`1: x = 42` 与 `2: return x`。
-- 实际结果：[06_ir_constant_assignment.txt](results/20260414_215442/06_ir_constant_assignment.txt)，与预期一致。
+- 实际结果：[06_ir_constant_assignment.txt](results/20260415_002706/06_ir_constant_assignment.txt)，与预期一致。
 - 结论分析：变量声明初始化路径可正常落到三地址赋值语句。
 
 ### 07. `ir_arithmetic_assignment`
@@ -121,7 +122,7 @@
   2. 检查乘法临时变量、加法临时变量和最终赋值。
   3. 与 [07_ir_arithmetic_assignment.txt](expected/07_ir_arithmetic_assignment.txt) 比对。
 - 预期输出：`t1 = 2 * 3`，`t2 = 1 + t1`，`x = t2`。
-- 实际结果：[07_ir_arithmetic_assignment.txt](results/20260414_215442/07_ir_arithmetic_assignment.txt)，完全一致。
+- 实际结果：[07_ir_arithmetic_assignment.txt](results/20260415_002706/07_ir_arithmetic_assignment.txt)，完全一致。
 - 结论分析：当前 `TriAddrGenerator` 的算术表达式展开顺序稳定。
 
 ### 08. `ir_function_call_and_control_flow`
@@ -134,7 +135,7 @@
   2. 检查条件跳转、空转移、循环回跳和 `call foo(x, 1)`。
   3. 与 [08_ir_function_call_and_control_flow.txt](expected/08_ir_function_call_and_control_flow.txt) 比对。
 - 预期输出：共 `12` 条语句，跳转目标分别为 `3/6/7/9/12`。
-- 实际结果：[08_ir_function_call_and_control_flow.txt](results/20260414_215442/08_ir_function_call_and_control_flow.txt)，所有编号与预期一致。
+- 实际结果：[08_ir_function_call_and_control_flow.txt](results/20260415_002706/08_ir_function_call_and_control_flow.txt)，所有编号与预期一致。
 - 结论分析：控制流回填逻辑当前是正确的，没有出现目标行号漂移。
 
 ### 09. `ir_function_body`
@@ -148,7 +149,7 @@
   3. 检查 `function_declared`、`local_c_visible_after_exit`、`param_a_visible_after_exit`。
   4. 与 [09_ir_function_body.txt](expected/09_ir_function_body.txt) 比对。
 - 预期输出：函数符号仍可见，局部 `c` 和参数 `a` 在函数退出后不可见。
-- 实际结果：[09_ir_function_body.txt](results/20260414_215442/09_ir_function_body.txt)，全部匹配。
+- 实际结果：[09_ir_function_body.txt](results/20260415_002706/09_ir_function_body.txt)，全部匹配。
 - 结论分析：函数级符号表进出栈行为正确，生成器没有泄漏局部符号到外层。
 
 ### 10. `error_unsupported_operator`
@@ -161,7 +162,7 @@
   2. 捕获探针输出的异常文本。
   3. 与 [10_error_unsupported_operator.txt](expected/10_error_unsupported_operator.txt) 比对。
 - 预期输出：`error=unsupported arithmetic operator: ^`。
-- 实际结果：[10_error_unsupported_operator.txt](results/20260414_215442/10_error_unsupported_operator.txt)，与预期完全一致。
+- 实际结果：[10_error_unsupported_operator.txt](results/20260415_002706/10_error_unsupported_operator.txt)，与预期完全一致。
 - 结论分析：当前错误信息对定位问题是足够明确的。
 
 ### 11. `generate_empty_root`
@@ -174,7 +175,7 @@
   2. 分别检查 `generate(nullptr)` 和空 `NODE_PROGRAM` 的输出。
   3. 与 [11_generate_empty_root.txt](expected/11_generate_empty_root.txt) 比对。
 - 预期输出：两类输入均为 `stmtCount=0` 且格式化文本为空。
-- 实际结果：[11_generate_empty_root.txt](results/20260414_215442/11_generate_empty_root.txt)，与预期一致。
+- 实际结果：[11_generate_empty_root.txt](results/20260415_002706/11_generate_empty_root.txt)，与预期一致。
 - 结论分析：边界输入处理稳定，不会在空树场景下崩溃。
 
 ### 12. `cli_self_test`
@@ -187,8 +188,8 @@
   2. 运行 `./build/seuIntermediate --self-test`。
   3. 将退出码、stdout、stderr 归一化。
   4. 与 [12_cli_self_test.txt](expected/12_cli_self_test.txt) 比对。
-- 预期输出：退出码为 `0`，六条自测全部为 `ok`。
-- 实际结果：[12_cli_self_test.txt](results/20260414_215442/12_cli_self_test.txt)，结果完全一致。
+- 预期输出：退出码为 `0`，七条自测全部为 `ok`。
+- 实际结果：[12_cli_self_test.txt](results/20260415_002706/12_cli_self_test.txt)，结果完全一致。
 - 结论分析：脚本化测试与模块官方自测保持一致，没有出现两套测试口径分叉。
 
 ### 13. `perf_batch_generation`
@@ -199,14 +200,96 @@
 - 测试步骤：
   1. 运行 `./icg_probe perf-batch 2000`。
   2. 将输出与 [13_perf_batch_generation.txt](expected/13_perf_batch_generation.txt) 比对。
-  3. 将原始耗时写入 [13_perf_batch_generation.metrics](results/20260414_215442/logs/13_perf_batch_generation.metrics)。
+  3. 将原始耗时写入 [13_perf_batch_generation.metrics](results/20260415_002706/logs/13_perf_batch_generation.metrics)。
 - 预期输出：`iterations=2000`，`final_stmt_count=3`，`total_stmt_count=6000`，`status=ok`。
-- 实际结果：[13_perf_batch_generation.txt](results/20260414_215442/13_perf_batch_generation.txt)，功能结果匹配；原始耗时记录为 `elapsed_seconds=0`。
+- 实际结果：[13_perf_batch_generation.txt](results/20260415_002706/13_perf_batch_generation.txt)，功能结果匹配；原始耗时记录为 `elapsed_seconds=0`。
 - 结论分析：当前规模下批量生成稳定可复现；后续如需性能门禁，应引入更大规模样本和独立基准环境。
+
+### 14. `basic_block_empty_code`
+
+- 名称：空代码基本块划分
+- 目的：验证空 `IntermediateCode` 不会伪造 leader 或基本块。
+- 输入：[14_basic_block_empty_code.md](test_cases/14_basic_block_empty_code.md)
+- 测试步骤：
+  1. 运行 `./icg_probe basic-block-empty`。
+  2. 检查 `block_count=0` 和 `leaders=<empty>`。
+  3. 与 [14_basic_block_empty_code.txt](expected/14_basic_block_empty_code.txt) 比对。
+- 预期输出：无基本块、无 leader。
+- 实际结果：[14_basic_block_empty_code.txt](results/20260415_002706/14_basic_block_empty_code.txt)，与预期一致。
+- 结论分析：空 IR 输入下的基本块切分行为稳定。
+
+### 15. `basic_block_linear_fallthrough`
+
+- 名称：顺序代码基本块划分
+- 目的：验证无跳转的顺序代码不会被错误切块。
+- 输入：[15_basic_block_linear_fallthrough.md](test_cases/15_basic_block_linear_fallthrough.md)
+- 测试步骤：
+  1. 运行 `./icg_probe basic-block-linear`。
+  2. 检查仅生成 `1` 个基本块，leader 为 `1`。
+  3. 与 [15_basic_block_linear_fallthrough.txt](expected/15_basic_block_linear_fallthrough.txt) 比对。
+- 预期输出：单块覆盖 `1-4`，无后继。
+- 实际结果：[15_basic_block_linear_fallthrough.txt](results/20260415_002706/15_basic_block_linear_fallthrough.txt)，与预期一致。
+- 结论分析：当前切分规则不会对纯顺序代码过度分块。
+
+### 16. `basic_block_conditional_branch`
+
+- 名称：条件分支基本块划分
+- 目的：验证条件跳转目标、跳转后继和 `return` 终止的 leader 识别。
+- 输入：[16_basic_block_conditional_branch.md](test_cases/16_basic_block_conditional_branch.md)
+- 测试步骤：
+  1. 运行 `./icg_probe basic-block-conditional`。
+  2. 检查 leaders 为 `1,2,3,5`。
+  3. 检查 `B1 -> B3, B2` 与 `B2 -> B4`。
+  4. 与 [16_basic_block_conditional_branch.txt](expected/16_basic_block_conditional_branch.txt) 比对。
+- 预期输出：共 `4` 个块，条件与无条件后继都正确。
+- 实际结果：[16_basic_block_conditional_branch.txt](results/20260415_002706/16_basic_block_conditional_branch.txt)，与预期一致。
+- 结论分析：基本块划分已经正确覆盖典型分支结构。
+
+### 17. `basic_block_mixed_control_flow`
+
+- 名称：混合控制流基本块划分
+- 目的：验证循环回边、函数调用块和退出块的综合切分。
+- 输入：[17_basic_block_mixed_control_flow.md](test_cases/17_basic_block_mixed_control_flow.md)
+- 测试步骤：
+  1. 运行 `./icg_probe basic-block-mixed`。
+  2. 检查 leaders 为 `1,2,3,6,7,8,9,12`。
+  3. 检查回边 `B7 -> B5` 和退出块 `B8`。
+  4. 与 [17_basic_block_mixed_control_flow.txt](expected/17_basic_block_mixed_control_flow.txt) 比对。
+- 预期输出：共 `8` 个块，后继块关系与控制流一致。
+- 实际结果：[17_basic_block_mixed_control_flow.txt](results/20260415_002706/17_basic_block_mixed_control_flow.txt)，与预期一致。
+- 结论分析：当前实现已经能对复杂控制流 IR 形成稳定基本块视图。
+
+### 18. `basic_block_sparse_stmt_numbers`
+
+- 名称：稀疏语句号基本块划分
+- 目的：验证 `stmtNo` 非连续时的块成员显示与切分规则。
+- 输入：[18_basic_block_sparse_stmt_numbers.md](test_cases/18_basic_block_sparse_stmt_numbers.md)
+- 测试步骤：
+  1. 运行 `./icg_probe basic-block-sparse`。
+  2. 检查 leaders 为 `10`。
+  3. 检查块成员显示为 `stmts=[10,20,30]`。
+  4. 与 [18_basic_block_sparse_stmt_numbers.txt](expected/18_basic_block_sparse_stmt_numbers.txt) 比对。
+- 预期输出：单块包含 `10,20,30` 三条语句，不伪装为连续区间。
+- 实际结果：[18_basic_block_sparse_stmt_numbers.txt](results/20260415_002706/18_basic_block_sparse_stmt_numbers.txt)，与预期一致。
+- 结论分析：当前基本块格式化对稀疏语句号是稳定的。
+
+### 19. `basic_block_invalid_target`
+
+- 名称：非法跳转目标处理
+- 目的：验证跳转目标不存在时不会崩溃，并给出固定后继表示。
+- 输入：[19_basic_block_invalid_target.md](test_cases/19_basic_block_invalid_target.md)
+- 测试步骤：
+  1. 运行 `./icg_probe basic-block-invalid-target`。
+  2. 检查 leaders 为 `10,20`。
+  3. 检查首块后继显示为 `invalid(99)`。
+  4. 与 [19_basic_block_invalid_target.txt](expected/19_basic_block_invalid_target.txt) 比对。
+- 预期输出：非法目标不生成 leader，但会被稳定标记为 `invalid(99)`。
+- 实际结果：[19_basic_block_invalid_target.txt](results/20260415_002706/19_basic_block_invalid_target.txt)，与预期一致。
+- 结论分析：非法目标输入当前不会导致崩溃，且格式化契约明确。
 
 ## 3. 总体结论
 
-- 本次为 `seuIntermediate` 新增了可直接运行的一键测试框架，`13/13` 用例全部通过。
+- 本次为 `seuIntermediate` 新增并验证了基本块划分能力，`19/19` 用例全部通过。
 - 额外执行的 `ctest` 官方入口测试也通过，说明脚本化测试与现有 CMake 自测一致。
 - 目前未发现生产模块在既有功能范围内的行为性缺陷。
 
@@ -228,6 +311,7 @@
 - Parse-root 交接：已覆盖
 - 符号表作用域与偏移：已覆盖
 - 三地址码格式化：已覆盖
+- 基本块 leader 识别与后继块格式化：已覆盖
 - 声明初始化、赋值、算术表达式：已覆盖
 - 函数调用、条件分支、循环、返回：已覆盖
 - 函数定义与作用域退出：已覆盖

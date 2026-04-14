@@ -165,5 +165,5 @@ ctest --test-dir build --output-on-failure
 - 需要可用的 C++17 编译器
 - 生成器内部自测会调用外部编译器，并设置 60 秒超时
 - 生成出的 parser 当前接口仍是批量 token 输入，不直接驱动 `lex` 文件
-- 与 `seuLex` 联通时，推荐使用 `seuLex` 新增的 `tokenize_detailed(...)` 结果，经桥接层转换成 `Token`
-- 该桥接层除复制 `type/lexeme/line/column` 外，还需要按文法需求补全 `YYSTYPE semantic`
+- 生成的 token 头会稳定导出 `SEU_YACC_TOKEN_NAMESPACE`、`SEU_YACC_TOKEN_TYPE`、`SEU_YACC_SEMANTIC_TYPE`
+- 与 `seuLex` 联通时，推荐让 `seuLex` 以 `--token-header <generated_tokens.h>` 生成 ABI 模式 lexer，并直接调用 `tokenize_for_parser(...)`

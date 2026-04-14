@@ -25,7 +25,8 @@ class CodeGenerator {
    */
   void emitLexer(const dfa& automaton,
                  const LexSpecification& specification,
-                 const std::string& outPath) const;
+                 const std::string& outPath,
+                 const std::string& tokenHeaderPath = "") const;
 };
 
 /**
@@ -60,7 +61,8 @@ class SeuLexDriver {
    */
   void generate(const std::string& lexPath,
                 const std::string& outCppPath,
-                const std::string& dotDir) const;
+                const std::string& dotDir,
+                const std::string& tokenHeaderPath = "") const;
 
   /**
    * @brief Run built-in smoke tests.

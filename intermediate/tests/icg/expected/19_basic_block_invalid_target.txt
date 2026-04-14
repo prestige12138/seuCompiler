@@ -1,0 +1,7 @@
+block_count=2
+leaders=10,20
+B1 [leader=10, stmts=[10], successors=invalid(99)]
+10: goto 99
+
+B2 [leader=20, stmts=[20], successors=none]
+20: return x

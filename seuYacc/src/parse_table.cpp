@@ -778,8 +778,17 @@ void ParserCodeGenerator::emitParser(const std::vector<parse_table_item>& table,
          << "  int column = 0;\n"
          << "  YYSTYPE semantic{};\n"
          << "};\n\n"
+         << "using yytoken_type = Token;\n"
+         << "using yysemantic_type = YYSTYPE;\n\n"
          << "bool yyparse(const std::vector<Token>& tokens);\n\n"
-         << "}  // namespace " << name_space << "\n";
+         << "}  // namespace " << name_space << "\n\n"
+         << "#if defined(SEU_YACC_TOKEN_NAMESPACE) || defined(SEU_YACC_TOKEN_TYPE) || \\\n"
+         << "    defined(SEU_YACC_SEMANTIC_TYPE)\n"
+         << "#error \"multiple generated seuYacc token ABI headers included in one translation unit\"\n"
+         << "#endif\n"
+         << "#define SEU_YACC_TOKEN_NAMESPACE " << name_space << "\n"
+         << "#define SEU_YACC_TOKEN_TYPE " << name_space << "::Token\n"
+         << "#define SEU_YACC_SEMANTIC_TYPE " << name_space << "::YYSTYPE\n";
 
   std::ofstream output(out_cpp_path);
   if (!output) {

@@ -14,6 +14,7 @@ static seu_icg::ASTBuilder g_ast_builder;
 }
 
 %token <ival> NUMBER
+%token <ival> MAGIC
 %token <str> IDENTIFIER
 %token RETURN
 %type <node> program stmt_list stmt expr
@@ -79,6 +80,10 @@ expr
       $$ = g_ast_builder.makeIdentifier(std::string($1), "int");
     }
   | NUMBER
+    {
+      $$ = g_ast_builder.makeConstant(std::to_string($1), "int");
+    }
+  | MAGIC
     {
       $$ = g_ast_builder.makeConstant(std::to_string($1), "int");
     }

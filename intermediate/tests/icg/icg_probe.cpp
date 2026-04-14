@@ -104,6 +104,26 @@ ASTNode* makeArithmeticAssignmentProgram(const ASTBuilder& builder) {
   });
 }
 
+void dumpBasicBlockPartition(const IntermediateCode& code) {
+  const std::vector<IntermediateCode> blocks = seu_icg::splitBasicBlocks(code);
+  std::cout << "block_count=" << blocks.size() << '\n'
+            << "leaders=";
+  if (blocks.empty()) {
+    std::cout << "<empty>";
+  } else {
+    for (std::size_t index = 0; index < blocks.size(); ++index) {
+      if (index != 0) {
+        std::cout << ',';
+      }
+      std::cout << blocks[index].stmts.front().stmtNo;
+    }
+  }
+  if (!blocks.empty()) {
+    std::cout << '\n' << seu_icg::formatBasicBlocks(blocks);
+  }
+  std::cout << '\n';
+}
+
 void commandAstShape() {
   const ASTBuilder builder;
   ASTNode* root = builder.makeProgram({
@@ -315,6 +335,62 @@ void commandIrFunction() {
   builder.destroyTree(root);
 }
 
+void commandBasicBlockEmpty() {
+  dumpBasicBlockPartition(IntermediateCode());
+}
+
+void commandBasicBlockLinear() {
+  IntermediateCode code;
+  code.addStmt(seu_icg::TriAddrStmt(1, seu_icg::OP_ASSIGN, "1", "", "x"));
+  code.addStmt(seu_icg::TriAddrStmt(2, seu_icg::OP_ADD, "x", "2", "t1"));
+  code.addStmt(seu_icg::TriAddrStmt(3, seu_icg::OP_ASSIGN, "t1", "", "y"));
+  code.addStmt(seu_icg::TriAddrStmt(4, seu_icg::OP_RETURN, "y", ""));
+  dumpBasicBlockPartition(code);
+}
+
+void commandBasicBlockConditional() {
+  IntermediateCode code;
+  code.addStmt(seu_icg::TriAddrStmt(1, seu_icg::OP_IF_GOTO, "x > 0", "3"));
+  code.addStmt(seu_icg::TriAddrStmt(2, seu_icg::OP_GOTO, "", "5"));
+  code.addStmt(seu_icg::TriAddrStmt(3, seu_icg::OP_ASSIGN, "1", "", "y"));
+  code.addStmt(seu_icg::TriAddrStmt(4, seu_icg::OP_RETURN, "y", ""));
+  code.addStmt(seu_icg::TriAddrStmt(5, seu_icg::OP_ASSIGN, "0", "", "y"));
+  code.addStmt(seu_icg::TriAddrStmt(6, seu_icg::OP_RETURN, "y", ""));
+  dumpBasicBlockPartition(code);
+}
+
+void commandBasicBlockMixed() {
+  IntermediateCode code;
+  code.addStmt(seu_icg::TriAddrStmt(1, seu_icg::OP_IF_GOTO, "x > 0", "3"));
+  code.addStmt(seu_icg::TriAddrStmt(2, seu_icg::OP_GOTO, "", "6"));
+  code.addStmt(seu_icg::TriAddrStmt(3, seu_icg::OP_FUNC_CALL, "foo", "x, 1", "t1"));
+  code.addStmt(seu_icg::TriAddrStmt(4, seu_icg::OP_ASSIGN, "t1", "", "x"));
+  code.addStmt(seu_icg::TriAddrStmt(5, seu_icg::OP_GOTO, "", "7"));
+  code.addStmt(seu_icg::TriAddrStmt(6, seu_icg::OP_ASSIGN, "0", "", "x"));
+  code.addStmt(seu_icg::TriAddrStmt(7, seu_icg::OP_IF_GOTO, "x < 10", "9"));
+  code.addStmt(seu_icg::TriAddrStmt(8, seu_icg::OP_GOTO, "", "12"));
+  code.addStmt(seu_icg::TriAddrStmt(9, seu_icg::OP_ADD, "x", "1", "t2"));
+  code.addStmt(seu_icg::TriAddrStmt(10, seu_icg::OP_ASSIGN, "t2", "", "x"));
+  code.addStmt(seu_icg::TriAddrStmt(11, seu_icg::OP_GOTO, "", "7"));
+  code.addStmt(seu_icg::TriAddrStmt(12, seu_icg::OP_RETURN, "x", ""));
+  dumpBasicBlockPartition(code);
+}
+
+void commandBasicBlockSparse() {
+  IntermediateCode code;
+  code.addStmt(seu_icg::TriAddrStmt(10, seu_icg::OP_ASSIGN, "1", "", "x"));
+  code.addStmt(seu_icg::TriAddrStmt(20, seu_icg::OP_ADD, "x", "2", "t1"));
+  code.addStmt(seu_icg::TriAddrStmt(30, seu_icg::OP_RETURN, "t1", ""));
+  dumpBasicBlockPartition(code);
+}
+
+void commandBasicBlockInvalidTarget() {
+  IntermediateCode code;
+  code.addStmt(seu_icg::TriAddrStmt(10, seu_icg::OP_GOTO, "", "99"));
+  code.addStmt(seu_icg::TriAddrStmt(20, seu_icg::OP_RETURN, "x", ""));
+  dumpBasicBlockPartition(code);
+}
+
 void commandIrUnsupportedOp() {
   const ASTBuilder builder;
   SymbolTable symbols;
@@ -388,7 +464,9 @@ void printUsage(const char* program) {
       << "Usage: " << program
       << " <ast-shape|parse-root|symbol-scope|symbol-offsets|formatters|"
          "ir-constant-assign|ir-arithmetic|ir-control-flow|ir-function|"
-         "ir-unsupported-op|generate-empty|perf-batch ITERATIONS>\n";
+         "ir-unsupported-op|generate-empty|basic-block-empty|basic-block-linear|"
+         "basic-block-conditional|basic-block-mixed|basic-block-sparse|"
+         "basic-block-invalid-target|perf-batch ITERATIONS>\n";
 }
 
 }  // namespace
@@ -443,6 +521,30 @@ int main(int argc, char** argv) {
     }
     if (command == "generate-empty") {
       commandGenerateEmpty();
+      return 0;
+    }
+    if (command == "basic-block-empty") {
+      commandBasicBlockEmpty();
+      return 0;
+    }
+    if (command == "basic-block-linear") {
+      commandBasicBlockLinear();
+      return 0;
+    }
+    if (command == "basic-block-conditional") {
+      commandBasicBlockConditional();
+      return 0;
+    }
+    if (command == "basic-block-mixed") {
+      commandBasicBlockMixed();
+      return 0;
+    }
+    if (command == "basic-block-sparse") {
+      commandBasicBlockSparse();
+      return 0;
+    }
+    if (command == "basic-block-invalid-target") {
+      commandBasicBlockInvalidTarget();
       return 0;
     }
     if (command == "perf-batch") {

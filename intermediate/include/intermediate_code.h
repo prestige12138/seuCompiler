@@ -145,10 +145,35 @@ std::string formatTriAddrStmt(const TriAddrStmt& stmt);
 std::string formatIntermediateCode(const IntermediateCode& code);
 
 /**
+ * @brief Split one three-address-code sequence into basic blocks.
+ *
+ * Leaders follow the standard rule set: the first statement, jump targets, and
+ * statements that immediately follow jumps.
+ *
+ * Complexity: O(N log N), where N is the statement count.
+ */
+std::vector<IntermediateCode> splitBasicBlocks(const IntermediateCode& code);
+
+/**
+ * @brief Format a basic-block partition in stable text form.
+ *
+ * Complexity: O(B + N + total_text), where B is the block count and N is the
+ * statement count.
+ */
+std::string formatBasicBlocks(const std::vector<IntermediateCode>& blocks);
+
+/**
  * @brief Dump a whole three-address-code sequence to one output stream.
  *
  * Complexity: O(N + total_text).
  */
 void dumpIntermediateCode(const IntermediateCode& code, std::ostream& out);
+
+/**
+ * @brief Dump a basic-block partition to one output stream.
+ *
+ * Complexity: O(B + N + total_text).
+ */
+void dumpBasicBlocks(const std::vector<IntermediateCode>& blocks, std::ostream& out);
 
 }  // namespace seu_icg

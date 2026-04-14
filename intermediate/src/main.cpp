@@ -224,12 +224,55 @@ bool runFunctionBodyTest(const ASTBuilder& builder) {
   return ok;
 }
 
+bool runBasicBlockTest() {
+  IntermediateCode code;
+  code.addStmt(seu_icg::TriAddrStmt(1, seu_icg::OP_IF_GOTO, "x > 0", "3"));
+  code.addStmt(seu_icg::TriAddrStmt(2, seu_icg::OP_GOTO, "", "6"));
+  code.addStmt(seu_icg::TriAddrStmt(3, seu_icg::OP_FUNC_CALL, "foo", "x, 1", "t1"));
+  code.addStmt(seu_icg::TriAddrStmt(4, seu_icg::OP_ASSIGN, "t1", "", "x"));
+  code.addStmt(seu_icg::TriAddrStmt(5, seu_icg::OP_GOTO, "", "7"));
+  code.addStmt(seu_icg::TriAddrStmt(6, seu_icg::OP_ASSIGN, "0", "", "x"));
+  code.addStmt(seu_icg::TriAddrStmt(7, seu_icg::OP_IF_GOTO, "x < 10", "9"));
+  code.addStmt(seu_icg::TriAddrStmt(8, seu_icg::OP_GOTO, "", "12"));
+  code.addStmt(seu_icg::TriAddrStmt(9, seu_icg::OP_ADD, "x", "1", "t2"));
+  code.addStmt(seu_icg::TriAddrStmt(10, seu_icg::OP_ASSIGN, "t2", "", "x"));
+  code.addStmt(seu_icg::TriAddrStmt(11, seu_icg::OP_GOTO, "", "7"));
+  code.addStmt(seu_icg::TriAddrStmt(12, seu_icg::OP_RETURN, "x", ""));
+
+  const std::vector<IntermediateCode> blocks = seu_icg::splitBasicBlocks(code);
+  const bool ok = expectEqual(
+      "basic_block_partition",
+      seu_icg::formatBasicBlocks(blocks),
+      "B1 [leader=1, stmts=[1], successors=B3, B2]\n"
+      "1: if x > 0 goto 3\n\n"
+      "B2 [leader=2, stmts=[2], successors=B4]\n"
+      "2: goto 6\n\n"
+      "B3 [leader=3, stmts=[3,4,5], successors=B5]\n"
+      "3: t1 = call foo(x, 1)\n"
+      "4: x = t1\n"
+      "5: goto 7\n\n"
+      "B4 [leader=6, stmts=[6], successors=B5]\n"
+      "6: x = 0\n\n"
+      "B5 [leader=7, stmts=[7], successors=B7, B6]\n"
+      "7: if x < 10 goto 9\n\n"
+      "B6 [leader=8, stmts=[8], successors=B8]\n"
+      "8: goto 12\n\n"
+      "B7 [leader=9, stmts=[9,10,11], successors=B5]\n"
+      "9: t2 = x + 1\n"
+      "10: x = t2\n"
+      "11: goto 7\n\n"
+      "B8 [leader=12, stmts=[12], successors=none]\n"
+      "12: return x");
+  return ok;
+}
+
 bool runSelfTests() {
   const ASTBuilder builder;
   return runAstConstructionTest(builder) && runParseRootTest(builder) &&
          runSymbolTableTest() &&
          runArithmeticAssignmentTest(builder) &&
-         runControlFlowAndCallTest(builder) && runFunctionBodyTest(builder);
+         runControlFlowAndCallTest(builder) && runFunctionBodyTest(builder) &&
+         runBasicBlockTest();
 }
 
 void printUsage(const char* program) {

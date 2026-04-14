@@ -35,9 +35,17 @@ if [[ -z "${SEU_LEX_BIN}" || -z "${SEU_YACC_BIN}" ]]; then
   if [[ -n "${SEU_TEST_CXX:-}" ]]; then
     CMAKE_ARGS+=("-DCMAKE_CXX_COMPILER=${SEU_TEST_CXX}")
   fi
-  cmake -S "${REPO_ROOT}/seuLex" -B "${SEULEX_BUILD_DIR}" "${CMAKE_ARGS[@]}" > "${LOG_DIR}/seulex.configure.log"
+  if [[ ${#CMAKE_ARGS[@]} -gt 0 ]]; then
+    cmake -S "${REPO_ROOT}/seuLex" -B "${SEULEX_BUILD_DIR}" "${CMAKE_ARGS[@]}" > "${LOG_DIR}/seulex.configure.log"
+  else
+    cmake -S "${REPO_ROOT}/seuLex" -B "${SEULEX_BUILD_DIR}" > "${LOG_DIR}/seulex.configure.log"
+  fi
   cmake --build "${SEULEX_BUILD_DIR}" -j > "${LOG_DIR}/seulex.build.log"
-  cmake -S "${REPO_ROOT}/seuYacc" -B "${SEUYACC_BUILD_DIR}" "${CMAKE_ARGS[@]}" > "${LOG_DIR}/seuyacc.configure.log"
+  if [[ ${#CMAKE_ARGS[@]} -gt 0 ]]; then
+    cmake -S "${REPO_ROOT}/seuYacc" -B "${SEUYACC_BUILD_DIR}" "${CMAKE_ARGS[@]}" > "${LOG_DIR}/seuyacc.configure.log"
+  else
+    cmake -S "${REPO_ROOT}/seuYacc" -B "${SEUYACC_BUILD_DIR}" > "${LOG_DIR}/seuyacc.configure.log"
+  fi
   cmake --build "${SEUYACC_BUILD_DIR}" -j > "${LOG_DIR}/seuyacc.build.log"
   SEU_LEX_BIN="${SEULEX_BUILD_DIR}/seuLex"
   SEU_YACC_BIN="${SEUYACC_BUILD_DIR}/seuYacc"
@@ -53,7 +61,7 @@ if grep -q "${REPO_ROOT}" "${PIPELINE_PARSER}"; then
 fi
 
 "${SEU_LEX_BIN}" \
-  "${LEX_SPEC}" "${PIPELINE_LEXER}" "${TMP_DIR}/dot" \
+  "${LEX_SPEC}" "${PIPELINE_LEXER}" "${TMP_DIR}/dot" --token-header "${PIPELINE_TOKENS}" \
   > "${LOG_DIR}/seulex.generate.stdout" 2> "${LOG_DIR}/seulex.generate.stderr"
 
 cat > "${PIPELINE_DRIVER}" <<'EOF'
@@ -69,35 +77,11 @@ cat > "${PIPELINE_DRIVER}" <<'EOF'
 #include "tri_addr_generator.h"
 #include "pipeline_tokens.h"
 
-struct SeuLexToken {
-  int type = 0;
-  std::string lexeme;
-  int line = 0;
-  int column = 0;
-};
-
-std::vector<SeuLexToken> tokenize_detailed(const std::string& source);
+std::vector<pipeline_parser_generated::Token> tokenize_for_parser(const std::string& source);
 
 int main() {
-  const std::string source = "x = 1 + 2 * 3; return x;";
-  std::vector<SeuLexToken> lex_tokens = tokenize_detailed(source);
-  std::vector<pipeline_parser_generated::Token> tokens;
-  tokens.reserve(lex_tokens.size());
-
-  for (const SeuLexToken& token : lex_tokens) {
-    pipeline_parser_generated::Token parser_token{};
-    parser_token.type = token.type;
-    parser_token.lexeme = token.lexeme;
-    parser_token.line = token.line;
-    parser_token.column = token.column;
-    if (token.type == pipeline_parser_generated::NUMBER) {
-      parser_token.semantic.ival = std::stoi(token.lexeme);
-    }
-    if (token.type == pipeline_parser_generated::IDENTIFIER) {
-      parser_token.semantic.str = token.lexeme.c_str();
-    }
-    tokens.push_back(parser_token);
-  }
+  const std::string source = "x = answer + 2 * 3; return x;";
+  std::vector<pipeline_parser_generated::Token> tokens = tokenize_for_parser(source);
 
   if (!pipeline_parser_generated::yyparse(tokens)) {
     throw std::runtime_error("yyparse returned false");

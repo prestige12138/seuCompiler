@@ -129,8 +129,9 @@ translation_unit
 
 如果需要完整三模块联通，推荐链路是：
 
-1. `seuLex` 的 `tokenize_detailed(source)`
-2. 轻量桥接层转换到 `seuYacc` 生成的 `Token`
+1. 先由 `seuYacc` 生成 `generated_tokens.h`
+2. `seuLex` 以 `--token-header generated_tokens.h` 生成 ABI 模式 lexer
+3. 直接调用 `tokenize_for_parser(source)`
 3. `yyparse(tokens)`
 4. `releaseParseRoot()`
 5. `TriAddrGenerator::generate(root)`
@@ -176,6 +177,7 @@ translation_unit
 - 临时变量统一命名为 `t1`, `t2`, ...
 - 跳转目标直接使用语句编号
 - `OP_FUNC_CALL` 输出为 `result = call func(arglist)`
+- 额外提供 `splitBasicBlocks(...)` / `formatBasicBlocks(...)` 作为基本块视图
 
 ## 自测内容
 
@@ -186,6 +188,7 @@ translation_unit
 - 算术赋值 IR
 - `if/else`、`while`、函数调用 IR
 - 函数体与参数作用域 IR
+- 基本块划分与后继块格式化
 
 ## 当前边界
 
@@ -193,6 +196,7 @@ translation_unit
 - 当前模块默认 AST 已经由上游语义动作或适配层构建完成
 - 当前模块没有扩展报告之外的 IR 操作符，例如专门的 `LABEL`、`PARAM`、`FUNC_BEGIN`
 - 条件表达式当前以文本条件直接挂到 `OP_IF_GOTO.arg1`
+- `splitBasicBlocks(...)` 返回的块保留原始 `stmtNo`；若只关心块内语句条数，应使用 `stmts.size()`
 
 ## 文档导航
 

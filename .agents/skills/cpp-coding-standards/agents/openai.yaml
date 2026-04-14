@@ -1,0 +1,7 @@
+interface:
+  display_name: "C++ Coding Standards"
+  short_description: "Modern C++ Core Guidelines and safe coding practices"
+  brand_color: "#2563EB"
+  default_prompt: "Use $cpp-coding-standards to enforce modern, safe, idiomatic C++ practices."
+policy:
+  allow_implicit_invocation: true

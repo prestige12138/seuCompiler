@@ -1,0 +1,7 @@
+interface:
+  display_name: "C++ Testing"
+  short_description: "GoogleTest, CTest, coverage, and sanitizer workflows"
+  brand_color: "#16A34A"
+  default_prompt: "Use $cpp-testing to write or fix C++ tests with GoogleTest and CTest."
+policy:
+  allow_implicit_invocation: true

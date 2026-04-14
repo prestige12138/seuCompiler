@@ -10,7 +10,7 @@
 - 本次实际运行结果目录：[results/20260415_002706](results/20260415_002706)
 - 最新运行指针：[results/LATEST.txt](results/LATEST.txt)
 - 汇总结果：[SUMMARY.md](results/20260415_002706/SUMMARY.md)
-- 实际执行结果：共 `17` 条测试，`17` 条通过，`0` 条失败。
+- 实际执行结果：共 `19` 条测试，`19` 条通过，`0` 条失败。
 - 额外验证：执行 `ctest --test-dir build --output-on-failure`，结果为 `1/1` 通过。
 
 本套测试覆盖了以下能力面：

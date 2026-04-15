@@ -79,7 +79,7 @@ cmake --build build
 运行生成器：
 
 ```bash
-./build/seuYacc ../resources/c99.y generated_parser.cpp generated_tokens.h lalr
+./build/seuYacc ../resources/minic.y generated_parser.cpp generated_tokens.h lalr
 ```
 
 运行内建自测：
@@ -101,7 +101,7 @@ ctest --test-dir build --output-on-failure
 输入：
 
 - 主输入为一个 `.y` 文法文件
-- `resources/c99.y` 是当前默认参考文法
+- `resources/minic.y` 是当前默认参考文法
 - `resources/minic.l` 是配套词法规范参考，主要用于 token 对齐和整链路联调背景
 
 输出：
@@ -136,7 +136,7 @@ ctest --test-dir build --output-on-failure
 
 ## 当前实现策略
 
-- 对外默认走 direct LALR(1) 构造，而不是先完整构 canonical LR(1) 再合并。这是为控制 `c99.y` 级别文法的状态膨胀。
+- 对外默认走 direct LALR(1) 构造，而不是先完整构 canonical LR(1) 再合并。这是为控制较大文法上的状态膨胀。
 - canonical LR(1) 仍保留，供 `lr1` 模式和小文法验证使用。
 - `LALRConverter` 保留为显式 LR(1) 到 LALR(1) 合并模块，主要用于算法对照和自测验证。
 - 生成器把 `%{...%}` 和第三段用户代码按可信 C/C++ 代码处理，不做沙箱执行。
@@ -157,7 +157,7 @@ ctest --test-dir build --output-on-failure
 
 - 小表达式文法的生成、编译、运行
 - 带 `%union`、`%type`、语义动作、第三段用户代码的文法
-- `resources/c99.y` 的生成与生成后编译
+- `resources/minic.y` 的生成与生成后编译
 
 ## 使用约束
 

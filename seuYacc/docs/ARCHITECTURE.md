@@ -68,7 +68,7 @@
 特点：
 
 - `buildCanonicalPDA()` 保留规范 LR(1) 版本
-- `buildLALRPDA()` 直接在 LR(0) core 上传播 lookahead，避免 `c99.y` 级别文法状态爆炸
+- `buildLALRPDA()` 直接在 LR(0) core 上传播 lookahead，避免较大文法上的状态爆炸
 
 ### `lalr_converter.*`
 
@@ -128,7 +128,7 @@
 
 原因：
 
-- `resources/c99.y` 文法规模较大
+- 历史上完整规格文法规模较大
 - 规范 LR(1) 状态数膨胀明显
 - 直接走 LR(0) core + lookahead 传播更适合当前工程目标
 
@@ -199,7 +199,7 @@ bool yyparse(const std::vector<Token>& tokens);
   - 校验基础生成链和解析执行
 - 语义动作文法
   - 校验 `%union`、`%type`、typed action、第三段用户代码
-- `c99.y`
+- `minic.y`
   - 校验真实规模文法的生成和生成后编译
 
 这三层组合之后，能覆盖当前最容易出错的生成路径。

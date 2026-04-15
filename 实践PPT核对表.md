@@ -36,14 +36,14 @@ PPT 原文要点：
 
 | PPT 提交项 | 状态 | 仓库内对应材料 |
 | --- | --- | --- |
-| `Lex` 输入文件 | 已就绪 | [resources/c99.l](/Users/llawliet/代码/seuCompiler/resources/c99.l), [resources/minic.l](/Users/llawliet/代码/seuCompiler/resources/minic.l) |
-| `Yacc` 输入文件 | 已就绪 | [resources/c99.y](/Users/llawliet/代码/seuCompiler/resources/c99.y) |
+| `Lex` 输入文件 | 已就绪 | [resources/minic.l](/Users/llawliet/代码/seuCompiler/resources/minic.l) |
+| `Yacc` 输入文件 | 已就绪 | [resources/minic.y](/Users/llawliet/代码/seuCompiler/resources/minic.y) |
 | 含语义规则与 translation scheme 的联调用输入 | 已就绪 | [integration/tests/pipeline/test_cases/pipeline_expr.l](/Users/llawliet/代码/seuCompiler/integration/tests/pipeline/test_cases/pipeline_expr.l), [integration/tests/pipeline/test_cases/pipeline_expr.y](/Users/llawliet/代码/seuCompiler/integration/tests/pipeline/test_cases/pipeline_expr.y), [integration/tests/ir_pipeline/test_cases/demo_ir.l](/Users/llawliet/代码/seuCompiler/integration/tests/ir_pipeline/test_cases/demo_ir.l), [integration/tests/ir_pipeline/test_cases/demo_ir.y](/Users/llawliet/代码/seuCompiler/integration/tests/ir_pipeline/test_cases/demo_ir.y) |
 | 词法分析程序生成器源程序 | 已就绪 | [seuLex/](/Users/llawliet/代码/seuCompiler/seuLex) |
 | 语法分析程序生成器源程序 | 已就绪 | [seuYacc/](/Users/llawliet/代码/seuCompiler/seuYacc) |
 | 中间代码生成模块源程序 | 已就绪 | [intermediate/](/Users/llawliet/代码/seuCompiler/intermediate) |
-| 生成的词法分析程序源程序 | 已就绪 | [seuLex/generated_lexer.cpp](/Users/llawliet/代码/seuCompiler/seuLex/generated_lexer.cpp) |
-| 生成的语法分析程序源程序 | 已就绪 | [seuYacc/generated_parser.cpp](/Users/llawliet/代码/seuCompiler/seuYacc/generated_parser.cpp), [seuYacc/generated_tokens.h](/Users/llawliet/代码/seuCompiler/seuYacc/generated_tokens.h) |
+| 生成的词法分析程序源程序 | 已就绪 | 由 [seuLex/](/Users/llawliet/代码/seuCompiler/seuLex) 在构建或测试时现场生成 |
+| 生成的语法分析程序源程序 | 已就绪 | 由 [seuYacc/](/Users/llawliet/代码/seuCompiler/seuYacc) 在构建或测试时现场生成 |
 | 词法分析测试用例和测试结果 | 已就绪 | [seuLex/tests/lex/](/Users/llawliet/代码/seuCompiler/seuLex/tests/lex), [seuLex/tests/lex/LEX_TEST_REPORT.md](/Users/llawliet/代码/seuCompiler/seuLex/tests/lex/LEX_TEST_REPORT.md) |
 | 语法分析测试用例和测试结果 | 已就绪 | [seuYacc/tests/yacc/](/Users/llawliet/代码/seuCompiler/seuYacc/tests/yacc), [seuYacc/tests/yacc/YACC_TEST_REPORT.md](/Users/llawliet/代码/seuCompiler/seuYacc/tests/yacc/YACC_TEST_REPORT.md) |
 | 中间代码模块测试用例和测试结果 | 已就绪 | [intermediate/tests/icg/](/Users/llawliet/代码/seuCompiler/intermediate/tests/icg), [intermediate/tests/icg/INTERMEDIATE_TEST_REPORT.md](/Users/llawliet/代码/seuCompiler/intermediate/tests/icg/INTERMEDIATE_TEST_REPORT.md) |
@@ -68,9 +68,7 @@ PPT 原文要点：
 
 ### 3. 生成产物样例
 
-- [seuLex/generated_lexer.cpp](/Users/llawliet/代码/seuCompiler/seuLex/generated_lexer.cpp)
-- [seuYacc/generated_parser.cpp](/Users/llawliet/代码/seuCompiler/seuYacc/generated_parser.cpp)
-- [seuYacc/generated_tokens.h](/Users/llawliet/代码/seuCompiler/seuYacc/generated_tokens.h)
+- 生成产物改为通过构建或测试脚本现场生成，不再在仓库中提交固定样例文件
 - [integration/tests/pipeline/expected/pipeline_expr.ir](/Users/llawliet/代码/seuCompiler/integration/tests/pipeline/expected/pipeline_expr.ir)
 - [integration/tests/ir_pipeline/expected/demo_ir.tac](/Users/llawliet/代码/seuCompiler/integration/tests/ir_pipeline/expected/demo_ir.tac)
 - [integration/tests/ir_pipeline/expected/demo_ir.ll](/Users/llawliet/代码/seuCompiler/integration/tests/ir_pipeline/expected/demo_ir.ll)

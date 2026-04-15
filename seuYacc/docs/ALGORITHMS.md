@@ -192,7 +192,7 @@ A -> X1 X2 ... Xn
 
 ### 4.3 为什么默认使用这个版本
 
-对 `c99.y` 这类文法：
+对较大文法：
 
 - canonical LR(1) 的状态膨胀会拖慢生成
 - direct LALR 保留了 LALR(1) 所需的 lookahead 信息
@@ -355,11 +355,11 @@ using <generated_ns>::YYSTYPE;
 - 验证 typed action
 - 验证第三段 helper
 
-### 10.3 `c99.y`
+### 10.3 `minic.y`
 
 目的：
 
-- 验证真实规模文法可生成
+- 验证当前主规格文法可生成
 - 验证生成出的 parser 可被 C++17 编译器接受
 
 ### 10.4 超时保护

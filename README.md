@@ -167,9 +167,7 @@ bool yyparse(const std::vector<Token>& tokens);
 
 参考输入与课程文档位于 [resources/](/Users/llawliet/代码/seuCompiler/resources)：
 
-- [c99.l](/Users/llawliet/代码/seuCompiler/resources/c99.l)
 - [minic.l](/Users/llawliet/代码/seuCompiler/resources/minic.l)
-- [c99.y](/Users/llawliet/代码/seuCompiler/resources/c99.y)
 - [minic.y](/Users/llawliet/代码/seuCompiler/resources/minic.y)
 - [编译原理中期报告.docx](/Users/llawliet/代码/seuCompiler/resources/编译原理中期报告.docx)
 - [编译原理课程实践 2026.pptx](/Users/llawliet/代码/seuCompiler/resources/编译原理课程实践%202026.pptx)

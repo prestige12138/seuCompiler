@@ -74,7 +74,7 @@ flowchart TD
 flowchart TD
     T0[runSelfTests] --> T1[表达式文法]
     T0 --> T2[语义动作文法]
-    T0 --> T3[c99.y]
+    T0 --> T3[minic.y]
 
     T1 --> T1A[生成]
     T1A --> T1B[编译]

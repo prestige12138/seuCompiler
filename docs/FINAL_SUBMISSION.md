@@ -24,18 +24,15 @@
 
 ### 输入规格与课程资源
 
-- [resources/c99.l](/Users/llawliet/代码/seuCompiler/resources/c99.l)
 - [resources/minic.l](/Users/llawliet/代码/seuCompiler/resources/minic.l)
-- [resources/c99.y](/Users/llawliet/代码/seuCompiler/resources/c99.y)
 - [resources/minic.y](/Users/llawliet/代码/seuCompiler/resources/minic.y)
 - [resources/编译原理中期报告.docx](/Users/llawliet/代码/seuCompiler/resources/编译原理中期报告.docx)
 - [resources/编译原理课程实践 2026.pptx](/Users/llawliet/代码/seuCompiler/resources/编译原理课程实践%202026.pptx)
 
 ### 正式生成产物样例
 
-- [seuLex/generated_lexer.cpp](/Users/llawliet/代码/seuCompiler/seuLex/generated_lexer.cpp)
-- [seuYacc/generated_parser.cpp](/Users/llawliet/代码/seuCompiler/seuYacc/generated_parser.cpp)
-- [seuYacc/generated_tokens.h](/Users/llawliet/代码/seuCompiler/seuYacc/generated_tokens.h)
+- 当前 `minic-plus` 分支不再提交固定的 `generated_*.cpp/.h` 样例文件
+- 对应产物由 `seuLex` / `seuYacc` 在构建、自测和集成测试中现场生成
 
 ### demo_ir 演示样例
 

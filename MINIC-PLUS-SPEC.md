@@ -201,6 +201,8 @@
 - `seuYacc` 中仅用于 `resources/c99.y` 的仓库探测与 `--self-test` 生成分支
 - `seuYacc/tests/yacc/run_yacc_tests.sh` 中的 `c99.y` 回归生成与大文法性能基线
 - `intermediate` 中未被当前主链路使用的 `ASTBuilder::makeUnary` / `ASTBuilder::makeTernary` helper
+- `resources/c99.l` / `resources/c99.y` 参考规格文件
+- 仓库内已提交的 `seuLex/generated_lexer.cpp`、`seuYacc/generated_parser.cpp`、`seuYacc/generated_tokens.h` 固定样例产物
 
 这些删除都没有改变当前 `minic-plus` 子集的语言边界，只是去掉了与该边界无关的冗余实现和测试入口。
 

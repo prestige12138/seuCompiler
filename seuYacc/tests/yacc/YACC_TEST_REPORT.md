@@ -5,8 +5,8 @@
 - 测试对象：`seuYacc` 模块的输入解析、文法处理、LR(1)/LALR(1) 自动机构造、分析表生成、代码生成与运行时行为。
 - 执行脚本：[run_yacc_tests.sh](run_yacc_tests.sh)
 - 辅助探针：[yacc_probe.cpp](yacc_probe.cpp)
-- 本次实际运行结果目录：[results/20260415_180135](results/20260415_180135)
-- 汇总结果：[SUMMARY.md](results/20260415_180135/SUMMARY.md)
+- 本次实际运行结果目录：[results/20260415_220247](results/20260415_220247)
+- 汇总结果：[SUMMARY.md](results/20260415_220247/SUMMARY.md)
 - 实际执行结果：共 `18` 条测试，`18` 条通过，`0` 条失败。
 
 本套测试覆盖了以下能力面：
@@ -39,7 +39,7 @@
   2. 输出起始符、token 数、规则数、是否含 verbatim/user code 等摘要。
   3. 与基线文件 [01_parse_sections_basic.txt](expected/01_parse_sections_basic.txt) 比对。
 - 预期输出：`start=translation_unit`，`rules=2`，`verbatim=yes`，`user_code=yes`。
-- 实际结果：[01_parse_sections_basic.txt](results/20260414_192059/01_parse_sections_basic.txt)，输出与预期完全一致。
+- 实际结果：[01_parse_sections_basic.txt](results/20260415_220247/01_parse_sections_basic.txt)，输出与预期完全一致。
 - 结论分析：基础三段切分稳定，后续生成链依赖的源文件分段前提成立。
 
 ### 02. `parse_union_precedence_midrule`
@@ -52,7 +52,7 @@
   2. 检查 typed token、typed nonterminal、precedence group 与 synthetic midrule rule 数量。
   3. 与 [02_parse_union_precedence_midrule.txt](expected/02_parse_union_precedence_midrule.txt) 比对。
 - 预期输出：`typed_tokens=1`，`typed_nonterminals=1`，`precedence_groups=2`，`midrule_rules=1`。
-- 实际结果：[02_parse_union_precedence_midrule.txt](results/20260414_192059/02_parse_union_precedence_midrule.txt)，规则总数为 `4`，mid-rule 合成数量为 `1`。
+- 实际结果：[02_parse_union_precedence_midrule.txt](results/20260415_220247/02_parse_union_precedence_midrule.txt)，规则总数为 `4`，mid-rule 合成数量为 `1`。
 - 结论分析：复杂定义区和 mid-rule action 转换路径工作正常，可支撑后续语义动作生成。
 
 ### 03. `first_follow_expr`
@@ -66,7 +66,7 @@
   3. 输出 `E`、`T`、`F` 的 FIRST / FOLLOW。
   4. 与 [03_first_follow_expr.txt](expected/03_first_follow_expr.txt) 比对。
 - 预期输出：`FIRST(E)={'(',ID}`，`FOLLOW(E)={$,')','+'}` 等。
-- 实际结果：[03_first_follow_expr.txt](results/20260414_192059/03_first_follow_expr.txt)，全部集合匹配。
+- 实际结果：[03_first_follow_expr.txt](results/20260415_220247/03_first_follow_expr.txt)，全部集合匹配。
 - 结论分析：FIRST / FOLLOW 在非空表达式文法上行为正确。
 
 ### 04. `first_follow_nullable_chain`
@@ -79,7 +79,7 @@
   2. 输出 `S`、`A`、`B` 的 FIRST / FOLLOW。
   3. 与 [04_first_follow_nullable_chain.txt](expected/04_first_follow_nullable_chain.txt) 比对。
 - 预期输出：`FIRST(S)={'a','b',<epsilon>}`，`FOLLOW(A)={$,'b'}`。
-- 实际结果：[04_first_follow_nullable_chain.txt](results/20260414_192059/04_first_follow_nullable_chain.txt)，epsilon 与 FOLLOW 传播均符合预期。
+- 实际结果：[04_first_follow_nullable_chain.txt](results/20260415_220247/04_first_follow_nullable_chain.txt)，epsilon 与 FOLLOW 传播均符合预期。
 - 结论分析：nullable chain 的集合传播实现是可用的。
 
 ### 05. `closure_lookahead`
@@ -92,7 +92,7 @@
   2. 读取状态 `0` 的所有 item。
   3. 与 [05_closure_lookahead.txt](expected/05_closure_lookahead.txt) 比对。
 - 预期输出：`A -> . B , 'c'`、`B -> . , 'c'`、`B -> . 'b' , 'c'` 等项均存在。
-- 实际结果：[05_closure_lookahead.txt](results/20260414_192059/05_closure_lookahead.txt)，状态 `0` 共 `5` 个 item，lookahead 全部正确。
+- 实际结果：[05_closure_lookahead.txt](results/20260415_220247/05_closure_lookahead.txt)，状态 `0` 共 `5` 个 item，lookahead 全部正确。
 - 结论分析：closure 的预测符传播正确，不是 LR(0) 级别的“只扩核不扩预测符”。
 
 ### 06. `direct_lalr_vs_merge_lalr`
@@ -107,7 +107,7 @@
   4. 比较状态数、冲突数、序列化表内容。
   5. 与 [06_direct_lalr_vs_merge_lalr.txt](expected/06_direct_lalr_vs_merge_lalr.txt) 比对。
 - 预期输出：`canonical_states=22`，`merged_lalr_states=12`，`direct_lalr_states=12`，`table_equal=yes`。
-- 实际结果：[06_direct_lalr_vs_merge_lalr.txt](results/20260414_192059/06_direct_lalr_vs_merge_lalr.txt)，两条路径状态数一致，分析表等价。
+- 实际结果：[06_direct_lalr_vs_merge_lalr.txt](results/20260415_220247/06_direct_lalr_vs_merge_lalr.txt)，两条路径状态数一致，分析表等价。
 - 结论分析：direct LALR 与 merge 路径在当前表达式文法上保持一致，可作为回归基线。
 
 ### 07. `precedence_left_assoc_runtime`
@@ -122,7 +122,7 @@
   4. 读取 `yyparse` 结果与 `get_assoc_value()`。
   5. 与 [07_precedence_left_assoc_runtime.txt](expected/07_precedence_left_assoc_runtime.txt) 比对。
 - 预期输出：`parse=true`，`value=5`。
-- 实际结果：[07_precedence_left_assoc_runtime.txt](results/20260414_192059/07_precedence_left_assoc_runtime.txt)，解析成功，结果为 `5`。
+- 实际结果：[07_precedence_left_assoc_runtime.txt](results/20260415_220247/07_precedence_left_assoc_runtime.txt)，解析成功，结果为 `5`。
 - 结论分析：左结合冲突消解与生成 parser 的运行时语义一致。
 
 ### 08. `precedence_nonassoc_reject`
@@ -136,7 +136,7 @@
   3. 观察 `yyparse` 返回值。
   4. 与 [08_precedence_nonassoc_reject.txt](expected/08_precedence_nonassoc_reject.txt) 比对。
 - 预期输出：`parse=false`。
-- 实际结果：[08_precedence_nonassoc_reject.txt](results/20260414_192059/08_precedence_nonassoc_reject.txt)，解析稳定返回 `false`。
+- 实际结果：[08_precedence_nonassoc_reject.txt](results/20260415_220247/08_precedence_nonassoc_reject.txt)，解析稳定返回 `false`。
 - 结论分析：非结合冲突被正确归约为错误动作，而不是默认 shift。
 
 ### 09. `reduce_reduce_resolution`
@@ -150,7 +150,7 @@
   3. 提取首个冲突的最终解析动作。
   4. 与 [09_reduce_reduce_resolution.txt](expected/09_reduce_reduce_resolution.txt) 比对。
 - 预期输出：`reduce_reduce=1`，`resolved_action=r2`。
-- 实际结果：[09_reduce_reduce_resolution.txt](results/20260414_192059/09_reduce_reduce_resolution.txt)，冲突发生在 state `4`，最终保留 `r2`。
+- 实际结果：[09_reduce_reduce_resolution.txt](results/20260415_220247/09_reduce_reduce_resolution.txt)，冲突发生在 state `4`，最终保留 `r2`。
 - 结论分析：reduce/reduce 冲突处理与实现策略一致。
 
 ### 10. `symbol_table_scope_shadowing`
@@ -165,7 +165,7 @@
   4. 依次检查内层、退出内层、退出全部后的查询结果。
   5. 与 [10_symbol_table_scope_shadowing.txt](expected/10_symbol_table_scope_shadowing.txt) 比对。
 - 预期输出：`outer_x=int`，`inner_x=char`，`after_exit_x=int`，最终 `missing=yes`。
-- 实际结果：[10_symbol_table_scope_shadowing.txt](results/20260414_192059/10_symbol_table_scope_shadowing.txt)，所有查找结果符合预期。
+- 实际结果：[10_symbol_table_scope_shadowing.txt](results/20260415_220247/10_symbol_table_scope_shadowing.txt)，所有查找结果符合预期。
 - 结论分析：语义作用域栈行为正确，可作为后续语义分析的稳定依赖。
 
 ### 11. `lex_token_contract_accept`
@@ -179,7 +179,7 @@
   3. 调用 `yyparse`。
   4. 与 [11_lex_token_contract_accept.txt](expected/11_lex_token_contract_accept.txt) 比对。
 - 预期输出：`parse=true`。
-- 实际结果：[11_lex_token_contract_accept.txt](results/20260414_192059/11_lex_token_contract_accept.txt)，解析成功。
+- 实际结果：[11_lex_token_contract_accept.txt](results/20260415_220247/11_lex_token_contract_accept.txt)，解析成功。
 - 结论分析：token code 与 quoted char terminal 的集成契约成立。
 
 ### 12. `generated_parse_failure`
@@ -193,7 +193,7 @@
   3. 调用 `yyparse`。
   4. 与 [12_generated_parse_failure.txt](expected/12_generated_parse_failure.txt) 比对。
 - 预期输出：`parse=false`。
-- 实际结果：[12_generated_parse_failure.txt](results/20260414_192059/12_generated_parse_failure.txt)，返回 `false`。
+- 实际结果：[12_generated_parse_failure.txt](results/20260415_220247/12_generated_parse_failure.txt)，返回 `false`。
 - 结论分析：当前实现没有恢复逻辑，但拒绝行为稳定且可预期。
 
 ### 13. `generated_semantic_actions_and_user_code`
@@ -207,7 +207,7 @@
   3. 调用 `yyparse` 并读取用户函数 `read_semantic_total()`。
   4. 与 [13_generated_semantic_actions_and_user_code.txt](expected/13_generated_semantic_actions_and_user_code.txt) 比对。
 - 预期输出：`parse=true`，`semantic_total=7`。
-- 实际结果：[13_generated_semantic_actions_and_user_code.txt](results/20260414_192059/13_generated_semantic_actions_and_user_code.txt)，解析成功，语义结果为 `7`。
+- 实际结果：[13_generated_semantic_actions_and_user_code.txt](results/20260415_220247/13_generated_semantic_actions_and_user_code.txt)，解析成功，语义结果为 `7`。
 - 结论分析：语义动作翻译路径、用户代码嵌入路径均已打通。
 
 ### 14. `mode_lr1_generation_compile`
@@ -220,7 +220,7 @@
   2. 将生成的 `parser.cpp` 编译为目标文件。
   3. 与 [14_mode_lr1_generation_compile.txt](expected/14_mode_lr1_generation_compile.txt) 比对。
 - 预期输出：`generate_exit=0`，`compile_exit=0`，`mode=lr1`。
-- 实际结果：[14_mode_lr1_generation_compile.txt](results/20260414_192059/14_mode_lr1_generation_compile.txt)，全部通过。
+- 实际结果：[14_mode_lr1_generation_compile.txt](results/20260415_220247/14_mode_lr1_generation_compile.txt)，全部通过。
 - 结论分析：`lr1` 模式可独立工作，不依赖默认 `lalr` 路径。
 
 ### 15. `error_missing_delimiters`
@@ -233,7 +233,7 @@
   2. 捕获退出码、stdout、stderr。
   3. 与 [15_error_missing_delimiters.txt](expected/15_error_missing_delimiters.txt) 比对。
 - 预期输出：`exit_code=1`，stderr 为 `seuYacc error: missing second %% section delimiter`。
-- 实际结果：[15_error_missing_delimiters.txt](results/20260414_192059/15_error_missing_delimiters.txt)，与预期完全一致。
+- 实际结果：[15_error_missing_delimiters.txt](results/20260415_220247/15_error_missing_delimiters.txt)，与预期完全一致。
 - 结论分析：基础结构错误提示明确，便于定位。
 
 ### 16. `error_unterminated_action`
@@ -246,7 +246,7 @@
   2. 捕获退出码、stdout、stderr。
   3. 与 [16_error_unterminated_action.txt](expected/16_error_unterminated_action.txt) 比对。
 - 预期输出：`exit_code=1`，stderr 为 `seuYacc error: unterminated action block in grammar section`。
-- 实际结果：[16_error_unterminated_action.txt](results/20260414_192059/16_error_unterminated_action.txt)，与预期一致。
+- 实际结果：[16_error_unterminated_action.txt](results/20260415_220247/16_error_unterminated_action.txt)，与预期一致。
 - 结论分析：action 解析器的错误边界清晰。
 
 ### 17. `resource_minic_generation_regression`
@@ -259,7 +259,7 @@
   2. 仅编译生成的 `parser.cpp` 到目标文件。
   3. 与 [17_resource_minic_generation_regression.txt](expected/17_resource_minic_generation_regression.txt) 比对。
 - 预期输出：`generate_exit=0`，`compile_exit=0`。
-- 实际结果：[17_resource_minic_generation_regression.txt](results/20260415_180135/17_resource_minic_generation_regression.txt)，均成功。
+- 实际结果：[17_resource_minic_generation_regression.txt](results/20260415_220247/17_resource_minic_generation_regression.txt)，均成功。
 - 结论分析：对当前子集主规格文法的回归能力正常，没有因本轮删减而暴露生成回退。
 
 ### 18. `cli_self_test`
@@ -272,7 +272,7 @@
   2. 归一化输出，仅保留是否包含 sample / semantic / minic 三条自测完成标志。
   3. 与 [18_cli_self_test.txt](expected/18_cli_self_test.txt) 比对。
 - 预期输出：`exit_code=0`，`has_sample=yes`，`has_semantic=yes`，`has_minic=yes`。
-- 实际结果：[18_cli_self_test.txt](results/20260415_180135/18_cli_self_test.txt)，全部满足。
+- 实际结果：[18_cli_self_test.txt](results/20260415_220247/18_cli_self_test.txt)，全部满足。
 - 结论分析：项目自带 smoke test 仍然可用，与外部测试套件互为补充。
 
 ## 3. 总体结论
@@ -291,7 +291,7 @@
 
 - 若后续实现 `error` token、`yyerrok`、`yyclearin` 等恢复语义，应新增专门恢复用例，不应继续沿用“失败即通过”的口径。
 - 若希望更深入验证运行期符号表，建议在测试构建模式下暴露只读调试接口，便于断言 `{` / `}` 触发的作用域变化。
-- 性能部分当前只有单机阈值测试，后续可加入多轮平均值、状态数统计和更细颗粒度的构造耗时拆分。
+- 当前报告已不再保留大文法性能基线；如果后续重新引入性能项，建议单独维护为独立基准报告，而不是混在当前子集回归里。
 
 ## 6. 测试覆盖率总结
 

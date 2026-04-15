@@ -19,7 +19,7 @@
 
 - 对齐 `seuLex` 的模块化工程结构
 - 确认中期报告中的数据结构名称必须保留
-- 确认主参考文法为 `resources/c99.y`
+- 当前 `minic-plus` 分支以 `resources/minic.y` 为主参考文法
 
 产出：
 
@@ -50,7 +50,7 @@
 
 问题：
 
-- `c99.y` 级别文法在规范 LR(1) 路径上代价过高
+- 历史上的完整规格文法在规范 LR(1) 路径上代价过高
 
 决策：
 
@@ -86,7 +86,7 @@
 
 审查暴露过的关键问题包括：
 
-- `c99.y` 在 canonical LR(1) 上卡住
+- 历史完整规格文法在 canonical LR(1) 上卡住
 - grammar symbol 直接写入 C++ 代码存在生成风险
 - `%union` 多行解析不足
 - typed semantic action 未真正生效
@@ -132,8 +132,8 @@ ctest --test-dir seuYacc/build --output-on-failure
    - 验证 `%type`
    - 验证 typed action
    - 验证第三段 helper
-3. `c99.y`
-   - 验证大文法生成
+3. `minic.y`
+   - 验证当前主规格文法生成
    - 验证生成后的 parser 编译
 
 ## 4. 当前工程边界
@@ -192,7 +192,7 @@ ctest --test-dir seuYacc/build --output-on-failure
 
 - 模块结构清晰
 - 算法链完整
-- 文法规模可支撑 `c99.y`
+- 文法规模可支撑 `minic.y`
 - 生成代码可编译
 - 自测可复现
 

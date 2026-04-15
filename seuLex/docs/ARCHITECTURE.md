@@ -121,7 +121,7 @@
 2. `SeuLexDriver::runSelfTests`
 3. 生成小样例 lexer
 4. 直接在内存中对 DFA 做行为验证
-5. 生成 `minic.l` / `c99.l` 的输出文件
+5. 生成 `minic.l` 的输出文件
 
 ## 4. 设计决策
 

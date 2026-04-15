@@ -67,7 +67,7 @@ ctest --test-dir intermediate/build --output-on-failure
 ### 运行最小整链路样例
 
 ```bash
-./integration/tests/pipeline/run_pipeline_test.sh
+SEU_TRUSTED_SPECS=1 bash ./integration/tests/pipeline/run_pipeline_test.sh
 ```
 
 该脚本会：
@@ -81,7 +81,7 @@ ctest --test-dir intermediate/build --output-on-failure
 ### 运行完整 IR 导出演示
 
 ```bash
-bash ./integration/tests/ir_pipeline/run_ir_pipeline_test.sh
+SEU_TRUSTED_SPECS=1 bash ./integration/tests/ir_pipeline/run_ir_pipeline_test.sh
 ```
 
 该脚本会输出并校验：
@@ -110,7 +110,8 @@ bash ./integration/tests/ir_pipeline/run_ir_pipeline_test.sh
 
 - CLI / 自测：[intermediate/src/main.cpp](/Users/llawliet/代码/seuCompiler/intermediate/src/main.cpp)
 - AST 接口：[intermediate/include/ast_builder.h](/Users/llawliet/代码/seuCompiler/intermediate/include/ast_builder.h)
-- IR 接口：[intermediate/include/tri_addr_generator.h](/Users/llawliet/代码/seuCompiler/intermediate/include/tri_addr_generator.h)
+- TAC 接口：[intermediate/include/tri_addr_generator.h](/Users/llawliet/代码/seuCompiler/intermediate/include/tri_addr_generator.h)
+- 目标 IR 接口：[intermediate/include/target_ir_emitter.h](/Users/llawliet/代码/seuCompiler/intermediate/include/target_ir_emitter.h)
 - 模块说明：[intermediate/README-INTERMEDIATE.md](/Users/llawliet/代码/seuCompiler/intermediate/README-INTERMEDIATE.md)
 
 ## 联通约定
@@ -174,3 +175,6 @@ bool yyparse(const std::vector<Token>& tokens);
 
 - 顶层整合设计：[docs/INTEGRATION.md](/Users/llawliet/代码/seuCompiler/docs/INTEGRATION.md)
 - 本轮终审记录：[docs/FINAL_AUDIT.md](/Users/llawliet/代码/seuCompiler/docs/FINAL_AUDIT.md)
+- 最终提交归档：[docs/FINAL_SUBMISSION.md](/Users/llawliet/代码/seuCompiler/docs/FINAL_SUBMISSION.md)
+- 期末提交核对表：[实践PPT核对表.md](/Users/llawliet/代码/seuCompiler/实践PPT核对表.md)
+- 最终联调截图附件：[docs/assets/final_submission/](/Users/llawliet/代码/seuCompiler/docs/assets/final_submission)

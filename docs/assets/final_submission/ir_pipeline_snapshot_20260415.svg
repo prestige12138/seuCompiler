@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1360" height="900" viewBox="0 0 1360 900">
+  <rect width="1360" height="900" fill="#0b1220"/>
+  <rect x="28" y="28" width="1304" height="844" rx="16" fill="#111827" stroke="#334155" stroke-width="2"/>
+  <text x="56" y="72" fill="#e5e7eb" font-family="Menlo, Monaco, Consolas, monospace" font-size="28">Full IR pipeline snapshot</text>
+  <text x="56" y="110" fill="#93c5fd" font-family="Menlo, Monaco, Consolas, monospace" font-size="20">$ SEU_TRUSTED_SPECS=1 bash integration/tests/ir_pipeline/run_ir_pipeline_test.sh</text>
+  <text x="56" y="156" fill="#cbd5e1" font-family="Menlo, Monaco, Consolas, monospace" font-size="18" xml:space="preserve">
+    <tspan x="56" dy="0">Run ID: 20260415_122323</tspan>
+    <tspan x="56" dy="30">Actual dir: integration/tests/ir_pipeline/results/20260415_122323/actual</tspan>
+    <tspan x="56" dy="44">TAC:</tspan>
+    <tspan x="56" dy="30">1: t1 = v + 1</tspan>
+    <tspan x="56" dy="30">...</tspan>
+    <tspan x="56" dy="30">10: t2 = call inc(y)</tspan>
+    <tspan x="56" dy="30">...</tspan>
+    <tspan x="56" dy="30">23: return x</tspan>
+    <tspan x="56" dy="44">LLVM IR:</tspan>
+    <tspan x="56" dy="30">define i32 @inc(i32 %v.in) { ... }</tspan>
+    <tspan x="56" dy="30">define i32 @main() {</tspan>
+    <tspan x="56" dy="30">  ...</tspan>
+    <tspan x="56" dy="30">  %r4 = call i32 @inc(i32 %r3)</tspan>
+    <tspan x="56" dy="30">  ...</tspan>
+    <tspan x="56" dy="30">  br i1 %r14, label %bb_17, label %bb_16</tspan>
+    <tspan x="56" dy="30">  ...</tspan>
+    <tspan x="56" dy="30">  ret i32 %r21</tspan>
+    <tspan x="56" dy="44">Jimple:</tspan>
+    <tspan x="56" dy="30">.method public static int inc(int v) { ... }</tspan>
+    <tspan x="56" dy="30">.method public static int main() {</tspan>
+    <tspan x="56" dy="30">  ...</tspan>
+    <tspan x="56" dy="30">  t2 = staticinvoke DemoIrPipeline.inc(y);</tspan>
+    <tspan x="56" dy="30">  if result &gt; limit goto label_17;</tspan>
+    <tspan x="56" dy="30">  ...</tspan>
+    <tspan x="56" dy="30">  return x;</tspan>
+  </text>
+</svg>

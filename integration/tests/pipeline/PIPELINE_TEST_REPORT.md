@@ -20,4 +20,8 @@
 3. `.y` 语义动作能够构 AST 并通过 `releaseParseRoot()` 交给 `intermediate`。
 4. 最终 IR 与预期完全一致。
 
-最新通过结果目录可由 [results/LATEST.txt](results/LATEST.txt) 查询。
+最新通过结果目录：
+
+- [results/20260415_122316](/Users/llawliet/代码/seuCompiler/integration/tests/pipeline/results/20260415_122316)
+- 当前指针：[results/LATEST.txt](results/LATEST.txt)
+- 最新输出：[pipeline_expr.ir](/Users/llawliet/代码/seuCompiler/integration/tests/pipeline/results/20260415_122316/pipeline_expr.ir)

@@ -1,152 +1,97 @@
-# 实践 PPT 核对表
+# 最终提交材料核对表
 
-基于当前仓库代码、测试、文档和 `resources/编译原理课程实践 2026.pptx` 的任务项整理。
+严格对照 `resources/编译原理课程实践 2026.pptx` 第 34 页“期末提交内容”整理。
+
+PPT 原文要点：
+
+- 全部电子文档提交给课代表
+- 以“全组同学学号 + 姓名”命名文件夹
+- 提交内容包括：
+  - `Lex` 和 `Yacc` 输入文件
+  - 词法、语法分析程序生成器源程序
+  - 中间代码生成模块源程序
+  - 生成的词法、语法分析程序源程序
+  - 词法分析、语法分析测试用例和测试结果
+  - 生成的中间代码
+  - 实验报告及 `ppt`
 
 状态说明：
 
-- `已完成`：仓库内已有实现、文档或测试支撑
-- `部分完成`：已有可用版本，但范围、接口或覆盖度还没达到 PPT 的完全体要求
-- `未完成`：当前仓库中未看到对应实现或验证
+- `已就绪`：仓库内已有正式文件，可直接纳入提交包
+- `需人工转制`：仓库内已有内容稿，但本轮不生成对应成品文件
 
-## 当前阶段判断
+## 一、最终提交包命名要求
 
-当前进度大致相当于 PPT 参考进度中的：
+- 提交文件夹命名：`全组同学学号+姓名`
+- 建议在最终打包时保留如下一级目录：
+  - `seuLex/`
+  - `seuYacc/`
+  - `intermediate/`
+  - `integration/`
+  - `docs/`
+  - `resources/`
+  - 根目录报告与答辩材料
 
-- `第 5-8 周核心实现`：已完成
-- `第 9 周联调与测试`：已完成最小整链路版本
-- `第 10-12 周验收答辩准备`：可进入
+## 二、PPT 第 34 页逐项核对
 
-一句话结论：
-
-- `seuLex`：已完成
-- `seuYacc`：已完成
-- `中间代码生成`：已完成子集版第一阶段
-- `三模块联通`：已完成最小可运行整链路
-- `期末提交完全体`：仍有少量收口项
-
-## 一、Lex 部分主要工作
-
-参考 PPT：`Lex 部分主要工作`、`第 5-8 周实现`
-
-| 项目 | 状态 | 说明 |
+| PPT 提交项 | 状态 | 仓库内对应材料 |
 | --- | --- | --- |
-| Lex 输入文件三段解析 | 已完成 | 支持 `Definitions / Rules / User subroutines` |
-| 扩展 RE 转普通 RE | 已完成 | 覆盖课程要求的主要扩展写法 |
-| 常规 RE 解析 | 已完成 | 已实现中缀到后缀及后续构造 |
-| 单 RE 到 NFA | 已完成 | 已实现 |
-| 多 NFA 合并 | 已完成 | 已实现 |
-| NFA 确定化 | 已完成 | 已实现 |
-| DFA 最小化 | 已完成 | 已实现 |
-| 根据最小 DFA 生成词法分析器 | 已完成 | 已实现并可编译运行 |
-| NFA / DFA 可视化 | 已完成 | 支持 dot 输出 |
-| Lex 测试 | 已完成 | 模块测试通过 |
+| `Lex` 输入文件 | 已就绪 | [resources/c99.l](/Users/llawliet/代码/seuCompiler/resources/c99.l), [resources/minic.l](/Users/llawliet/代码/seuCompiler/resources/minic.l) |
+| `Yacc` 输入文件 | 已就绪 | [resources/c99.y](/Users/llawliet/代码/seuCompiler/resources/c99.y) |
+| 含语义规则与 translation scheme 的联调用输入 | 已就绪 | [integration/tests/pipeline/test_cases/pipeline_expr.l](/Users/llawliet/代码/seuCompiler/integration/tests/pipeline/test_cases/pipeline_expr.l), [integration/tests/pipeline/test_cases/pipeline_expr.y](/Users/llawliet/代码/seuCompiler/integration/tests/pipeline/test_cases/pipeline_expr.y), [integration/tests/ir_pipeline/test_cases/demo_ir.l](/Users/llawliet/代码/seuCompiler/integration/tests/ir_pipeline/test_cases/demo_ir.l), [integration/tests/ir_pipeline/test_cases/demo_ir.y](/Users/llawliet/代码/seuCompiler/integration/tests/ir_pipeline/test_cases/demo_ir.y) |
+| 词法分析程序生成器源程序 | 已就绪 | [seuLex/](/Users/llawliet/代码/seuCompiler/seuLex) |
+| 语法分析程序生成器源程序 | 已就绪 | [seuYacc/](/Users/llawliet/代码/seuCompiler/seuYacc) |
+| 中间代码生成模块源程序 | 已就绪 | [intermediate/](/Users/llawliet/代码/seuCompiler/intermediate) |
+| 生成的词法分析程序源程序 | 已就绪 | [seuLex/generated_lexer.cpp](/Users/llawliet/代码/seuCompiler/seuLex/generated_lexer.cpp) |
+| 生成的语法分析程序源程序 | 已就绪 | [seuYacc/generated_parser.cpp](/Users/llawliet/代码/seuCompiler/seuYacc/generated_parser.cpp), [seuYacc/generated_tokens.h](/Users/llawliet/代码/seuCompiler/seuYacc/generated_tokens.h) |
+| 词法分析测试用例和测试结果 | 已就绪 | [seuLex/tests/lex/](/Users/llawliet/代码/seuCompiler/seuLex/tests/lex), [seuLex/tests/lex/LEX_TEST_REPORT.md](/Users/llawliet/代码/seuCompiler/seuLex/tests/lex/LEX_TEST_REPORT.md) |
+| 语法分析测试用例和测试结果 | 已就绪 | [seuYacc/tests/yacc/](/Users/llawliet/代码/seuCompiler/seuYacc/tests/yacc), [seuYacc/tests/yacc/YACC_TEST_REPORT.md](/Users/llawliet/代码/seuCompiler/seuYacc/tests/yacc/YACC_TEST_REPORT.md) |
+| 中间代码模块测试用例和测试结果 | 已就绪 | [intermediate/tests/icg/](/Users/llawliet/代码/seuCompiler/intermediate/tests/icg), [intermediate/tests/icg/INTERMEDIATE_TEST_REPORT.md](/Users/llawliet/代码/seuCompiler/intermediate/tests/icg/INTERMEDIATE_TEST_REPORT.md) |
+| 三模块联调测试与结果 | 已就绪 | [integration/tests/pipeline/PIPELINE_TEST_REPORT.md](/Users/llawliet/代码/seuCompiler/integration/tests/pipeline/PIPELINE_TEST_REPORT.md), [integration/tests/ir_pipeline/IR_PIPELINE_TEST_REPORT.md](/Users/llawliet/代码/seuCompiler/integration/tests/ir_pipeline/IR_PIPELINE_TEST_REPORT.md) |
+| 生成的中间代码 | 已就绪 | [integration/tests/pipeline/expected/pipeline_expr.ir](/Users/llawliet/代码/seuCompiler/integration/tests/pipeline/expected/pipeline_expr.ir), [integration/tests/ir_pipeline/expected/demo_ir.tac](/Users/llawliet/代码/seuCompiler/integration/tests/ir_pipeline/expected/demo_ir.tac), [integration/tests/ir_pipeline/expected/demo_ir.ll](/Users/llawliet/代码/seuCompiler/integration/tests/ir_pipeline/expected/demo_ir.ll), [integration/tests/ir_pipeline/expected/demo_ir.jimple](/Users/llawliet/代码/seuCompiler/integration/tests/ir_pipeline/expected/demo_ir.jimple) |
+| 实验报告 | 已就绪 | [课程实验报告.md](/Users/llawliet/代码/seuCompiler/课程实验报告.md) |
+| 答辩 PPT | 需人工转制 | [答辩PPT.md](/Users/llawliet/代码/seuCompiler/答辩PPT.md) |
 
-## 二、Yacc 部分主要工作
+## 三、建议直接打包的最终材料
 
-参考 PPT：`Yacc 部分主要工作`、`语法分析`、`LALR`
+### 1. 核心源码
 
-| 项目 | 状态 | 说明 |
-| --- | --- | --- |
-| Yacc 输入文件解析 | 已完成 | 支持 definitions / rules / user code 三段 |
-| FIRST 集计算 | 已完成 | 已实现 |
-| item 闭包与预测符计算 | 已完成 | 已实现 |
-| LR(1) 状态变迁构造 | 已完成 | 已实现 |
-| LR(1) 分析表构造 | 已完成 | 已实现 |
-| LR 总控程序 | 已完成 | 已生成可运行 parser |
-| LR(1) 到 LALR(1) 转换 | 已完成 | 已实现并测试 |
-| 冲突处理与优先级结合性 | 已完成 | 已有测试覆盖 |
-| 语法树输出 / 可视化 | 部分完成 | 已有 AST 交接链路，但不是完整“通用可视化语法树输出体系” |
-| Yacc 测试 | 已完成 | 模块测试通过 |
+- [seuLex/](/Users/llawliet/代码/seuCompiler/seuLex)
+- [seuYacc/](/Users/llawliet/代码/seuCompiler/seuYacc)
+- [intermediate/](/Users/llawliet/代码/seuCompiler/intermediate)
 
-## 三、中间代码生成
+### 2. 输入规格与演示样例
 
-参考 PPT：`中间代码生成`
+- [resources/](/Users/llawliet/代码/seuCompiler/resources)
+- [integration/tests/pipeline/test_cases/](/Users/llawliet/代码/seuCompiler/integration/tests/pipeline/test_cases)
+- [integration/tests/ir_pipeline/test_cases/](/Users/llawliet/代码/seuCompiler/integration/tests/ir_pipeline/test_cases)
 
-| 项目 | 状态 | 说明 |
-| --- | --- | --- |
-| 语义分析输入为语法树 | 已完成 | 当前主链路采用 AST 方式 |
-| 带语义信息的 AST | 已完成 | 已实现 |
-| 符号表构造 | 已完成 | 支持全局 / 局部 / 参数 / 作用域 |
-| 三地址语句生成 | 已完成 | 已实现标准文本输出 |
-| 赋值 / 算术 / 函数调用 / 跳转 | 已完成 | 已覆盖当前子集 |
-| return / if / while | 已完成 | 已覆盖当前子集 |
-| 声明和定义语义规则 | 部分完成 | 已有子集实现，不是完整 C99 语义规则 |
-| 基本块划分 | 已完成 | 已提供 `splitBasicBlocks(...)`、`formatBasicBlocks(...)` 和专项测试 |
-| LLVM IR / Jimple 输出 | 未完成 | 当前只做三地址码，不输出 LLVM IR / Jimple |
-| 中间代码测试 | 已完成 | 模块测试通过 |
+### 3. 生成产物样例
 
-## 四、三模块联调
+- [seuLex/generated_lexer.cpp](/Users/llawliet/代码/seuCompiler/seuLex/generated_lexer.cpp)
+- [seuYacc/generated_parser.cpp](/Users/llawliet/代码/seuCompiler/seuYacc/generated_parser.cpp)
+- [seuYacc/generated_tokens.h](/Users/llawliet/代码/seuCompiler/seuYacc/generated_tokens.h)
+- [integration/tests/pipeline/expected/pipeline_expr.ir](/Users/llawliet/代码/seuCompiler/integration/tests/pipeline/expected/pipeline_expr.ir)
+- [integration/tests/ir_pipeline/expected/demo_ir.tac](/Users/llawliet/代码/seuCompiler/integration/tests/ir_pipeline/expected/demo_ir.tac)
+- [integration/tests/ir_pipeline/expected/demo_ir.ll](/Users/llawliet/代码/seuCompiler/integration/tests/ir_pipeline/expected/demo_ir.ll)
+- [integration/tests/ir_pipeline/expected/demo_ir.jimple](/Users/llawliet/代码/seuCompiler/integration/tests/ir_pipeline/expected/demo_ir.jimple)
 
-参考 PPT：`基本流程`、`第 9 周联调与测试`
+### 4. 正式文档
 
-| 项目 | 状态 | 说明 |
-| --- | --- | --- |
-| Lex -> Yacc 接口联通 | 已完成 | 已统一到生成头驱动的 token ABI，pipeline 不再手工桥接 semantic |
-| Yacc -> Intermediate 接口联通 | 已完成 | 通过 `setParseRoot/releaseParseRoot` 交接 AST |
-| Lex -> Yacc -> AST -> IR 最小整链路 | 已完成 | 已有正式样例与测试 |
-| 面向大文法的完整三模块联通 | 部分完成 | 当前优先保证教学小样例；`c99` 级别主要做到生成与编译回归 |
+- [README.md](/Users/llawliet/代码/seuCompiler/README.md)
+- [docs/FINAL_SUBMISSION.md](/Users/llawliet/代码/seuCompiler/docs/FINAL_SUBMISSION.md)
+- [docs/FINAL_AUDIT.md](/Users/llawliet/代码/seuCompiler/docs/FINAL_AUDIT.md)
+- [docs/INTEGRATION.md](/Users/llawliet/代码/seuCompiler/docs/INTEGRATION.md)
+- [课程实验报告.md](/Users/llawliet/代码/seuCompiler/课程实验报告.md)
+- [答辩PPT.md](/Users/llawliet/代码/seuCompiler/答辩PPT.md)
 
-## 五、文档与测试
+## 四、最终结论
 
-参考 PPT：`实验报告与答辩`、`测试报告`
+对照 PPT 第 34 页，除答辩 PPT 成品外，其余提交项均已具备仓库内正式入口。
 
-| 项目 | 状态 | 说明 |
-| --- | --- | --- |
-| Lex 文档 | 已完成 | 已有模块 README 和 docs |
-| Yacc 文档 | 已完成 | 已有模块 README 和 docs |
-| Intermediate 文档 | 已完成 | 已补齐 docs |
-| 集成说明文档 | 已完成 | 根目录 `docs/INTEGRATION.md` |
-| 最终审核文档 | 已完成 | 根目录 `docs/FINAL_AUDIT.md` |
-| Lex 测试报告 | 已完成 | 已有 |
-| Yacc 测试报告 | 已完成 | 已有 |
-| Intermediate 测试报告 | 已完成 | 已有 |
-| 三模块集成测试报告 | 已完成 | 已有 |
-| 最终课程实验报告 | 已完成 | 根目录已整理课程提交版 `课程实验报告.md` |
-| 最终答辩 PPT | 已完成 | 根目录已整理答辩内容稿 `答辩PPT.md` |
+本轮新增并正式归档的关键材料：
 
-## 六、期末提交内容核对
-
-参考 PPT：`期末提交内容`
-
-| 提交项 | 状态 | 说明 |
-| --- | --- | --- |
-| Lex 输入文件 | 已完成 | `resources/c99.l`、`resources/minic.l` |
-| Yacc 输入文件 | 已完成 | `resources/c99.y` |
-| 词法分析程序生成器源程序 | 已完成 | `seuLex/` |
-| 语法分析程序生成器源程序 | 已完成 | `seuYacc/` |
-| 中间代码生成模块源程序 | 已完成 | `intermediate/` |
-| 生成的词法分析程序源程序 | 已完成 | 仓库中保留 `seuLex/generated_lexer.cpp` |
-| 生成的语法分析程序源程序 | 已完成 | 仓库中保留 `seuYacc/generated_parser.cpp` |
-| 词法分析测试用例与测试报告 | 已完成 | `seuLex/tests/lex/` |
-| 语法分析测试用例与测试报告 | 已完成 | `seuYacc/tests/yacc/` |
-| 生成的中间代码样例 | 已完成 | `integration/tests/pipeline/expected/pipeline_expr.ir` |
-| 实验报告 | 已完成 | 根目录已提供课程提交版实验报告 |
-| 答辩 PPT | 已完成 | 根目录已提供答辩逐页内容稿 |
-
-## 七、当前还差什么
-
-如果按“课程验收完全体”而不是“代码已可运行”来判断，主要还差：
-
-1. 如果你们组目标是更强版本，还可以继续补：
-   - 非最小样例的三模块大规模联调
-   - 更完整的 C 子集语义规则
-   - LLVM IR 或 Jimple 输出
-
-## 八、当前最稳的对外表述
-
-当前最准确的表述是：
-
-- 已完成 `seuLex`、`seuYacc` 和 `中间代码生成` 三个模块的模块化实现、文档和测试
-- 已完成一条正式的 `Lex -> Yacc -> AST -> IR` 最小整链路
-- 当前工程已经具备课程项目验收前的联调和答辩准备基础
-- 根目录已补齐课程实验报告和答辩内容稿，当前仓库已达到直接整理提交材料的状态
-
-## 参考来源
-
-- `resources/编译原理课程实践 2026.pptx`
-  - `Lex 部分主要工作`
-  - `Yacc 部分主要工作`
-  - `中间代码生成`
-  - `参考进度`
-  - `实验报告与答辩`
-  - `期末提交内容`
+- 完整 IR 演示样例：`.l/.y/.c + TAC/LLVM IR/Jimple`
+- 最终提交归档说明：`docs/FINAL_SUBMISSION.md`
+- 最新联调截图与测试材料入口
+- 更新后的实验报告

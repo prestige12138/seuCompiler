@@ -1,3 +1,8 @@
+/**
+ * @file node.cpp
+ * @brief Minimal accessors for the report-defined automaton node type.
+ */
+
 #include "node.h"
 
 #include <utility>

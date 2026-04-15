@@ -1,3 +1,8 @@
+/**
+ * @file main.cpp
+ * @brief Self-test and utility entry point for the intermediate-code module.
+ */
+
 #include "ast_builder.h"
 #include "intermediate_code.h"
 #include "symbol_table.h"

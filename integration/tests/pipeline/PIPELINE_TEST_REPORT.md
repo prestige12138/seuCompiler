@@ -22,6 +22,6 @@
 
 最新通过结果目录：
 
-- [results/20260415_122316](/Users/llawliet/代码/seuCompiler/integration/tests/pipeline/results/20260415_122316)
+- [results/20260416_005216](/Users/llawliet/代码/seuCompiler/integration/tests/pipeline/results/20260416_005216)
 - 当前指针：[results/LATEST.txt](results/LATEST.txt)
-- 最新输出：[pipeline_expr.ir](/Users/llawliet/代码/seuCompiler/integration/tests/pipeline/results/20260415_122316/pipeline_expr.ir)
+- 最新输出：[pipeline_expr.ir](/Users/llawliet/代码/seuCompiler/integration/tests/pipeline/results/20260416_005216/pipeline_expr.ir)

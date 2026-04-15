@@ -1,3 +1,9 @@
+/**
+ * @file lex_state.h
+ * @brief Internal allocation helpers and shared construction tables for
+ *        seuLex implementation files.
+ */
+
 #pragma once
 
 #include <cstddef>

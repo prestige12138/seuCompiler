@@ -1,3 +1,8 @@
+/**
+ * @file lex_state.cpp
+ * @brief Shared mutable construction state for the seuLex pipeline.
+ */
+
 #include "nfa_constructor.h"
 
 #include <memory>
@@ -29,6 +34,8 @@ node* createState(bool accepted) {
 }
 
 void resetGlobalTables() {
+  // Every generation run starts from a fresh arena so state ids, rule tables,
+  // and transient automata never leak across test cases or CLI invocations.
   char_set.clear();
   idreTable.clear();
   nfaTable.clear();

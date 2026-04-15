@@ -44,8 +44,19 @@ typedef struct dfa {
   void printDFA();
 } dfa;
 
+/**
+ * @brief Accepting DFA states after determinization or minimization.
+ */
 extern std::vector<node*> dfaterminals;
+
+/**
+ * @brief Action table for the current DFA before minimization.
+ */
 extern std::map<int, std::string> TerStateActionTable;
+
+/**
+ * @brief Action table for the minimized DFA used by code emission.
+ */
 extern std::map<int, std::string> mindfareturn;
 
 }  // namespace seu_lex

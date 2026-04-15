@@ -12,7 +12,7 @@
   - [demo_ir.tac](expected/demo_ir.tac)
   - [demo_ir.ll](expected/demo_ir.ll)
   - [demo_ir.jimple](expected/demo_ir.jimple)
-- 最新运行结果目录：[results/20260415_122323](results/20260415_122323)
+- 最新运行结果目录：[results/20260416_005220](results/20260416_005220)
 - 最新运行指针：[results/LATEST.txt](results/LATEST.txt)
 
 覆盖能力：
@@ -48,9 +48,9 @@
   - LLVM IR 含 `define i32 @inc`、`define i32 @main`、`call i32 @inc`、`br i1`、`ret i32`
   - Jimple 含 `.method public static int inc`、`.method public static int main`、`staticinvoke DemoIrPipeline.inc(y)`、`if ... goto` 和 `return x;`
 - 实际结果：
-  - [demo_ir.tac](results/20260415_122323/actual/demo_ir.tac)
-  - [demo_ir.ll](results/20260415_122323/actual/demo_ir.ll)
-  - [demo_ir.jimple](results/20260415_122323/actual/demo_ir.jimple)
+  - [demo_ir.tac](results/20260416_005220/actual/demo_ir.tac)
+  - [demo_ir.ll](results/20260416_005220/actual/demo_ir.ll)
+  - [demo_ir.jimple](results/20260416_005220/actual/demo_ir.jimple)
 - 结论分析：本用例已稳定覆盖声明、赋值、算术、条件、循环、调用和返回，满足课程验收所需的小型全流程演示。
 
 ## 3. 总体结论

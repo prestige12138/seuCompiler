@@ -1,3 +1,8 @@
+/**
+ * @file symbol_table.cpp
+ * @brief Scope-aware symbol table used by the intermediate-code generator.
+ */
+
 #include "symbol_table.h"
 
 #include <algorithm>
@@ -52,6 +57,8 @@ bool SymbolTable::declare(const SymbolEntry& entry) {
   stored.scope_level = currentScopeLevel();
 
   if (!stored.is_function && stored.offset < 0) {
+    // Offsets are assigned lazily so callers can either provide explicit layout
+    // information or let the table synthesize one from the declared type width.
     const int width = typeWidth(stored.type);
     if (stored.is_parameter) {
       stored.offset = scope.nextParameterOffset;

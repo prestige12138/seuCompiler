@@ -4,8 +4,8 @@
   <text x="56" y="72" fill="#e5e7eb" font-family="Menlo, Monaco, Consolas, monospace" font-size="28">Full IR pipeline snapshot</text>
   <text x="56" y="110" fill="#93c5fd" font-family="Menlo, Monaco, Consolas, monospace" font-size="20">$ SEU_TRUSTED_SPECS=1 bash integration/tests/ir_pipeline/run_ir_pipeline_test.sh</text>
   <text x="56" y="156" fill="#cbd5e1" font-family="Menlo, Monaco, Consolas, monospace" font-size="18" xml:space="preserve">
-    <tspan x="56" dy="0">Run ID: 20260415_122323</tspan>
-    <tspan x="56" dy="30">Actual dir: integration/tests/ir_pipeline/results/20260415_122323/actual</tspan>
+    <tspan x="56" dy="0">Run ID: 20260416_005220</tspan>
+    <tspan x="56" dy="30">Actual dir: integration/tests/ir_pipeline/results/20260416_005220/actual</tspan>
     <tspan x="56" dy="44">TAC:</tspan>
     <tspan x="56" dy="30">1: t1 = v + 1</tspan>
     <tspan x="56" dy="30">...</tspan>

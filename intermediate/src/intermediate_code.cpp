@@ -1,3 +1,8 @@
+/**
+ * @file intermediate_code.cpp
+ * @brief Formatting and basic-block utilities for report-defined TAC.
+ */
+
 #include "intermediate_code.h"
 
 #include <algorithm>
@@ -234,6 +239,8 @@ std::vector<IntermediateCode> splitBasicBlocks(const IntermediateCode& code) {
   }
 
   std::set<int> leaders;
+  // Leaders follow the standard rules: first statement, jump targets, and the
+  // fallthrough immediately after a jump-producing statement.
   leaders.insert(code.stmts.front().stmtNo);
   for (std::size_t index = 0; index < code.stmts.size(); ++index) {
     const TriAddrStmt& stmt = code.stmts[index];

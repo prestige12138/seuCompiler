@@ -57,15 +57,15 @@
 
 - 命令：`ctest --test-dir build --output-on-failure`
 - 最新结果：`5/5` 通过
-- 总耗时：`64.13 sec`
+- 总耗时：`23.72 sec`
 
 ### 最小链路快照
 
 对应脚本：
 
 - [run_pipeline_test.sh](/Users/llawliet/代码/seuCompiler/integration/tests/pipeline/run_pipeline_test.sh)
-- 最新结果目录：[results/20260415_122316](/Users/llawliet/代码/seuCompiler/integration/tests/pipeline/results/20260415_122316)
-- 最新输出文件：[pipeline_expr.ir](/Users/llawliet/代码/seuCompiler/integration/tests/pipeline/results/20260415_122316/pipeline_expr.ir)
+- 最新结果目录：[results/20260416_005216](/Users/llawliet/代码/seuCompiler/integration/tests/pipeline/results/20260416_005216)
+- 最新输出文件：[pipeline_expr.ir](/Users/llawliet/代码/seuCompiler/integration/tests/pipeline/results/20260416_005216/pipeline_expr.ir)
 
 输出：
 
@@ -81,11 +81,11 @@
 对应脚本：
 
 - [run_ir_pipeline_test.sh](/Users/llawliet/代码/seuCompiler/integration/tests/ir_pipeline/run_ir_pipeline_test.sh)
-- 最新结果目录：[results/20260415_122323](/Users/llawliet/代码/seuCompiler/integration/tests/ir_pipeline/results/20260415_122323)
+- 最新结果目录：[results/20260416_005220](/Users/llawliet/代码/seuCompiler/integration/tests/ir_pipeline/results/20260416_005220)
 - 最新实际输出：
-  - [demo_ir.tac](/Users/llawliet/代码/seuCompiler/integration/tests/ir_pipeline/results/20260415_122323/actual/demo_ir.tac)
-  - [demo_ir.ll](/Users/llawliet/代码/seuCompiler/integration/tests/ir_pipeline/results/20260415_122323/actual/demo_ir.ll)
-  - [demo_ir.jimple](/Users/llawliet/代码/seuCompiler/integration/tests/ir_pipeline/results/20260415_122323/actual/demo_ir.jimple)
+  - [demo_ir.tac](/Users/llawliet/代码/seuCompiler/integration/tests/ir_pipeline/results/20260416_005220/actual/demo_ir.tac)
+  - [demo_ir.ll](/Users/llawliet/代码/seuCompiler/integration/tests/ir_pipeline/results/20260416_005220/actual/demo_ir.ll)
+  - [demo_ir.jimple](/Users/llawliet/代码/seuCompiler/integration/tests/ir_pipeline/results/20260416_005220/actual/demo_ir.jimple)
 
 `demo_ir.tac`：
 

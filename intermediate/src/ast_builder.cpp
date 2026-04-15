@@ -1,3 +1,9 @@
+/**
+ * @file ast_builder.cpp
+ * @brief Construction helpers for the report-defined AST plus parse-root
+ *        handoff utilities shared with generated parsers.
+ */
+
 #include "ast_builder.h"
 
 #include <utility>
@@ -12,6 +18,8 @@ ASTNode* g_parse_root = nullptr;
 ASTNode* ASTBuilder::makeNode(ASTNodeType type,
                               const std::string& value,
                               const std::string& var_type) const {
+  // All specialized builders funnel through this helper so the report-defined
+  // layout stays consistent across parser actions and tests.
   ASTNode* node = new ASTNode(type, value);
   node->varType = var_type;
   return node;
@@ -125,6 +133,8 @@ void ASTBuilder::destroyTree(ASTNode* root) const {
   if (root == nullptr) {
     return;
   }
+  // Ownership is tree-shaped in the current subset, so post-order deletion is
+  // sufficient and keeps the builder compatible with raw-pointer semantic values.
   for (ASTNode* child : root->children) {
     destroyTree(child);
   }

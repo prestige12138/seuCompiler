@@ -1,3 +1,8 @@
+/**
+ * @file main.cpp
+ * @brief CLI entry for the standalone seuYacc generator.
+ */
+
 #include "parse_table.h"
 
 #include <iostream>

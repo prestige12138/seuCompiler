@@ -1,3 +1,8 @@
+/**
+ * @file dfa_minimizer.cpp
+ * @brief DFA minimization by iterative partition refinement.
+ */
+
 #include "dfa_minimizer.h"
 
 #include <map>
@@ -65,6 +70,8 @@ dfa DFAMinimizer::minimizeDFA(const dfa& automaton) const {
       std::map<std::string, std::vector<int>> buckets;
       for (int stateId : group) {
         std::ostringstream signature;
+        // Two states stay equivalent only if their outgoing transitions and
+        // accepting actions point to the same partition signature.
         signature << stateToPartition[stateId] << '#';
         signature << actionForState(stateId) << '#';
         const auto transitions = automaton.nodeVec[stateId].getMultimap();

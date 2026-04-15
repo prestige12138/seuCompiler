@@ -1,3 +1,9 @@
+/**
+ * @file code_generator.cpp
+ * @brief DFA visualization, standalone lexer emission, and built-in
+ *        end-to-end self-tests for seuLex.
+ */
+
 #include "code_generator.h"
 
 #include <algorithm>
@@ -293,6 +299,8 @@ int evaluateDFA(const dfa& automaton, const std::string& yytext) {
   if (!current->IsAccepted()) {
     return -1;
   }
+  // Self-tests only need an observable token id, so `return IDENTIFIER;` style
+  // actions are mapped into stable integers when they are not numeric already.
   const std::string action = actionForState(current->GetState());
   if (action.find("return") == std::string::npos) {
     return 0;
@@ -511,6 +519,8 @@ void CodeGenerator::emitLexer(const dfa& automaton,
   }
   output << "};\n\n";
 
+  // Accept-state metadata is emitted separately so the generated runtime can
+  // implement longest match without inspecting action source strings.
   output << "static const std::vector<int> kAcceptStates = {";
   for (std::size_t index = 0; index < automaton.nodeVec.size(); ++index) {
     if (index != 0) {
@@ -763,6 +773,8 @@ void SeuLexDriver::generate(const std::string& lexPath,
                             const std::string& outCppPath,
                             const std::string& dotDir,
                             const std::string& tokenHeaderPath) const {
+  // The full pipeline mirrors the report order: parse -> expand RE ->
+  // postfix -> NFA -> DFA -> minimize -> emit code and visualizations.
   resetGlobalTables();
 
   LexParser parser;
@@ -830,6 +842,7 @@ bool SeuLexDriver::runSelfTests(const std::string& workspaceRoot) const {
       "%%\n"
       "int yywrap() { return 1; }\n";
 
+  // 1. Generate and execute a representative standalone lexer.
   {
     std::ofstream sampleFile(specPath);
     sampleFile << sampleSpec;
@@ -862,6 +875,7 @@ bool SeuLexDriver::runSelfTests(const std::string& workspaceRoot) const {
     throw std::runtime_error("generated sample lexer failed runtime validation");
   }
 
+  // 2. Check runtime safeguards such as yytext capacity overflow handling.
   const std::string overflowSpecPath = joinPath(tempDir, "overflow.l");
   const std::string overflowOutPath = joinPath(tempDir, "generated_overflow_lexer.cpp");
   const std::string overflowDriverPath = joinPath(tempDir, "generated_overflow_driver.cpp");
@@ -902,6 +916,7 @@ bool SeuLexDriver::runSelfTests(const std::string& workspaceRoot) const {
     throw std::runtime_error("generated overflow lexer failed overflow validation");
   }
 
+  // 3. Validate the parser-token ABI path used by the Lex -> Yacc integration.
   const std::string abiSpecPath = joinPath(tempDir, "abi_sample.l");
   const std::string abiHeaderPath = joinPath(tempDir, "abi_tokens.h");
   const std::string abiOutPath = joinPath(tempDir, "generated_abi_lexer.cpp");
@@ -1010,6 +1025,8 @@ bool SeuLexDriver::runSelfTests(const std::string& workspaceRoot) const {
     throw std::runtime_error("generated ABI lexer failed runtime validation");
   }
 
+  // 4. Rebuild a DFA in-memory so regex edge cases can be tested without
+  // repeatedly compiling generated code.
   resetGlobalTables();
   LexParser parser;
   REExpander expander;

@@ -5,12 +5,12 @@
   <text x="56" y="110" fill="#93c5fd" font-family="Menlo, Monaco, Consolas, monospace" font-size="20">$ ctest --test-dir build --output-on-failure</text>
   <text x="56" y="156" fill="#cbd5e1" font-family="Menlo, Monaco, Consolas, monospace" font-size="20" xml:space="preserve">
     <tspan x="56" dy="0">Test project /Users/llawliet/代码/seuCompiler/build</tspan>
-    <tspan x="56" dy="34">1/5 Test #1: seuCompiler_pipeline_expr_integration ...   Passed    7.71 sec</tspan>
-    <tspan x="56" dy="34">2/5 Test #2: seuCompiler_ir_pipeline_integration .....   Passed    5.47 sec</tspan>
-    <tspan x="56" dy="34">3/5 Test #3: seuLex_self_test ........................   Passed   42.12 sec</tspan>
-    <tspan x="56" dy="34">4/5 Test #4: seuYacc_self_test .......................   Passed    8.82 sec</tspan>
-    <tspan x="56" dy="34">5/5 Test #5: seuIntermediate_self_test ...............   Passed    0.00 sec</tspan>
+    <tspan x="56" dy="34">1/5 Test #1: seuCompiler_pipeline_expr_integration ...   Passed    4.26 sec</tspan>
+    <tspan x="56" dy="34">2/5 Test #2: seuCompiler_ir_pipeline_integration .....   Passed    4.42 sec</tspan>
+    <tspan x="56" dy="34">3/5 Test #3: seuLex_self_test ........................   Passed   11.41 sec</tspan>
+    <tspan x="56" dy="34">4/5 Test #4: seuYacc_self_test .......................   Passed    3.61 sec</tspan>
+    <tspan x="56" dy="34">5/5 Test #5: seuIntermediate_self_test ...............   Passed    0.01 sec</tspan>
     <tspan x="56" dy="50">100% tests passed, 0 tests failed out of 5</tspan>
-    <tspan x="56" dy="34">Total Test time (real) =  64.13 sec</tspan>
+    <tspan x="56" dy="34">Total Test time (real) =  23.72 sec</tspan>
   </text>
 </svg>

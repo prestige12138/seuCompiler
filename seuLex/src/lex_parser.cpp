@@ -1,3 +1,8 @@
+/**
+ * @file lex_parser.cpp
+ * @brief Lex three-section parsing and rule extraction implementation.
+ */
+
 #include "lex_parser.h"
 
 #include <algorithm>
@@ -17,6 +22,8 @@ std::size_t findSectionDelimiter(const std::string& content, std::size_t startPo
   bool inVerbatim = false;
   bool lineStart = true;
   for (std::size_t index = startPos; index + 1 < content.size(); ++index) {
+    // `%%` only splits sections when it appears at the beginning of a logical
+    // line and outside `%{ ... %}` verbatim blocks.
     if (lineStart) {
       std::size_t marker = index;
       while (marker < content.size() &&
@@ -98,6 +105,8 @@ bool isActionBalanced(const std::string& action) {
   if (action.front() != '{') {
     return true;
   }
+  // Actions may contain strings, chars, or comments. The parser therefore
+  // tracks lexical context instead of naively counting braces.
   int braceDepth = 0;
   bool inString = false;
   bool inChar = false;
@@ -187,6 +196,8 @@ std::pair<std::string, std::string> splitRegexAndAction(const std::string& ruleT
       continue;
     }
     if (!inQuote && !inClass && std::isspace(static_cast<unsigned char>(ch)) != 0) {
+      // The first whitespace outside literals and character classes separates
+      // the rule's regex from its action block.
       separator = i;
       break;
     }
@@ -222,6 +233,8 @@ std::string takeBetweenMarkers(const std::string& text,
     if (end == std::string::npos) {
       throw std::runtime_error("unterminated marker block in definitions section");
     }
+    // The extracted body is preserved verbatim and also removed from the
+    // normalized definitions view so directive parsing does not see it twice.
     extracted << text.substr(begin + left.size(), end - begin - left.size()) << '\n';
     if (ranges != nullptr) {
       ranges->push_back({begin, end + right.size()});
@@ -270,6 +283,8 @@ LexSpecification LexParser::parseLexFile(const std::string& path) const {
   spec.rulesSection = content.substr(first + 2, second - (first + 2));
   spec.userSubroutines = content.substr(second + 2);
 
+  // Parse named definitions first so later RE expansion can resolve `{NAME}`
+  // references without revisiting the original source file.
   std::vector<std::pair<std::size_t, std::size_t>> verbatimRanges;
   spec.verbatimDefinitions =
       takeBetweenMarkers(spec.definitionsSection, "%{", "%}", &verbatimRanges);
@@ -303,6 +318,8 @@ LexSpecification LexParser::parseLexFile(const std::string& path) const {
     pendingRule += rawLine;
     const auto parts = splitRegexAndAction(pendingRule);
     if (parts.first.empty() || !isActionBalanced(parts.second)) {
+      // Multi-line actions are accumulated until the block is structurally
+      // complete, which keeps parsing simple without losing source fidelity.
       continue;
     }
     LexRule rule;

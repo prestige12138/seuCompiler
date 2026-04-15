@@ -1,3 +1,8 @@
+/**
+ * @file symbol_table.cpp
+ * @brief Global grammar symbol tables and semantic-scope helpers for seuYacc.
+ */
+
 #include "symbol_table.h"
 
 #include <algorithm>
@@ -30,6 +35,8 @@ char* stableAssoc(const std::string& assoc) {
 }  // namespace
 
 void SymbolTableManager::reset() {
+  // These globals mirror the report-defined layout, so a full reset must also
+  // clear the legacy vectors in addition to the C++ helper maps.
   ops.clear();
   terminals.clear();
   nonterminals.clear();

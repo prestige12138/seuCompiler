@@ -1,3 +1,8 @@
+/**
+ * @file lr1_pda.cpp
+ * @brief FIRST/FOLLOW computation and LR(1)/LALR(1) PDA construction.
+ */
+
 #include "lr1_pda.h"
 
 #include <algorithm>
@@ -213,6 +218,8 @@ std::vector<ITEM> closureWithProductions(
     const std::set<std::string> predicts =
         firstOfSequence(item.right, static_cast<std::size_t>(item.dotpos + 1), first_sets, item.predict);
     for (const producer& production : found_productions->second) {
+      // Each propagated lookahead becomes a distinct LR(1) item. Duplicates are
+      // normalized away after closure growth stabilizes.
       for (const std::string& predict : predicts) {
         ITEM next;
         next.left = production.left;
@@ -359,6 +366,7 @@ std::map<std::string, std::set<std::string>> LR1Builder::computeFirstSets() cons
   bool changed = true;
   while (changed) {
     changed = false;
+    // Standard fixed-point iteration over productions until no FIRST set grows.
     for (const producer& production : producers) {
       auto& target = first_sets[production.left];
       if (production.right.empty()) {
@@ -536,6 +544,8 @@ LRPDA LR1Builder::buildLALRPDA(
           propagated_predicts.insert(predicts.begin(), predicts.end());
         }
 
+        // The direct LALR path keeps one LR(0) core graph, then saturates
+        // lookahead propagation inside each core before pushing it across edges.
         for (const producer& production : found_productions->second) {
           CoreItem target_core;
           target_core.left = production.left;
@@ -655,6 +665,8 @@ LRPDA LR1Builder::buildCanonicalPDA(
       if (target.empty()) {
         continue;
       }
+      // Canonical LR(1) distinguishes states by full item+lookahead content,
+      // so state reuse keys include prediction symbols.
       const std::string key = stateKey(target, true);
       int target_state = -1;
       const auto found = known_states.find(key);

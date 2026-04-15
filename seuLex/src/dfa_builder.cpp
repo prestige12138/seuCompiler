@@ -1,3 +1,8 @@
+/**
+ * @file dfa_builder.cpp
+ * @brief NFA determinization via subset construction.
+ */
+
 #include "dfa_builder.h"
 
 #include <iostream>
@@ -44,6 +49,8 @@ std::string pickActionFromSet(const std::set<node*>& states) {
       continue;
     }
     if (found_priority->second < best_priority) {
+      // The smallest original rule index wins, matching Lex's "earlier rule"
+      // disambiguation once longest-match has already selected the state set.
       best_priority = found_priority->second;
       chosen = nfaterstatetoaction.at(label);
     }
@@ -160,6 +167,8 @@ dfa DFABuilder::subsetConstruct(const nfa& automaton) const {
   }
 
   dfa result;
+  // The deterministic graph is materialized only after all subsets are known,
+  // which keeps pointer wiring local to `result.nodeVec`.
   result.nodeVec.resize(state_sets.size());
   result.endNode.clear();
   dfaterminals.clear();

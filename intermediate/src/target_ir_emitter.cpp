@@ -1,3 +1,8 @@
+/**
+ * @file target_ir_emitter.cpp
+ * @brief Lowering from three-address code into LLVM IR and Jimple text.
+ */
+
 #include "target_ir_emitter.h"
 
 #include <algorithm>
@@ -299,6 +304,8 @@ FunctionUnit buildFunctionUnit(const ASTNode* function_node,
 
   unit.code = function_code;
 
+  // Referenced temporaries and variables are added after declarations so the
+  // target emitters still have storage for values introduced during lowering.
   std::vector<std::string> referenced;
   collectReferencedNames(unit.code, &referenced);
   for (const std::string& name : referenced) {
@@ -339,6 +346,8 @@ std::vector<FunctionUnit> buildFunctionUnits(const ASTNode* root,
       has_function = true;
       const IntermediateCode function_shape = generateCodeForAst(child);
       const std::size_t function_size = function_shape.stmts.size();
+      // The current subset emits function TAC consecutively, so the already
+      // produced flat code stream can be partitioned back into per-function views.
       if (offset + function_size > code.stmts.size()) {
         throw std::runtime_error("function partition exceeds provided intermediate code");
       }
@@ -601,6 +610,8 @@ std::string emitLlvmFunction(const FunctionUnit& unit) {
           } else {
             needs_exit_block = true;
           }
+          // TAC conditional jumps carry only the true target; the false edge is
+          // represented as block fallthrough and is materialized explicitly here.
           out << "  br i1 " << cond_reg << ", label %" << true_label << ", label %"
               << false_label << '\n';
           terminated = true;
@@ -762,6 +773,8 @@ std::string emitJimpleFunction(const FunctionUnit& unit, const TargetIrOptions& 
           } else {
             needs_exit_label = true;
           }
+          // Jimple has no implicit fallthrough branch node in this text form, so
+          // the false edge becomes an explicit `goto` to the next block.
           {
             const ParsedCondition condition = parseCondition(stmt.arg1);
             out << "  if " << renderOperand(condition.lhs, "condition operand") << ' '
@@ -835,6 +848,8 @@ std::string emitJimpleFunction(const FunctionUnit& unit, const TargetIrOptions& 
 std::string formatLlvmIr(const ASTNode* root,
                          const IntermediateCode& code,
                          const TargetIrOptions& options) {
+  // Formatting is per-function, but module-level comments are emitted once so
+  // generated files remain deterministic and easy to diff.
   const std::vector<FunctionUnit> units = buildFunctionUnits(root, code, options);
   std::ostringstream out;
   if (options.emitComments) {

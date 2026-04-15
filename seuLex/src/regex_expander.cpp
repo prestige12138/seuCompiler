@@ -1,3 +1,9 @@
+/**
+ * @file regex_expander.cpp
+ * @brief Expansion of Lex-style extended RE syntax into the explicit token
+ *        stream consumed by Thompson construction.
+ */
+
 #include "regex_expander.h"
 
 #include <algorithm>
@@ -81,6 +87,10 @@ struct RegexAst {
   std::unique_ptr<RegexAst> left;
   std::unique_ptr<RegexAst> right;
 };
+
+// The extended RE parser first lowers every feature into a small AST and only
+// then serializes that AST into the explicit infix language expected by the
+// postfix/NFA stages.
 
 std::unique_ptr<RegexAst> makeLiteral(char ch) {
   auto ast = std::make_unique<RegexAst>();
@@ -189,6 +199,8 @@ std::string expandNamedDefinitions(const std::string& raw,
           throw std::runtime_error("cyclic regular definition reference: " + body);
         }
         recursion_guard.insert(body);
+        // Definitions are expanded recursively, but each reference is wrapped
+        // in parentheses so precedence is preserved after substitution.
         oss << "( " << expandNamedDefinitions(idreTable.at(body), recursion_guard) << " )";
         recursion_guard.erase(body);
         index = close;
@@ -256,6 +268,8 @@ class ExtendedRegexParser {
       } else if (peek() == '+') {
         ++pos_;
         auto duplicated = cloneAst(*base);
+        // `r+` is lowered to `r r*`, which lets the NFA stage stay small and
+        // only implement concatenation, union, star, and epsilon.
         base = makeConcat(std::move(base), makeStar(std::move(duplicated)));
       } else if (peek() == '?') {
         ++pos_;
@@ -295,6 +309,8 @@ class ExtendedRegexParser {
       throw std::runtime_error("repetition bound exceeds implementation limit");
     }
 
+    // Bounded repetition is desugared into concatenation plus optional tails.
+    // This keeps the downstream NFA builder independent from `{m,n}` syntax.
     std::unique_ptr<RegexAst> result;
     if (lower == 0) {
       result = makeEpsilon();
@@ -494,6 +510,8 @@ std::string serializeAst(const RegexAst& ast) {
       if (ast.charset.empty()) {
         return "eps";
       }
+      // Character classes are lowered into an explicit union of literals so
+      // the postfix/NFA stages never need a dedicated "set" operator.
       std::ostringstream oss;
       oss << "( ";
       for (std::size_t index = 0; index < ast.charset.size(); ++index) {

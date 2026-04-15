@@ -1,3 +1,8 @@
+/**
+ * @file nfa_constructor.cpp
+ * @brief Infix-to-postfix conversion and Thompson NFA construction.
+ */
+
 #include "nfa_constructor.h"
 
 #include <sstream>
@@ -33,6 +38,8 @@ std::vector<std::string> splitSpaceTokens(const std::string& text) {
 }  // namespace
 
 std::string NFABuilder::toPostfix(const std::string& infix) const {
+  // The RE expander emits a space-separated explicit infix language. Here we
+  // only need shunting-yard over `|`, explicit concatenation `&`, and `*`.
   const std::vector<std::string> tokens = splitSpaceTokens(infix);
   std::vector<std::string> output;
   std::stack<std::string> operators;
@@ -136,6 +143,8 @@ nfa NFABuilder::buildNFA(const std::string& postfix,
       Fragment lhs = fragments.top();
       fragments.pop();
       lhs.accept->SetAccept(false);
+      // Thompson concatenation: wire lhs accept state into rhs start with
+      // epsilon so only one fragment boundary remains on the stack.
       lhs.accept->Addoutstate(kEpsilon, rhs.start);
       fragments.push({lhs.start, rhs.accept});
       continue;
@@ -186,6 +195,8 @@ nfa NFABuilder::buildNFA(const std::string& postfix,
   }
 
   const Fragment built_fragment = fragments.top();
+  // Accept states keep both the user action and the original rule priority so
+  // DFA determinization can still implement Lex's first-rule tie-breaking.
   nfaterstatetoaction[built_fragment.accept->GetState()] = action;
   nfaPriorityTableInternal[built_fragment.accept->GetState()] = priority;
 
@@ -198,6 +209,7 @@ nfa NFABuilder::buildNFA(const std::string& postfix,
 nfa NFABuilder::mergeNFA(const std::vector<nfa>& automata) const {
   nfa merged {};
   merged.start = createState(false);
+  // All rule NFAs are connected under one fresh start state with epsilon edges.
   for (const nfa& automaton : automata) {
     merged.start->Addoutstate(kEpsilon, automaton.start);
     for (node* terminal : automaton.terminal) {

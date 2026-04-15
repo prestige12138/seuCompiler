@@ -1,3 +1,9 @@
+/**
+ * @file lalr_converter.cpp
+ * @brief Canonical LR(1) core merging used to materialize an explicit
+ *        LR(1) -> LALR(1) conversion path.
+ */
+
 #include "lalr_converter.h"
 
 #include <algorithm>
@@ -70,6 +76,8 @@ LALRResult LALRConverter::convert(const LRPDA& canonical) const {
   std::map<std::string, int> core_to_state;
   std::vector<std::vector<int>> groups;
   for (std::size_t index = 0; index < canonical.nodes.size(); ++index) {
+    // States with the same LR(0) core are grouped together; lookaheads are
+    // merged afterwards so the resulting graph matches LALR(1) structure.
     const std::string key = coreStateKey(canonical.nodes[index]);
     const auto found = core_to_state.find(key);
     if (found == core_to_state.end()) {

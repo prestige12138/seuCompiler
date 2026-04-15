@@ -1,3 +1,9 @@
+/**
+ * @file parse_table.cpp
+ * @brief Parse-table construction, parser code emission, and seuYacc driver
+ *        orchestration.
+ */
+
 #include "parse_table.h"
 
 #include <algorithm>
@@ -359,6 +365,8 @@ std::string resolveConflict(const std::string& existing,
     const auto token_precedence = precedenceOfSymbol(specification, lookahead);
     const auto production_precedence = precedenceOfSymbol(specification, precedence_symbol);
     pushConflict("shift/reduce");
+    // Yacc-style precedence resolution: missing metadata falls back to shift,
+    // otherwise compare precedence level first and associativity second.
     if (token_precedence.first < 0 || production_precedence.first < 0) {
       return shift_action;
     }
@@ -580,6 +588,8 @@ std::string translateSemanticAction(const std::string& action,
       continue;
     }
     if (ch == '$') {
+      // `$n`, `$$`, and `$<tag>n` are rewritten into accesses over the runtime
+      // reduction frame emitted below in `emitParser`.
       if (index + 1 < body.size() && body[index + 1] == '$') {
         out << inferredValueAccess(specification, rule, 0);
         index += 2;
@@ -739,6 +749,9 @@ void ParserCodeGenerator::emitParser(const std::vector<parse_table_item>& table,
                                      const std::string& out_header_path) const {
   (void)automaton;
   (void)start_symbol;
+  // The emitted parser is intentionally standalone: one token ABI header plus
+  // one `.cpp` with ACTION/GOTO tables, semantic-action dispatch, and a tiny
+  // runtime symbol table for scope observation.
   ensureDirectory(dirnameOf(out_cpp_path));
   ensureDirectory(dirnameOf(out_header_path));
 
@@ -999,6 +1012,8 @@ void ParserCodeGenerator::emitParser(const std::vector<parse_table_item>& table,
          << "    }\n"
          << "    if (!action.empty() && action[0] == 'r') {\n"
          << "      const int production = std::stoi(action.substr(1));\n"
+         << "      // Reduction pops RHS symbols, executes the translated action,\n"
+         << "      // then consults GOTO with the produced LHS symbol.\n"
          << "      const int pop_count = kProductionSize[static_cast<std::size_t>(production)];\n"
          << "      std::vector<SemanticValue> rhs(static_cast<std::size_t>(pop_count));\n"
          << "      for (int offset = pop_count - 1; offset >= 0; --offset) {\n"
@@ -1039,6 +1054,8 @@ void SeuYaccDriver::generate(const std::string& yacc_path,
                              const std::string& out_cpp_path,
                              const std::string& out_header_path,
                              const std::string& mode) const {
+  // The driver mirrors the report pipeline: parse specification, rebuild the
+  // report-defined symbol tables, construct LR automata, build tables, emit.
   SymbolTableManager symbols;
   symbols.reset();
 
@@ -1148,6 +1165,9 @@ bool SeuYaccDriver::runSelfTests(const std::string& workspace_root) const {
       "%%\n"
       "int semantic_helper() { return result_value; }\n";
 
+  // The built-in suite covers grammar parsing, canonical LR(1), explicit
+  // LR(1)->LALR merging, generated parser compilation, semantic actions, and
+  // current `resources/minic.y` regression generation.
   {
     std::ofstream file(grammar_path);
     file << grammar;

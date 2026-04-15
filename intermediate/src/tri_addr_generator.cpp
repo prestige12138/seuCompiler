@@ -1,3 +1,8 @@
+/**
+ * @file tri_addr_generator.cpp
+ * @brief AST-to-three-address-code lowering for the current minic-plus subset.
+ */
+
 #include "tri_addr_generator.h"
 
 #include <sstream>
@@ -51,6 +56,8 @@ IntermediateCode TriAddrGenerator::generate(ASTNode* root) {
   if (symbols_ != nullptr) {
     symbols_->reset();
   }
+  // Generation is single-pass over the AST. Control-flow backpatching is kept
+  // local to `emitIf` / `emitWhile`, so callers only see finished TAC.
   emitBlock(root);
   return code_;
 }
@@ -215,6 +222,8 @@ void TriAddrGenerator::emitIf(ASTNode* node) {
   const int true_jump = emitJump(OP_IF_GOTO, condition);
   const int false_jump = emitJump(OP_GOTO);
 
+  // Backpatch the "then" and optional "else" entry once statement numbers are
+  // known, mirroring the textbook translation scheme.
   patchTarget(true_jump, code_.stmtCount + 1);
   emitBlock(node->children[1]);
 
@@ -238,6 +247,7 @@ void TriAddrGenerator::emitWhile(ASTNode* node) {
   const int body_jump = emitJump(OP_IF_GOTO, condition);
   const int exit_jump = emitJump(OP_GOTO);
 
+  // The loop closes with an explicit backward goto to the condition leader.
   patchTarget(body_jump, code_.stmtCount + 1);
   emitBlock(node->children[1]);
   emit(OP_GOTO, std::to_string(condition_stmt));

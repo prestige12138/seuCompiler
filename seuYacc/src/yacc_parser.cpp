@@ -1,3 +1,9 @@
+/**
+ * @file yacc_parser.cpp
+ * @brief Yacc three-section parsing, directive extraction, and production
+ *        normalization implementation.
+ */
+
 #include "yacc_parser.h"
 
 #include <algorithm>
@@ -39,6 +45,8 @@ std::size_t findSectionDelimiter(const std::string& content, std::size_t start_p
   bool in_verbatim = false;
   bool line_start = true;
   for (std::size_t index = start_pos; index + 1 < content.size(); ++index) {
+    // `%{ ... %}` may legally contain `%%`, so only top-level markers split
+    // the Definitions / Rules / User subroutines sections.
     if (line_start) {
       std::size_t marker = index;
       while (marker < content.size() &&
@@ -410,6 +418,8 @@ std::vector<YaccRule> parseRules(const std::string& text) {
             continue;
           }
 
+          // Mid-rule actions are lowered into synthetic nonterminals so later
+          // LR construction only needs ordinary productions plus final actions.
           YaccRule synthetic;
           synthetic.grammar.left =
               "__midrule_" + left + "_" + std::to_string(midrule_index++);
@@ -468,6 +478,9 @@ YaccSpecification YaccParser::parseYaccFile(const std::string& path) const {
   spec.rulesSection = content.substr(first + 2, second - (first + 2));
   spec.userSubroutines = content.substr(second + 2);
 
+  // Definition directives are parsed after verbatim blocks are removed from the
+  // normalized view, but the verbatim text itself is still preserved for code
+  // generation.
   std::vector<std::pair<std::size_t, std::size_t>> verbatim_ranges;
   spec.verbatimDefinitions = takeVerbatimDefinitions(spec.definitionsSection, &verbatim_ranges);
   const std::string normalized_definitions = removeRanges(spec.definitionsSection, verbatim_ranges);

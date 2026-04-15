@@ -4,8 +4,8 @@
   <text x="56" y="72" fill="#e5e7eb" font-family="Menlo, Monaco, Consolas, monospace" font-size="28">Minimal pipeline snapshot</text>
   <text x="56" y="110" fill="#93c5fd" font-family="Menlo, Monaco, Consolas, monospace" font-size="20">$ SEU_TRUSTED_SPECS=1 bash integration/tests/pipeline/run_pipeline_test.sh</text>
   <text x="56" y="156" fill="#cbd5e1" font-family="Menlo, Monaco, Consolas, monospace" font-size="20" xml:space="preserve">
-    <tspan x="56" dy="0">Run ID: 20260415_122316</tspan>
-    <tspan x="56" dy="34">Result: integration/tests/pipeline/results/20260415_122316/pipeline_expr.ir</tspan>
+    <tspan x="56" dy="0">Run ID: 20260416_005216</tspan>
+    <tspan x="56" dy="34">Result: integration/tests/pipeline/results/20260416_005216/pipeline_expr.ir</tspan>
     <tspan x="56" dy="50">1: t1 = 2 * 3</tspan>
     <tspan x="56" dy="34">2: t2 = 42 + t1</tspan>
     <tspan x="56" dy="34">3: x = t2</tspan>

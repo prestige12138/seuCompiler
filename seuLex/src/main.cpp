@@ -1,3 +1,8 @@
+/**
+ * @file main.cpp
+ * @brief CLI entry for the standalone seuLex generator.
+ */
+
 #include "code_generator.h"
 
 #include <iostream>

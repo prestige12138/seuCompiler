@@ -105,3 +105,5 @@ seu_icg::ASTNode* root = seu_icg::releaseParseRoot();
 - [integration/tests/ir_pipeline/test_cases/demo_ir.y](/Users/llawliet/代码/seuCompiler/integration/tests/ir_pipeline/test_cases/demo_ir.y)
 - [integration/tests/ir_pipeline/test_cases/demo_ir.c](/Users/llawliet/代码/seuCompiler/integration/tests/ir_pipeline/test_cases/demo_ir.c)
 - [integration/tests/ir_pipeline/run_ir_pipeline_test.sh](/Users/llawliet/代码/seuCompiler/integration/tests/ir_pipeline/run_ir_pipeline_test.sh)
+
+`minic-plus` 分支中的 [resources/minic.l](/Users/llawliet/代码/seuCompiler/resources/minic.l) 和 [resources/minic.y](/Users/llawliet/代码/seuCompiler/resources/minic.y) 现在与这条 `demo_ir` 级别的稳定链路保持同一能力边界，用作收缩版教学子集参考，而不是比主链路更大的实验规格。

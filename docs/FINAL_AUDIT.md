@@ -21,6 +21,7 @@
 - AST 仍通过 `setParseRoot/releaseParseRoot` 交接
 - LLVM IR / Jimple 当前是课程演示级稳定文本，不做 SSA/优化
 - `.l/.y` 中的用户动作仍按可信输入处理
+- `minic-plus` 分支中的 `resources/minic.*` 已收紧到当前稳定可执行子集，不再额外宣称 `void`、全局变量、`for`、`break/continue`、`&&/||`
 
 ## 验收重点
 

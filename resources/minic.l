@@ -1,9 +1,8 @@
 /*
  * MiniC-Plus lexical specification
- * Phase 1 initialization only.
  *
- * This file is a resource scaffold for the `minic-plus` branch.
- * It is intentionally not wired into the current build/runtime yet.
+ * The `minic-plus` branch keeps only the stable executable subset already
+ * supported by the current Lex -> Yacc -> AST -> IR chain.
  */
 
 D           [0-9]
@@ -12,6 +11,7 @@ ALNUM       [A-Za-z0-9_]
 
 %{
 int yywrap(void) { return 1; }
+void comment(void);
 %}
 
 %%
@@ -19,17 +19,11 @@ int yywrap(void) { return 1; }
 "//"[^\n]*              { /* skip line comment */ }
 
 "int"                   { return(INT); }
-"void"                  { return(VOID); }
 "if"                    { return(IF); }
 "else"                  { return(ELSE); }
 "while"                 { return(WHILE); }
-"for"                   { return(FOR); }
-"break"                 { return(BREAK); }
-"continue"              { return(CONTINUE); }
 "return"                { return(RETURN); }
 
-"&&"                    { return(AND_OP); }
-"||"                    { return(OR_OP); }
 "<="                    { return(LE_OP); }
 ">="                    { return(GE_OP); }
 "=="                    { return(EQ_OP); }
@@ -50,7 +44,6 @@ int yywrap(void) { return 1; }
 "*"                     { return('*'); }
 "/"                     { return('/'); }
 "%"                     { return('%'); }
-"!"                     { return('!'); }
 "<"                     { return('<'); }
 ">"                     { return('>'); }
 

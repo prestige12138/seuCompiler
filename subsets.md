@@ -2,6 +2,12 @@
 
 本文件只做分析与规划，不涉及任何代码修改。
 
+补充说明：
+
+- 本文件中的 `MiniC-Plus` 是分析阶段提出过的“更大备选方案”
+- 当前 `minic-plus` 分支实际落地时，没有采用这里那份更大的方案
+- 现分支真实边界以 [MINIC-PLUS-SPEC.md](/Users/llawliet/代码/seuCompiler/MINIC-PLUS-SPEC.md) 为准，已经收紧到接近 `MiniC-Demo` 的稳定可执行子集
+
 分析对象：
 
 - `resources/c99.l`
@@ -165,7 +171,13 @@
 
 只要保留这两块，子集很快就会重新膨胀回接近完整 C。
 
-## 4. 三个方案对比
+## 4. 三个历史备选方案对比
+
+说明：
+
+- 本节是最初做子集规划时的历史备选方案分析
+- 这里的 `MiniC-Plus` 是“候选更大方案”，不是当前 `minic-plus` 分支已经落地的实现边界
+- 当前分支实际采用的边界，以 [MINIC-PLUS-SPEC.md](/Users/llawliet/代码/seuCompiler/MINIC-PLUS-SPEC.md) 为准
 
 | 方案 | 定位 | 支持特性 | 明确不支持 | 预计删减量 | 全流程验证难度 |
 | --- | --- | --- | --- | --- | --- |
@@ -173,9 +185,11 @@
 | `MiniC-Demo` | 推荐方案 | `int` 函数定义、参数列表、局部声明 `int x;` 或 `int x = expr;`、赋值、函数调用、`+ - * / %`、`< > <= >= == !=`、`if/else`、`while`、`return`、块语句 | `for/do/switch`、`break/continue/goto`、数组/指针/结构体/枚举、`typedef/static/const` 等、字符串/字符/浮点、`++ -- +=`、逻辑短路、条件运算符、逗号表达式、复杂声明器 | `c99.y` 约删 `70%~80%`，`c99.l` 约删 `65%~75%` | 低到中 |
 | `MiniC-Plus` | 更大方案 | 推荐方案全部能力，再加多声明符、简单全局 `int` 声明、`for`、`break/continue`、一元 `- !`、`&& ||` | 指针、数组、结构体、枚举、类型转换、函数指针、`switch`、`goto`、完整浮点/字符串/字符语义 | `c99.y` 约删 `55%~65%`，`c99.l` 约删 `50%~60%` | 中到高 |
 
-## 5. 推荐方案：MiniC-Demo
+## 5. 当时的推荐方案：MiniC-Demo
 
 `MiniC-Demo` 也可以理解为“Structured Int-Only MiniC”。
+
+这里仍然是分析阶段的方案定义，不代表当前 `minic-plus` 分支源码已经逐项实现了本节所有描述。
 
 它的目标不是做最小玩具文法，而是做一个：
 

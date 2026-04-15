@@ -1,62 +1,54 @@
 # MINIC-PLUS 规范
 
-本文件定义 `minic-plus` 分支第一阶段的初始化边界。
+本文件定义 `minic-plus` 分支当前采用的收缩版子集边界。
 
-当前阶段目标只有三件事：
-
-1. 建立独立分支 `minic-plus`
-2. 在 `resources/` 中放置 `minic-plus` 资源规格
-3. 固化子集规则，后续实现严格以本规范为边界
-
-本阶段不修改任何 `seuLex/`、`seuYacc/`、`intermediate/` 实现代码。
+这一版不再沿用最初那份“比 `demo_ir` 更大一档”的草案，而是明确收紧到当前仓库已经稳定跑通的最小自洽子集。原因很直接：这次目标是“最小化删改，不新增功能”，因此只能以现有实现真实支持的能力为准，不能继续保留 `void`、全局变量、`for`、`break/continue`、`&&/||` 这类尚未在现有主链路中稳定闭环的特性声明。
 
 ## 1. 设计目标
 
-`MiniC-Plus` 是一个明显小于当前 `c99.l / c99.y` 的子集语言，同时比 `demo_ir` 对应的最小教学子集稍大一档。
+`MiniC-Plus` 现在的定位是：
 
-它的目标不是逼近完整 C99，而是：
+- 明显小于 `resources/c99.l` / `resources/c99.y`
+- 与当前 `Lex -> Yacc -> AST -> IR` 可执行链路保持一致
+- 保留课程演示最核心的结构化语法能力
+- 尽量复用现有实现，不对 `seuLex`、`seuYacc`、`intermediate` 做结构性改造
 
-- 保留课程展示的核心能力
-- 为后续 `Lex -> Yacc -> AST -> IR` 全流程提供足够表达力
-- 避开 C 语言最昂贵的两类复杂度
-  - 复杂声明器体系
-  - 类型参与语法判定
+当前可执行基线与 [integration/tests/ir_pipeline/test_cases/demo_ir.l](/Users/llawliet/代码/seuCompiler/integration/tests/ir_pipeline/test_cases/demo_ir.l) 和 [integration/tests/ir_pipeline/test_cases/demo_ir.y](/Users/llawliet/代码/seuCompiler/integration/tests/ir_pipeline/test_cases/demo_ir.y) 保持同一能力级别。
 
 ## 2. 当前阶段状态
 
-当前分支仅完成资源初始化：
+当前分支只做了“边界收紧”，没有扩展实现：
 
 - [resources/minic.l](/Users/llawliet/代码/seuCompiler/resources/minic.l)
 - [resources/minic.y](/Users/llawliet/代码/seuCompiler/resources/minic.y)
 
-说明：
+约束：
 
-- 这两个文件当前是“初始化规格稿”
-- 它们尚未接入现有生成链和运行时
-- 语义动作、AST 映射、IR 对接留到后续阶段
+- 不修改 `seuLex/` 代码结构
+- 不修改 `seuYacc/` 代码结构
+- 不修改 `intermediate/` 代码结构
+- 不新增 AST 结点、IR 操作或特判逻辑
 
 ## 3. 支持的语言特性
 
 ### 3.1 类型
 
-- 支持 `int`
-- 支持 `void`
+- 仅支持 `int`
 
 约束：
 
-- 变量仅允许 `int`
-- 函数返回类型允许 `int` 或 `void`
+- 变量类型仅允许 `int`
+- 函数返回类型仅允许 `int`
 
 ### 3.2 顶层结构
 
 支持：
 
 - 多个函数定义
-- 简单全局 `int` 变量声明
 
 不支持：
 
-- 全局复杂初始化
+- 全局变量声明
 - 函数原型声明
 - `typedef`
 
@@ -65,14 +57,14 @@
 支持：
 
 - `int f(int a, int b) { ... }`
-- `void f(int a) { ... }`
-- `int main(void) { ... }`
+- `int main() { ... }`
 - 空参数表
 - 逗号分隔参数列表
 
 约束：
 
 - 参数类型仅允许 `int`
+- 不支持 `void` 参数表记法
 - 不支持数组参数、指针参数、函数指针参数
 
 ### 3.4 声明
@@ -80,41 +72,38 @@
 支持：
 
 - `int x;`
-- `int x = expr;`
-- `int a, b;`
-- `int a = 1, b = 2;`
 
-支持范围：
+约束：
 
-- 全局声明
-- 局部声明
-- `for` 初始化子句中的简单 `int` 声明
+- 仅支持局部简单声明
+- 块内仍采用“声明在前，语句在后”的简化约束
 
 不支持：
 
+- 声明初始化
+- 逗号声明符
+- 全局声明
 - `const` / `static` / `extern` / `register` / `volatile`
-- 指针声明
-- 数组声明
-- 结构体、联合体、枚举声明
+- 指针、数组、结构体、联合体、枚举
 
 ### 3.5 语句
 
 支持：
 
 - 赋值语句：`x = expr;`
-- 空语句：`;`
 - 复合语句：`{ ... }`
 - `if (expr) stmt`
 - `if (expr) stmt else stmt`
 - `while (expr) stmt`
-- `for (init; cond; step) stmt`
-- `break;`
-- `continue;`
-- `return;`
 - `return expr;`
 
 不支持：
 
+- 空语句
+- `return;`
+- `for`
+- `break`
+- `continue`
 - `switch/case/default`
 - `do-while`
 - `goto`
@@ -127,143 +116,93 @@
 - 十进制整数常量
 - 括号表达式
 - 函数调用表达式
-- 一元运算
-  - `-expr`
-  - `!expr`
-- 算术运算
-  - `+ - * / %`
-- 比较运算
-  - `< > <= >= == !=`
-- 逻辑运算
-  - `&& ||`
-
-约束：
-
-- 赋值不作为通用表达式开放，只按“赋值语句”与 `for` 子句处理
+- 算术运算：`+ - * / %`
+- 比较运算：`< > <= >= == !=`
 
 不支持：
 
+- 一元 `!`
+- 一元负号
+- `&& ||`
+- 赋值表达式
 - `++ --`
-- `+= -= *= /= %=`
-- `?:`
+- 复合赋值
 - 逗号表达式
 - cast
 - `sizeof`
-- 位运算与移位
+- 位运算、移位、条件运算符
 
 ### 3.7 词法
 
-建议词法资源仅覆盖：
+词法资源只覆盖以下内容：
 
-- 关键字
-  - `int`
-  - `void`
-  - `if`
-  - `else`
-  - `while`
-  - `for`
-  - `break`
-  - `continue`
-  - `return`
+- 关键字：`int if else while return`
 - 标识符
 - 十进制整数常量
-- 注释
-  - `/* ... */`
-  - `// ...`
+- 注释：`/* ... */`、`// ...`
 - 空白
-- 运算符与界符
-  - `= + - * / % ! && || < > <= >= == !=`
+- 运算符与界符：
+  - `= + - * / % < > <= >= == !=`
   - `(` `)` `{` `}` `,` `;`
 
 ## 4. 明确不支持的特性
 
-以下内容全部排除在 `MiniC-Plus` 第一版边界之外：
+以下内容全部排除在当前 `MiniC-Plus` 边界之外：
 
+- `void`
+- 全局变量
+- `for`
+- `break`
+- `continue`
+- `&& || !`
 - 指针
 - 数组
 - 函数指针
-- 抽象声明器
-- `type_name`
 - `typedef`
 - `struct`
 - `union`
 - `enum`
 - 成员访问 `.` / `->`
 - 下标 `[]`
-- 字符串常量
-- 字符常量
-- 浮点常量
-- `char short long float double signed unsigned _Bool _Complex _Imaginary`
-- `switch/case/default`
-- `do-while`
-- `goto`
-- `++ --`
+- 字符串、字符、浮点常量
 - 复合赋值
-- 位运算
-- 移位运算
+- 位运算与移位
 - 条件运算符 `?:`
 - `sizeof`
 - cast
 
-## 5. 推荐语义边界
+## 5. 与 main 分支相比的复杂度变化
 
-后续实现时建议保持以下约束不变：
+相较当前 `c99` 资源，当前 `MiniC-Plus` 明显更小：
 
-- 只有一个标量变量类型：`int`
-- 函数返回类型只做 `int / void`
-- 块语句内部仍采用“声明在前，语句在后”的简化约束
-- `for` 的 `init` 与 `step` 只支持简单赋值或简单 `int` 声明
-- 逻辑表达式先允许语法存在，后续若实现 IR 时可再决定：
-  - 采用短路求值
-  - 或先降级为布尔化普通表达式
+- 删除了几乎全部类型系统分支
+- 删除了复杂声明器
+- 删除了聚合类型
+- 删除了非结构化控制流
+- 删除了逻辑表达式和大部分一元运算
 
-## 6. 与 main 分支相比的复杂度变化
+它现在不再追求“略大于 `demo_ir`”，而是直接与当前稳定可执行链路等价。
 
-相较当前接近完整 C99 的 `resources/c99.l / c99.y`，`MiniC-Plus` 会显著收缩：
-
-- 删除大部分类型系统
-- 删除复杂声明器
-- 删除聚合类型
-- 删除复杂表达式系统
-- 删除大部分非结构化控制流
-
-但它比最小教学子集更大，因为额外保留了：
-
-- `void`
-- 简单全局声明
-- `for`
-- `break / continue`
-- 一元 `!`
-- `&& / ||`
-
-## 7. 第一阶段交付边界
+## 6. 当前交付边界
 
 本阶段已完成：
 
-- 新建分支 `minic-plus`
-- 初始化 `resources/minic.l`
-- 新增 `resources/minic.y`
-- 新增本规范文件
+- 新建并维护独立分支 `minic-plus`
+- 收紧 [resources/minic.l](/Users/llawliet/代码/seuCompiler/resources/minic.l)
+- 收紧 [resources/minic.y](/Users/llawliet/代码/seuCompiler/resources/minic.y)
+- 同步更新本规范文件
 
 本阶段明确未做：
 
-- 不修改 `seuLex/` 源码
-- 不修改 `seuYacc/` 源码
-- 不修改 `intermediate/` 源码
-- 不调整构建脚本
-- 不接入测试
-- 不添加语义动作
+- 不重构现有模块
+- 不新增语法/语义能力
+- 不修改主链路测试样例
+- 不扩展 AST / TAC / LLVM IR / Jimple 支持边界
 
-## 8. 后续建议顺序
+## 7. 后续建议顺序
 
-后续若继续推进，建议顺序如下：
+如果后续还要继续推进 `minic-plus`，建议顺序是：
 
-1. 固化 token 集与非终结符集合
-2. 把 `resources/minic.l / minic.y` 收紧到无二义的最终资源稿
-3. 再接 AST 语义动作
-4. 再接 TAC
-5. 最后补 LLVM IR / Jimple
-
-一句话边界：
-
-`MiniC-Plus` 是“明显小于 C99、但足以展示结构化控制流与简单函数程序”的课程型子集，不是完整 C，也不是只剩表达式的玩具文法。
+1. 先把 `resources/minic.*` 正式接入一条独立集成测试
+2. 再按真实需要逐项放开更大的特性
+3. 每放开一项，都要同步补 AST、IR、测试和文档

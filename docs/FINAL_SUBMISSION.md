@@ -27,6 +27,7 @@
 - [resources/c99.l](/Users/llawliet/代码/seuCompiler/resources/c99.l)
 - [resources/minic.l](/Users/llawliet/代码/seuCompiler/resources/minic.l)
 - [resources/c99.y](/Users/llawliet/代码/seuCompiler/resources/c99.y)
+- [resources/minic.y](/Users/llawliet/代码/seuCompiler/resources/minic.y)
 - [resources/编译原理中期报告.docx](/Users/llawliet/代码/seuCompiler/resources/编译原理中期报告.docx)
 - [resources/编译原理课程实践 2026.pptx](/Users/llawliet/代码/seuCompiler/resources/编译原理课程实践%202026.pptx)
 

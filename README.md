@@ -23,6 +23,8 @@ SEU Compiler 2026 是一个按课程实践要求拆分的三阶段编译前端�
 
 `seuLex` 生成 scanner -> `seuYacc` 生成 parser -> `.y` 语义动作构 AST -> `intermediate` 释放 AST 根 -> 三地址码 -> LLVM IR / Jimple
 
+`minic-plus` 分支当前额外维护一套收缩版 `resources/minic.l` / `resources/minic.y`。这套资源故意只保留当前主链路已经稳定支持的子集：`int` 函数、局部 `int` 声明、赋值、算术/比较、`if/else`、`while`、函数调用、`return expr;`。本分支不再宣称支持 `void`、全局变量、`for`、`break/continue`、`&&/||`。
+
 ## 仓库结构
 
 ```text
@@ -168,6 +170,7 @@ bool yyparse(const std::vector<Token>& tokens);
 - [c99.l](/Users/llawliet/代码/seuCompiler/resources/c99.l)
 - [minic.l](/Users/llawliet/代码/seuCompiler/resources/minic.l)
 - [c99.y](/Users/llawliet/代码/seuCompiler/resources/c99.y)
+- [minic.y](/Users/llawliet/代码/seuCompiler/resources/minic.y)
 - [编译原理中期报告.docx](/Users/llawliet/代码/seuCompiler/resources/编译原理中期报告.docx)
 - [编译原理课程实践 2026.pptx](/Users/llawliet/代码/seuCompiler/resources/编译原理课程实践%202026.pptx)
 

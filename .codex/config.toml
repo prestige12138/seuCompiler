@@ -11,12 +11,16 @@ sandbox_mode = "workspace-write"
 web_search = "live"
 persistent_instructions = "Follow project AGENTS.md and .codex/AGENTS.md. Use project-local skills only if this repo actually provides them."
 
+[permissions.repo_safe.tools]
+git = "allow"
+default_permissions = "repo_safe"
+
 [features]
 multi_agent = true
 
 [profiles.strict]
 approval_policy = "on-request"
-sandbox_mode = "read-only"
+sandbox_mode = "workspace-write"
 web_search = "cached"
 
 [profiles.yolo]
@@ -75,15 +79,3 @@ config_file = "agents/loop-operator.toml"
 [agents.harness_optimizer]
 description = "Codex configuration and harness optimization specialist."
 config_file = "agents/harness-optimizer.toml"
-
-
-approval_policy = "on-request"
-
-# 允许无需审批的命令
-allowed_commands = [
-  "git add",
-  "git commit",
-  "git push",
-  "git pull",
-  "git status"
-]

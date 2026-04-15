@@ -7,8 +7,12 @@ graph TD
   D[tri_addr_generator] --> A
   D --> B
   D --> C
-  E[main] --> A
+  E[target_ir_emitter] --> A
   E --> B
-  E --> C
   E --> D
+  F[main] --> A
+  F --> B
+  F --> C
+  F --> D
+  F --> E
 ```

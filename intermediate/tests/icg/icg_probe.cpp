@@ -8,6 +8,7 @@
 #include "ast_builder.h"
 #include "intermediate_code.h"
 #include "symbol_table.h"
+#include "target_ir_emitter.h"
 #include "tri_addr_generator.h"
 
 namespace {
@@ -102,6 +103,14 @@ ASTNode* makeArithmeticAssignmentProgram(const ASTBuilder& builder) {
               "+",
               "int")),
   });
+}
+
+ASTNode* makeFunctionRoot(const ASTBuilder& builder,
+                          const std::string& name,
+                          const std::vector<ASTNode*>& parameters,
+                          const std::vector<ASTNode*>& body_nodes,
+                          const std::string& return_type = "int") {
+  return builder.makeFunction(name, return_type, parameters, builder.makeProgram(body_nodes));
 }
 
 void dumpBasicBlockPartition(const IntermediateCode& code) {
@@ -391,6 +400,140 @@ void commandBasicBlockInvalidTarget() {
   dumpBasicBlockPartition(code);
 }
 
+void commandLlvmLinearArithAndReturn() {
+  const ASTBuilder builder;
+  ASTNode* function = makeFunctionRoot(
+      builder,
+      "main",
+      {},
+      {builder.makeVarDecl("a", "int"), builder.makeVarDecl("b", "int")});
+
+  IntermediateCode code;
+  code.addStmt(seu_icg::TriAddrStmt(1, seu_icg::OP_ASSIGN, "1", "", "a"));
+  code.addStmt(seu_icg::TriAddrStmt(2, seu_icg::OP_ASSIGN, "2", "", "b"));
+  code.addStmt(seu_icg::TriAddrStmt(3, seu_icg::OP_ADD, "a", "b", "t1"));
+  code.addStmt(seu_icg::TriAddrStmt(4, seu_icg::OP_RETURN, "t1", ""));
+
+  seu_icg::TargetIrOptions options;
+  options.emitComments = false;
+  std::cout << seu_icg::formatLlvmIr(function, code, options) << '\n';
+  builder.destroyTree(function);
+}
+
+void commandLlvmBranchAndLoopShape() {
+  const ASTBuilder builder;
+  ASTNode* function = makeFunctionRoot(
+      builder,
+      "main",
+      {},
+      {builder.makeVarDecl("x", "int")});
+
+  IntermediateCode code;
+  code.addStmt(seu_icg::TriAddrStmt(1, seu_icg::OP_IF_GOTO, "x < 10", "3"));
+  code.addStmt(seu_icg::TriAddrStmt(2, seu_icg::OP_GOTO, "", "6"));
+  code.addStmt(seu_icg::TriAddrStmt(3, seu_icg::OP_ADD, "x", "1", "t1"));
+  code.addStmt(seu_icg::TriAddrStmt(4, seu_icg::OP_ASSIGN, "t1", "", "x"));
+  code.addStmt(seu_icg::TriAddrStmt(5, seu_icg::OP_GOTO, "", "1"));
+  code.addStmt(seu_icg::TriAddrStmt(6, seu_icg::OP_RETURN, "x", ""));
+
+  seu_icg::TargetIrOptions options;
+  options.emitComments = false;
+  std::cout << seu_icg::formatLlvmIr(function, code, options) << '\n';
+  builder.destroyTree(function);
+}
+
+void commandJimpleCallAndAssign() {
+  const ASTBuilder builder;
+  ASTNode* function = makeFunctionRoot(
+      builder,
+      "main",
+      {},
+      {builder.makeVarDecl("a", "int"), builder.makeVarDecl("x", "int")});
+
+  IntermediateCode code;
+  code.addStmt(seu_icg::TriAddrStmt(1, seu_icg::OP_FUNC_CALL, "foo", "a, 1", "t1"));
+  code.addStmt(seu_icg::TriAddrStmt(2, seu_icg::OP_ASSIGN, "t1", "", "x"));
+  code.addStmt(seu_icg::TriAddrStmt(3, seu_icg::OP_RETURN, "x", ""));
+
+  seu_icg::TargetIrOptions options;
+  options.className = "SeuDemo";
+  std::cout << seu_icg::formatJimple(function, code, options) << '\n';
+  builder.destroyTree(function);
+}
+
+void commandLlvmOutputStableFormat() {
+  const ASTBuilder builder;
+  ASTNode* function = makeFunctionRoot(
+      builder,
+      "add",
+      {builder.makeVarDecl("lhs", "int"), builder.makeVarDecl("rhs", "int")},
+      {builder.makeVarDecl("sum", "int")});
+
+  IntermediateCode code;
+  code.addStmt(seu_icg::TriAddrStmt(1, seu_icg::OP_ADD, "lhs", "rhs", "t1"));
+  code.addStmt(seu_icg::TriAddrStmt(2, seu_icg::OP_ASSIGN, "t1", "", "sum"));
+  code.addStmt(seu_icg::TriAddrStmt(3, seu_icg::OP_RETURN, "sum", ""));
+
+  seu_icg::TargetIrOptions options;
+  options.emitComments = false;
+  std::cout << seu_icg::formatLlvmIr(function, code, options) << '\n';
+  builder.destroyTree(function);
+}
+
+void commandJimpleOutputStableFormat() {
+  const ASTBuilder builder;
+  ASTNode* function = makeFunctionRoot(
+      builder,
+      "main",
+      {},
+      {builder.makeVarDecl("x", "int")});
+
+  IntermediateCode code;
+  code.addStmt(seu_icg::TriAddrStmt(1, seu_icg::OP_IF_GOTO, "x > 0", "3"));
+  code.addStmt(seu_icg::TriAddrStmt(2, seu_icg::OP_GOTO, "", "4"));
+  code.addStmt(seu_icg::TriAddrStmt(3, seu_icg::OP_RETURN, "x", ""));
+  code.addStmt(seu_icg::TriAddrStmt(4, seu_icg::OP_RETURN, "0", ""));
+
+  seu_icg::TargetIrOptions options;
+  options.className = "SeuDemo";
+  std::cout << seu_icg::formatJimple(function, code, options) << '\n';
+  builder.destroyTree(function);
+}
+
+void commandLlvmInvalidTargetFallback() {
+  const ASTBuilder builder;
+  ASTNode* function = makeFunctionRoot(
+      builder,
+      "main",
+      {},
+      {builder.makeVarDecl("x", "int")});
+
+  IntermediateCode code;
+  code.addStmt(seu_icg::TriAddrStmt(1, seu_icg::OP_IF_GOTO, "x > 0", "99"));
+
+  seu_icg::TargetIrOptions options;
+  options.emitComments = false;
+  std::cout << seu_icg::formatLlvmIr(function, code, options) << '\n';
+  builder.destroyTree(function);
+}
+
+void commandJimpleInvalidTargetFallback() {
+  const ASTBuilder builder;
+  ASTNode* function = makeFunctionRoot(
+      builder,
+      "main",
+      {},
+      {builder.makeVarDecl("x", "int")});
+
+  IntermediateCode code;
+  code.addStmt(seu_icg::TriAddrStmt(1, seu_icg::OP_IF_GOTO, "x > 0", "99"));
+
+  seu_icg::TargetIrOptions options;
+  options.className = "SeuDemo";
+  std::cout << seu_icg::formatJimple(function, code, options) << '\n';
+  builder.destroyTree(function);
+}
+
 void commandIrUnsupportedOp() {
   const ASTBuilder builder;
   SymbolTable symbols;
@@ -466,7 +609,9 @@ void printUsage(const char* program) {
          "ir-constant-assign|ir-arithmetic|ir-control-flow|ir-function|"
          "ir-unsupported-op|generate-empty|basic-block-empty|basic-block-linear|"
          "basic-block-conditional|basic-block-mixed|basic-block-sparse|"
-         "basic-block-invalid-target|perf-batch ITERATIONS>\n";
+         "basic-block-invalid-target|llvm-linear|llvm-branch-loop|"
+         "jimple-call-assign|llvm-stable|jimple-stable|llvm-invalid-target|"
+         "jimple-invalid-target|perf-batch ITERATIONS>\n";
 }
 
 }  // namespace
@@ -545,6 +690,34 @@ int main(int argc, char** argv) {
     }
     if (command == "basic-block-invalid-target") {
       commandBasicBlockInvalidTarget();
+      return 0;
+    }
+    if (command == "llvm-linear") {
+      commandLlvmLinearArithAndReturn();
+      return 0;
+    }
+    if (command == "llvm-branch-loop") {
+      commandLlvmBranchAndLoopShape();
+      return 0;
+    }
+    if (command == "jimple-call-assign") {
+      commandJimpleCallAndAssign();
+      return 0;
+    }
+    if (command == "llvm-stable") {
+      commandLlvmOutputStableFormat();
+      return 0;
+    }
+    if (command == "jimple-stable") {
+      commandJimpleOutputStableFormat();
+      return 0;
+    }
+    if (command == "llvm-invalid-target") {
+      commandLlvmInvalidTargetFallback();
+      return 0;
+    }
+    if (command == "jimple-invalid-target") {
+      commandJimpleInvalidTargetFallback();
       return 0;
     }
     if (command == "perf-batch") {

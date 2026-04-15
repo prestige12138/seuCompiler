@@ -1,0 +1,14 @@
+.class public final SeuDemo
+.super java.lang.Object
+
+.method public static int main()
+{
+  int a;
+  int x;
+  int t1;
+label_1:
+  t1 = staticinvoke SeuDemo.foo(a, 1);
+  x = t1;
+  return x;
+}
+

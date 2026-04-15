@@ -6,3 +6,4 @@
 - [数据结构说明](DATA_STRUCTURES.md)
 - [依赖图](DEPENDENCY_GRAPH.md)
 - [开发与验证过程](DEVELOPMENT_PROCESS.md)
+- 当前对外产物包含：三地址码、LLVM IR、Jimple

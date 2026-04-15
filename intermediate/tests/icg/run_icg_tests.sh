@@ -96,6 +96,7 @@ build_artifacts() {
     "${ICG_ROOT}/src/symbol_table.cpp" \
     "${ICG_ROOT}/src/tri_addr_generator.cpp" \
     "${ICG_ROOT}/src/intermediate_code.cpp" \
+    "${ICG_ROOT}/src/target_ir_emitter.cpp" \
     -o "${PROBE_BIN}" > "${LOG_DIR}/probe_build.log" 2>&1
 }
 
@@ -167,6 +168,13 @@ run_probe_case "16_basic_block_conditional_branch" basic-block-conditional
 run_probe_case "17_basic_block_mixed_control_flow" basic-block-mixed
 run_probe_case "18_basic_block_sparse_stmt_numbers" basic-block-sparse
 run_probe_case "19_basic_block_invalid_target" basic-block-invalid-target
+run_probe_case "20_llvm_linear_arith_and_return" llvm-linear
+run_probe_case "21_llvm_branch_and_loop_shape" llvm-branch-loop
+run_probe_case "22_jimple_call_and_assign" jimple-call-assign
+run_probe_case "23_llvm_output_stable_format" llvm-stable
+run_probe_case "24_jimple_output_stable_format" jimple-stable
+run_probe_case "25_llvm_invalid_target_fallback" llvm-invalid-target
+run_probe_case "26_jimple_invalid_target_fallback" jimple-invalid-target
 run_cli_self_test
 run_perf_case
 

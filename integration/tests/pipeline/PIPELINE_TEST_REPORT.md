@@ -11,6 +11,7 @@
 - Lex 规格：[pipeline_expr.l](test_cases/pipeline_expr.l)
 - Yacc 规格：[pipeline_expr.y](test_cases/pipeline_expr.y)
 - 预期 IR：[pipeline_expr.ir](expected/pipeline_expr.ir)
+- 完整 IR 导出演示另见：[../ir_pipeline/IR_PIPELINE_TEST_REPORT.md](../ir_pipeline/IR_PIPELINE_TEST_REPORT.md)
 
 当前验证目标：
 

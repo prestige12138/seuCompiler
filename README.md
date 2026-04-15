@@ -4,8 +4,9 @@ SEU Compiler 2026 是一个按课程实践要求拆分的三阶段编译前端�
 
 - `seuLex`：Lex 风格词法分析生成器
 - `seuYacc`：Yacc 风格 LR(1)/LALR(1) 语法分析生成器
-- `intermediate`：AST 与三地址中间代码生成模块
+- `intermediate`：AST、三地址码、LLVM IR、Jimple 生成模块
 - `integration/tests/pipeline`：最小整链路联通样例
+- `integration/tests/ir_pipeline`：完整 IR 导出演示样例
 
 实现语言统一为 `C++17`。
 
@@ -13,14 +14,14 @@ SEU Compiler 2026 是一个按课程实践要求拆分的三阶段编译前端�
 
 - `seuLex`：已实现，含 NFA/DFA 可视化、代码生成、自测与测试报告
 - `seuYacc`：已实现，含 LR(1)/LALR(1) 自动机、分析表、代码生成、自测与测试报告
-- `intermediate`：已实现，含 AST、符号表、三地址码生成、自测与测试报告
-- 三模块联通：仓库内已提供一条最小端到端链路
+- `intermediate`：已实现，含 AST、符号表、三地址码、LLVM IR、Jimple、自测与测试报告
+- 三模块联通：仓库内已提供最小链路和完整 IR 导出链路
 
 当前仓库默认信任 `.l` / `.y` 规格中的用户动作与用户代码段。生成器会把这些代码原样写入生成产物，测试脚本也会编译并运行这些产物，因此本项目当前适用场景是课程实验、可信输入和本地开发环境，不适用于直接执行不可信文法。
 
-当前最小联通路径是：
+当前完整联通路径是：
 
-`seuLex` 生成 scanner -> `seuYacc` 生成 parser -> `.y` 语义动作构 AST -> `intermediate` 释放 AST 根并生成 IR
+`seuLex` 生成 scanner -> `seuYacc` 生成 parser -> `.y` 语义动作构 AST -> `intermediate` 释放 AST 根 -> 三地址码 -> LLVM IR / Jimple
 
 ## 仓库结构
 
@@ -76,6 +77,18 @@ ctest --test-dir intermediate/build --output-on-failure
 3. 编译一个直接联通 driver
 4. 执行 `Lex -> Yacc -> AST -> IR`
 5. 校验输出 IR
+
+### 运行完整 IR 导出演示
+
+```bash
+bash ./integration/tests/ir_pipeline/run_ir_pipeline_test.sh
+```
+
+该脚本会输出并校验：
+
+1. `demo_ir.tac`
+2. `demo_ir.ll`
+3. `demo_ir.jimple`
 
 ## 模块入口
 

@@ -1,6 +1,7 @@
 #include "ast_builder.h"
 #include "intermediate_code.h"
 #include "symbol_table.h"
+#include "target_ir_emitter.h"
 #include "tri_addr_generator.h"
 
 #include <iostream>
@@ -27,6 +28,20 @@ bool expectEqual(const std::string& name,
   std::cerr << "[self-test] " << name << ": failed\n";
   std::cerr << "expected:\n" << expected << "\nactual:\n" << actual << '\n';
   return false;
+}
+
+bool expectContainsAll(const std::string& name,
+                       const std::string& actual,
+                       const std::vector<std::string>& fragments) {
+  for (const std::string& fragment : fragments) {
+    if (actual.find(fragment) == std::string::npos) {
+      std::cerr << "[self-test] " << name << ": failed\n";
+      std::cerr << "missing fragment: " << fragment << "\nactual:\n" << actual << '\n';
+      return false;
+    }
+  }
+  std::cout << "[self-test] " << name << ": ok\n";
+  return true;
 }
 
 bool runAstConstructionTest(const ASTBuilder& builder) {
@@ -266,13 +281,68 @@ bool runBasicBlockTest() {
   return ok;
 }
 
+bool runLlvmEmitterTest(const ASTBuilder& builder) {
+  ASTNode* function = builder.makeFunction(
+      "main",
+      "int",
+      {},
+      builder.makeProgram({
+          builder.makeVarDecl("a", "int"),
+          builder.makeVarDecl("b", "int"),
+          builder.makeReturn(builder.makeIdentifier("a", "int")),
+      }));
+
+  IntermediateCode code;
+  code.addStmt(seu_icg::TriAddrStmt(1, seu_icg::OP_ASSIGN, "1", "", "a"));
+  code.addStmt(seu_icg::TriAddrStmt(2, seu_icg::OP_ASSIGN, "2", "", "b"));
+  code.addStmt(seu_icg::TriAddrStmt(3, seu_icg::OP_ADD, "a", "b", "t1"));
+  code.addStmt(seu_icg::TriAddrStmt(4, seu_icg::OP_RETURN, "t1", ""));
+
+  seu_icg::TargetIrOptions options;
+  options.emitComments = false;
+  const bool ok = expectContainsAll(
+      "llvm_ir_emitter",
+      seu_icg::formatLlvmIr(function, code, options),
+      {"define i32 @main()", "alloca i32", "add nsw i32", "ret i32"});
+  builder.destroyTree(function);
+  return ok;
+}
+
+bool runJimpleEmitterTest(const ASTBuilder& builder) {
+  ASTNode* function = builder.makeFunction(
+      "main",
+      "int",
+      {},
+      builder.makeProgram({
+          builder.makeVarDecl("x", "int"),
+          builder.makeReturn(builder.makeIdentifier("x", "int")),
+      }));
+
+  IntermediateCode code;
+  code.addStmt(seu_icg::TriAddrStmt(1, seu_icg::OP_FUNC_CALL, "foo", "x, 1", "t1"));
+  code.addStmt(seu_icg::TriAddrStmt(2, seu_icg::OP_ASSIGN, "t1", "", "x"));
+  code.addStmt(seu_icg::TriAddrStmt(3, seu_icg::OP_RETURN, "x", ""));
+
+  seu_icg::TargetIrOptions options;
+  options.emitComments = true;
+  options.className = "SeuDemo";
+  const bool ok = expectContainsAll(
+      "jimple_ir_emitter",
+      seu_icg::formatJimple(function, code, options),
+      {".class public final SeuDemo", ".method public static int main()",
+       "staticinvoke SeuDemo.foo(x, 1);", "return x;"});
+  builder.destroyTree(function);
+  return ok;
+}
+
 bool runSelfTests() {
   const ASTBuilder builder;
   return runAstConstructionTest(builder) && runParseRootTest(builder) &&
          runSymbolTableTest() &&
          runArithmeticAssignmentTest(builder) &&
          runControlFlowAndCallTest(builder) && runFunctionBodyTest(builder) &&
-         runBasicBlockTest();
+         runBasicBlockTest() && runLlvmEmitterTest(builder) &&
+         runJimpleEmitterTest(builder);
 }
 
 void printUsage(const char* program) {

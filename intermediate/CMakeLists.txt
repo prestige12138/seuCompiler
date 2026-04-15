@@ -17,6 +17,7 @@ add_executable(seuIntermediate
   src/symbol_table.cpp
   src/tri_addr_generator.cpp
   src/intermediate_code.cpp
+  src/target_ir_emitter.cpp
   src/main.cpp
 )
 

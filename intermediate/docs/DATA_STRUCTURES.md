@@ -12,3 +12,4 @@
 
 - `SymbolEntry`
 - `SymbolTable`
+- `TargetIrOptions`

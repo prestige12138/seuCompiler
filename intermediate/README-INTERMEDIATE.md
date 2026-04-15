@@ -18,12 +18,14 @@ intermediate/
 │   ├── ast_builder.h
 │   ├── symbol_table.h
 │   ├── tri_addr_generator.h
-│   └── intermediate_code.h
+│   ├── intermediate_code.h
+│   └── target_ir_emitter.h
 ├── src/
 │   ├── ast_builder.cpp
 │   ├── symbol_table.cpp
 │   ├── tri_addr_generator.cpp
 │   ├── intermediate_code.cpp
+│   ├── target_ir_emitter.cpp
 │   └── main.cpp
 ├── docs/
 │   ├── README.md
@@ -45,7 +47,8 @@ intermediate/
 2. 全局 / 局部 / 参数三类符号表项管理与作用域切换
 3. 三地址语句生成
 4. 标准文本格式输出
-5. 内建自测
+5. 基于 AST + 三地址码的 LLVM IR / Jimple 文本输出
+6. 内建自测
 
 当前第一版重点支持这些 AST/IR 场景：
 
@@ -57,6 +60,8 @@ intermediate/
 - `while`
 - `return`
 - 函数定义作用域与参数登记
+- LLVM IR 非 SSA 内存式 lowering
+- Jimple 风格方法/局部变量/标签输出
 
 ## 构建
 
@@ -126,6 +131,7 @@ translation_unit
 4. `seu_icg::TriAddrGenerator generator(&symbols);`
 5. `IntermediateCode code = generator.generate(root);`
 6. `dumpIntermediateCode(code, std::cout);`
+7. 如需后端文本，可继续调用 `formatLlvmIr(root, code, options)` 或 `formatJimple(root, code, options)`
 
 如果需要完整三模块联通，推荐链路是：
 
@@ -135,6 +141,7 @@ translation_unit
 3. `yyparse(tokens)`
 4. `releaseParseRoot()`
 5. `TriAddrGenerator::generate(root)`
+6. `formatLlvmIr(root, code, options)` / `formatJimple(root, code, options)`
 
 ## AST 约定
 
@@ -179,6 +186,31 @@ translation_unit
 - `OP_FUNC_CALL` 输出为 `result = call func(arglist)`
 - 额外提供 `splitBasicBlocks(...)` / `formatBasicBlocks(...)` 作为基本块视图
 
+## LLVM IR / Jimple 输出
+
+当前新增公开接口：
+
+```cpp
+seu_icg::TargetIrOptions options;
+const std::string llvm_ir = seu_icg::formatLlvmIr(root, code, options);
+const std::string jimple = seu_icg::formatJimple(root, code, options);
+```
+
+设计要点：
+
+- 不修改报告规定的 `TriAddrStmt` / `IntermediateCode`
+- 通过 AST 恢复函数签名、参数和局部变量
+- 通过三地址码恢复控制流和临时变量
+- LLVM IR 采用非 SSA、`alloca/load/store` 风格
+- Jimple 采用方法 + local + label 的稳定文本形式
+
+当前输出边界：
+
+- 支持 `int` / `void` 函数
+- 支持标量局部变量、参数、临时变量
+- 支持 `+ - * / %`、条件跳转、循环、函数调用和 `return`
+- 不涉及 `phi`、指针、数组、结构体和真实后端优化
+
 ## 自测内容
 
 内建自测覆盖：
@@ -189,6 +221,8 @@ translation_unit
 - `if/else`、`while`、函数调用 IR
 - 函数体与参数作用域 IR
 - 基本块划分与后继块格式化
+- LLVM IR 输出 smoke test
+- Jimple 输出 smoke test
 
 ## 当前边界
 
@@ -197,6 +231,7 @@ translation_unit
 - 当前模块没有扩展报告之外的 IR 操作符，例如专门的 `LABEL`、`PARAM`、`FUNC_BEGIN`
 - 条件表达式当前以文本条件直接挂到 `OP_IF_GOTO.arg1`
 - `splitBasicBlocks(...)` 返回的块保留原始 `stmtNo`；若只关心块内语句条数，应使用 `stmts.size()`
+- `TargetIrEmitter` 会基于 AST 推断每个函数的语句段长度，再切分传入的 `IntermediateCode`；这是因为当前三地址码没有显式 `FUNC_BEGIN/FUNC_END`
 
 ## 文档导航
 

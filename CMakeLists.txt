@@ -29,3 +29,18 @@ set_tests_properties(
   seuCompiler_pipeline_expr_integration
   PROPERTIES WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )
+
+add_test(
+  NAME seuCompiler_ir_pipeline_integration
+  COMMAND ${CMAKE_COMMAND} -E env
+          SEU_LEX_BIN=$<TARGET_FILE:seuLex>
+          SEU_YACC_BIN=$<TARGET_FILE:seuYacc>
+          SEU_TEST_CXX=${CMAKE_CXX_COMPILER}
+          bash
+          ${CMAKE_CURRENT_SOURCE_DIR}/integration/tests/ir_pipeline/run_ir_pipeline_test.sh
+)
+
+set_tests_properties(
+  seuCompiler_ir_pipeline_integration
+  PROPERTIES WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+)

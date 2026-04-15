@@ -1,0 +1,17 @@
+.class public final SeuDemo
+.super java.lang.Object
+
+.method public static int main()
+{
+  int x;
+label_1:
+  if x > 0 goto label_3;
+  goto label_2;
+label_2:
+  goto label_4;
+label_3:
+  return x;
+label_4:
+  return 0;
+}
+

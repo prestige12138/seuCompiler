@@ -11,6 +11,8 @@
 5. 开始符号归约完成时通过 `seu_icg::setParseRoot(...)` 导出根节点
 6. 外层驱动通过 `seu_icg::releaseParseRoot()` 取得 AST
 7. `seu_icg::TriAddrGenerator` 生成三地址码
+8. `seu_icg::formatLlvmIr(root, code, options)` 生成 LLVM IR 文本
+9. `seu_icg::formatJimple(root, code, options)` 生成 Jimple 文本
 
 ## Token 契约
 
@@ -80,17 +82,26 @@ seu_icg::ASTNode* root = seu_icg::releaseParseRoot();
 - `seuLex` 可在 ABI 模式下对 parser token 头使用相对 include
 - 集成样例产物统一落在临时结果目录，而不是源码树根目录
 - 顶层 `CMakeLists.txt` 已把三模块和整链路测试纳入统一入口
+- 复杂 IR 演示样例单独放在 `integration/tests/ir_pipeline/`
 
 ## 安全与适用边界
 
 - `seuLex` 和 `seuYacc` 都会把规范文件中的用户动作、嵌入代码和用户子程序原样写入生成的 C++。
 - 当前测试脚本会继续把这些生成产物编译并执行，因此整条链路默认假设 `.l` / `.y` 输入是可信的。
+- 在 CI 环境中，`integration/tests/pipeline/run_pipeline_test.sh` 和 `integration/tests/ir_pipeline/run_ir_pipeline_test.sh` 现在要求显式设置 `SEU_TRUSTED_SPECS=1`，否则拒绝执行。
 - 如果未来需要支持在线评测、外部提交或其他不可信文法场景，必须把“代码生成 + 编译 + 运行”整体迁移到容器或沙箱中。
 
-## 当前最小样例
+## 当前样例
 
 最小工作样例位于：
 
 - [integration/tests/pipeline/test_cases/pipeline_expr.l](/Users/llawliet/代码/seuCompiler/integration/tests/pipeline/test_cases/pipeline_expr.l)
 - [integration/tests/pipeline/test_cases/pipeline_expr.y](/Users/llawliet/代码/seuCompiler/integration/tests/pipeline/test_cases/pipeline_expr.y)
 - [integration/tests/pipeline/run_pipeline_test.sh](/Users/llawliet/代码/seuCompiler/integration/tests/pipeline/run_pipeline_test.sh)
+
+完整 IR 演示样例位于：
+
+- [integration/tests/ir_pipeline/test_cases/demo_ir.l](/Users/llawliet/代码/seuCompiler/integration/tests/ir_pipeline/test_cases/demo_ir.l)
+- [integration/tests/ir_pipeline/test_cases/demo_ir.y](/Users/llawliet/代码/seuCompiler/integration/tests/ir_pipeline/test_cases/demo_ir.y)
+- [integration/tests/ir_pipeline/test_cases/demo_ir.c](/Users/llawliet/代码/seuCompiler/integration/tests/ir_pipeline/test_cases/demo_ir.c)
+- [integration/tests/ir_pipeline/run_ir_pipeline_test.sh](/Users/llawliet/代码/seuCompiler/integration/tests/ir_pipeline/run_ir_pipeline_test.sh)

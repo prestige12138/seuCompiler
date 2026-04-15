@@ -28,6 +28,23 @@ CXX_BIN="${SEU_TEST_CXX:-${CXX:-c++}}"
 SEU_LEX_BIN="${SEU_LEX_BIN:-}"
 SEU_YACC_BIN="${SEU_YACC_BIN:-}"
 
+if [[ -n "${CI:-}" && "${SEU_TRUSTED_SPECS:-0}" != "1" ]]; then
+  echo "refusing to compile generated parser/lexer in CI without SEU_TRUSTED_SPECS=1" >&2
+  exit 1
+fi
+
+if [[ "${SEU_TRUSTED_SPECS:-0}" != "1" ]]; then
+  echo "warning: this script compiles and runs C/C++ emitted from trusted .l/.y specs" >&2
+fi
+
+check_generated_file_for_repo_path() {
+  local file_path="$1"
+  if grep -q "${REPO_ROOT}" "${file_path}"; then
+    echo "generated file contains absolute repository paths: ${file_path}" >&2
+    exit 1
+  fi
+}
+
 if [[ -z "${SEU_LEX_BIN}" || -z "${SEU_YACC_BIN}" ]]; then
   SEULEX_BUILD_DIR="${TMP_DIR}/seuLex-build"
   SEUYACC_BUILD_DIR="${TMP_DIR}/seuYacc-build"
@@ -55,14 +72,14 @@ fi
   "${YACC_SPEC}" "${PIPELINE_PARSER}" "${PIPELINE_TOKENS}" lalr \
   > "${LOG_DIR}/seuyacc.generate.stdout" 2> "${LOG_DIR}/seuyacc.generate.stderr"
 
-if grep -q "${REPO_ROOT}" "${PIPELINE_PARSER}"; then
-  echo "generated parser contains absolute repository paths" >&2
-  exit 1
-fi
+check_generated_file_for_repo_path "${PIPELINE_PARSER}"
+check_generated_file_for_repo_path "${PIPELINE_TOKENS}"
 
 "${SEU_LEX_BIN}" \
   "${LEX_SPEC}" "${PIPELINE_LEXER}" "${TMP_DIR}/dot" --token-header "${PIPELINE_TOKENS}" \
   > "${LOG_DIR}/seulex.generate.stdout" 2> "${LOG_DIR}/seulex.generate.stderr"
+
+check_generated_file_for_repo_path "${PIPELINE_LEXER}"
 
 cat > "${PIPELINE_DRIVER}" <<'EOF'
 #include <cstdlib>

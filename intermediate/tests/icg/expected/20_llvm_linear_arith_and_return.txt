@@ -1,0 +1,18 @@
+define i32 @main() {
+entry:
+  %a.addr = alloca i32
+  %b.addr = alloca i32
+  %t1.addr = alloca i32
+  br label %bb_1
+
+bb_1:
+  store i32 1, i32* %a.addr
+  store i32 2, i32* %b.addr
+  %r1 = load i32, i32* %a.addr
+  %r2 = load i32, i32* %b.addr
+  %r3 = add nsw i32 %r1, %r2
+  store i32 %r3, i32* %t1.addr
+  %r4 = load i32, i32* %t1.addr
+  ret i32 %r4
+}
+

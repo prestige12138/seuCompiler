@@ -1,0 +1,17 @@
+define i32 @main() {
+entry:
+  %x.addr = alloca i32
+  br label %bb_1
+
+bb_1:
+  %r1 = load i32, i32* %x.addr
+  %r2 = icmp sgt i32 %r1, 0
+  br i1 %r2, label %bb_invalid, label %bb_exit
+
+bb_invalid:
+  ret i32 0
+
+bb_exit:
+  ret i32 0
+}
+

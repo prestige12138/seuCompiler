@@ -5,9 +5,9 @@
 - 测试对象：`seuYacc` 模块的输入解析、文法处理、LR(1)/LALR(1) 自动机构造、分析表生成、代码生成与运行时行为。
 - 执行脚本：[run_yacc_tests.sh](run_yacc_tests.sh)
 - 辅助探针：[yacc_probe.cpp](yacc_probe.cpp)
-- 本次实际运行结果目录：[results/20260414_192059](results/20260414_192059)
-- 汇总结果：[SUMMARY.md](results/20260414_192059/SUMMARY.md)
-- 实际执行结果：共 `19` 条测试，`19` 条通过，`0` 条失败。
+- 本次实际运行结果目录：[results/20260415_180135](results/20260415_180135)
+- 汇总结果：[SUMMARY.md](results/20260415_180135/SUMMARY.md)
+- 实际执行结果：共 `18` 条测试，`18` 条通过，`0` 条失败。
 
 本套测试覆盖了以下能力面：
 
@@ -20,7 +20,7 @@
 - ACTION / GOTO 表构造、优先级与结合性消解、reduce/reduce 冲突选择
 - 语义动作翻译、用户代码嵌入、生成 parser 的编译与运行
 - 词法接口契约：named token 与 quoted char token 混合输入
-- 错误输入失败路径、`resources/c99.y` 回归、内建 `--self-test`、大文法性能基线
+- 错误输入失败路径、`resources/minic.y` 回归、内建 `--self-test`
 
 当前实现的两个已知边界也被明确纳入测试口径：
 
@@ -249,18 +249,18 @@
 - 实际结果：[16_error_unterminated_action.txt](results/20260414_192059/16_error_unterminated_action.txt)，与预期一致。
 - 结论分析：action 解析器的错误边界清晰。
 
-### 17. `resource_c99_generation_regression`
+### 17. `resource_minic_generation_regression`
 
-- 名称：`resources/c99.y` 回归生成
-- 目的：验证主规格文法仍可完成生成并编译成目标文件。
-- 输入：`resources/c99.y`
+- 名称：`resources/minic.y` 回归生成
+- 目的：验证当前 `minic-plus` 主规格文法仍可完成生成并编译成目标文件。
+- 输入：`resources/minic.y`
 - 测试步骤：
-  1. 用 `lalr` 模式生成 `c99` parser。
+  1. 用 `lalr` 模式生成 `minic` parser。
   2. 仅编译生成的 `parser.cpp` 到目标文件。
-  3. 与 [17_resource_c99_generation_regression.txt](expected/17_resource_c99_generation_regression.txt) 比对。
+  3. 与 [17_resource_minic_generation_regression.txt](expected/17_resource_minic_generation_regression.txt) 比对。
 - 预期输出：`generate_exit=0`，`compile_exit=0`。
-- 实际结果：[17_resource_c99_generation_regression.txt](results/20260414_192059/17_resource_c99_generation_regression.txt)，均成功。
-- 结论分析：对主规格文法的回归能力正常，没有因新增测试而暴露生成回退。
+- 实际结果：[17_resource_minic_generation_regression.txt](results/20260415_180135/17_resource_minic_generation_regression.txt)，均成功。
+- 结论分析：对当前子集主规格文法的回归能力正常，没有因本轮删减而暴露生成回退。
 
 ### 18. `cli_self_test`
 
@@ -269,32 +269,17 @@
 - 输入：CLI 命令 `seuYacc --self-test`
 - 测试步骤：
   1. 执行内建自测。
-  2. 归一化输出，仅保留是否包含 sample / semantic / c99 三条自测完成标志。
+  2. 归一化输出，仅保留是否包含 sample / semantic / minic 三条自测完成标志。
   3. 与 [18_cli_self_test.txt](expected/18_cli_self_test.txt) 比对。
-- 预期输出：`exit_code=0`，`has_sample=yes`，`has_semantic=yes`，`has_c99=yes`。
-- 实际结果：[18_cli_self_test.txt](results/20260414_192059/18_cli_self_test.txt)，全部满足。
+- 预期输出：`exit_code=0`，`has_sample=yes`，`has_semantic=yes`，`has_minic=yes`。
+- 实际结果：[18_cli_self_test.txt](results/20260415_180135/18_cli_self_test.txt)，全部满足。
 - 结论分析：项目自带 smoke test 仍然可用，与外部测试套件互为补充。
-
-### 19. `large_grammar_build_perf`
-
-- 名称：大文法生成性能基线
-- 目的：为 `resources/c99.y` 建立最基本的耗时门槛。
-- 输入：`resources/c99.y`
-- 测试步骤：
-  1. 记录开始时间。
-  2. 生成并编译 `c99` parser。
-  3. 断言总生成时间不超过 `30s`。
-  4. 保存原始时长到 [19_large_grammar_build_perf.metrics](results/20260414_192059/logs/19_large_grammar_build_perf.metrics)。
-  5. 与 [19_large_grammar_build_perf.txt](expected/19_large_grammar_build_perf.txt) 比对。
-- 预期输出：`generate_exit=0`，`compile_exit=0`，`within_30s=yes`。
-- 实际结果：[19_large_grammar_build_perf.txt](results/20260414_192059/19_large_grammar_build_perf.txt)，原始耗时为 `2s`。
-- 结论分析：当前机器上的大文法生成性能处于安全范围内，可作为后续性能回归基线。
 
 ## 3. 总体结论
 
-- 本次测试共执行 `19` 项，全部通过。
+- 本次测试共执行 `18` 项，全部通过。
 - 解析层、自动机构造层、分析表层、代码生成层和 CLI 层均有独立覆盖，不是单一 smoke test。
-- `resources/c99.y` 回归与 `--self-test` 同时通过，说明当前 `seuYacc` 具备较好的端到端稳定性。
+- `resources/minic.y` 回归与 `--self-test` 同时通过，说明当前 `seuYacc` 在 `minic-plus` 子集口径下具备较好的端到端稳定性。
 
 ## 4. 发现的问题
 
@@ -310,11 +295,11 @@
 
 ## 6. 测试覆盖率总结
 
-- 能力覆盖率：`19 / 19` 计划场景已执行并通过。
+- 能力覆盖率：`18 / 18` 计划场景已执行并通过。
 - 分类覆盖：
   - 输入解析：4 项
   - 文法集合与闭包：3 项
   - LR/LALR 与冲突处理：4 项
   - 代码生成与运行时：5 项
-  - 错误处理、回归与性能：3 项
+  - 错误处理与回归：2 项
 - 代码行覆盖率：当前项目未配置 gcov / llvm-cov / CTest 覆盖率采集，因此无法提供真实行覆盖率百分比；本报告仅给出能力覆盖率与实际运行结果。

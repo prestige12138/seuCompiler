@@ -241,7 +241,7 @@ std::string resolveRepoRoot(const std::string& workspace_root) {
       joinPath(joinPath(workspace_root, ".."), ".."),
   };
   for (const std::string& candidate : candidates) {
-    if (fileExists(joinPath(candidate, "resources/c99.y")) &&
+    if (fileExists(joinPath(candidate, "resources/minic.y")) &&
         fileExists(joinPath(candidate, "resources/minic.l"))) {
       return candidate;
     }
@@ -1263,12 +1263,12 @@ bool SeuYaccDriver::runSelfTests(const std::string& workspace_root) const {
     throw std::runtime_error("generated semantic parser failed runtime validation");
   }
 
-  const std::string c99_parser_cpp = joinPath(temp_dir, "c99_parser.cpp");
-  const std::string c99_parser_h = joinPath(temp_dir, "c99_tokens.h");
-  const std::string c99_parser_obj = joinPath(temp_dir, "c99_parser.o");
-  generate(joinPath(repo_root, "resources/c99.y"), c99_parser_cpp, c99_parser_h, "lalr");
-  if (runProcess(kSelfTestCompiler, {"-std=c++17", "-c", c99_parser_cpp, "-o", c99_parser_obj}) != 0) {
-    throw std::runtime_error("generated c99 parser failed to compile");
+  const std::string minic_parser_cpp = joinPath(temp_dir, "minic_parser.cpp");
+  const std::string minic_parser_h = joinPath(temp_dir, "minic_tokens.h");
+  const std::string minic_parser_obj = joinPath(temp_dir, "minic_parser.o");
+  generate(joinPath(repo_root, "resources/minic.y"), minic_parser_cpp, minic_parser_h, "lalr");
+  if (runProcess(kSelfTestCompiler, {"-std=c++17", "-c", minic_parser_cpp, "-o", minic_parser_obj}) != 0) {
+    throw std::runtime_error("generated minic parser failed to compile");
   }
 
   char original_cwd[4096];
@@ -1304,7 +1304,7 @@ bool SeuYaccDriver::runSelfTests(const std::string& workspace_root) const {
 
   std::cout << "[self-test] generated sample parser: " << parser_cpp << '\n';
   std::cout << "[self-test] generated semantic parser: " << action_parser_cpp << '\n';
-  std::cout << "[self-test] generated c99 parser: " << c99_parser_cpp << '\n';
+  std::cout << "[self-test] generated minic parser: " << minic_parser_cpp << '\n';
   return true;
 }
 

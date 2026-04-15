@@ -1,5 +1,5 @@
 exit_code=0
 has_sample=yes
 has_semantic=yes
-has_c99=yes
+has_minic=yes
 stderr_empty=yes

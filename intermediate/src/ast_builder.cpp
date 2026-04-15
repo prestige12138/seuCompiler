@@ -44,15 +44,6 @@ ASTNode* ASTBuilder::makeAssignment(ASTNode* lhs, ASTNode* rhs) const {
   return node;
 }
 
-ASTNode* ASTBuilder::makeUnary(ASTNodeType type,
-                               ASTNode* child,
-                               const std::string& op,
-                               const std::string& var_type) const {
-  ASTNode* node = makeNode(type, op, var_type);
-  appendChild(node, child);
-  return node;
-}
-
 ASTNode* ASTBuilder::makeBinary(ASTNodeType type,
                                 ASTNode* lhs,
                                 ASTNode* rhs,
@@ -61,19 +52,6 @@ ASTNode* ASTBuilder::makeBinary(ASTNodeType type,
   ASTNode* node = makeNode(type, op, var_type);
   appendChild(node, lhs);
   appendChild(node, rhs);
-  return node;
-}
-
-ASTNode* ASTBuilder::makeTernary(ASTNodeType type,
-                                 ASTNode* first,
-                                 ASTNode* second,
-                                 ASTNode* third,
-                                 const std::string& value,
-                                 const std::string& var_type) const {
-  ASTNode* node = makeNode(type, value, var_type);
-  appendChild(node, first);
-  appendChild(node, second);
-  appendChild(node, third);
   return node;
 }
 

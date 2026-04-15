@@ -192,6 +192,18 @@
 - 收紧 [resources/minic.y](/Users/llawliet/代码/seuCompiler/resources/minic.y)
 - 同步更新本规范文件
 
+### 6.1 已删除内容
+
+本轮按“只删冗余、不扩功能”的原则，额外删除了以下与当前子集无关的代码路径：
+
+- `seuLex` 中仅用于 `resources/c99.l` 的仓库探测与 `--self-test` 生成分支
+- `seuLex/tests/lex/run_lex_tests.sh` 中的 `c99.l` 回归用例
+- `seuYacc` 中仅用于 `resources/c99.y` 的仓库探测与 `--self-test` 生成分支
+- `seuYacc/tests/yacc/run_yacc_tests.sh` 中的 `c99.y` 回归生成与大文法性能基线
+- `intermediate` 中未被当前主链路使用的 `ASTBuilder::makeUnary` / `ASTBuilder::makeTernary` helper
+
+这些删除都没有改变当前 `minic-plus` 子集的语言边界，只是去掉了与该边界无关的冗余实现和测试入口。
+
 本阶段明确未做：
 
 - 不重构现有模块

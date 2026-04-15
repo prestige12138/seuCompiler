@@ -457,10 +457,6 @@ run_generate_only_case "10_regression_minic_generate" \
   "$REPO_ROOT/resources/minic.l" \
   30 || FAILURES=$((FAILURES + 1))
 
-run_generate_only_case "11_regression_c99_generate" \
-  "$REPO_ROOT/resources/c99.l" \
-  60 || FAILURES=$((FAILURES + 1))
-
 run_runtime_perf_case "12_runtime_perf_long_stream" \
   "$RUN_DIR/04_longest_match_priority/generated.cpp" \
   5000 \

@@ -332,7 +332,7 @@ std::string resolveRepoRoot(const std::string& workspaceRoot) {
   };
   for (const std::string& candidate : candidates) {
     if (fileExists(joinPath(candidate, "resources/minic.l")) &&
-        fileExists(joinPath(candidate, "resources/c99.l"))) {
+        fileExists(joinPath(candidate, "resources/minic.y"))) {
       return candidate;
     }
   }
@@ -1134,14 +1134,9 @@ bool SeuLexDriver::runSelfTests(const std::string& workspaceRoot) const {
   generate(joinPath(repoRoot, "resources/minic.l"),
            generatedMinic,
            joinPath(tempDir, "minic_dot"));
-  const std::string generatedC99 = joinPath(tempDir, "generated_c99_lexer.cpp");
-  generate(joinPath(repoRoot, "resources/c99.l"),
-           generatedC99,
-           joinPath(tempDir, "c99_dot"));
 
   std::cout << "[self-test] generated lexer: " << outPath << '\n';
   std::cout << "[self-test] generated minic lexer: " << generatedMinic << '\n';
-  std::cout << "[self-test] generated c99 lexer: " << generatedC99 << '\n';
   return allPassed;
 }
 

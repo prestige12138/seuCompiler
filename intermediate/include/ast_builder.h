@@ -62,16 +62,6 @@ class ASTBuilder {
   ASTNode* makeAssignment(ASTNode* lhs, ASTNode* rhs) const;
 
   /**
-   * @brief Allocate one unary node.
-   *
-   * Complexity: O(|op| + |var_type|).
-   */
-  ASTNode* makeUnary(ASTNodeType type,
-                     ASTNode* child,
-                     const std::string& op,
-                     const std::string& var_type = "") const;
-
-  /**
    * @brief Allocate one binary node.
    *
    * Complexity: O(|op| + |var_type|).
@@ -81,18 +71,6 @@ class ASTBuilder {
                       ASTNode* rhs,
                       const std::string& op,
                       const std::string& var_type = "") const;
-
-  /**
-   * @brief Allocate one ternary node.
-   *
-   * Complexity: O(|value| + |var_type|).
-   */
-  ASTNode* makeTernary(ASTNodeType type,
-                       ASTNode* first,
-                       ASTNode* second,
-                       ASTNode* third,
-                       const std::string& value = "",
-                       const std::string& var_type = "") const;
 
   /**
    * @brief Allocate one function-call node.

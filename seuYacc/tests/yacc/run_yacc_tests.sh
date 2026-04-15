@@ -384,55 +384,13 @@ run_self_test_case() {
     else
       echo "has_semantic=no"
     fi
-    if grep -q "\\[self-test\\] generated c99 parser:" "${stdout_file}"; then
-      echo "has_c99=yes"
+    if grep -q "\\[self-test\\] generated minic parser:" "${stdout_file}"; then
+      echo "has_minic=yes"
     else
-      echo "has_c99=no"
+      echo "has_minic=no"
     fi
     echo "stderr_empty=$( [[ -s "${stderr_file}" ]] && echo no || echo yes )"
   } > "${actual}"
-
-  compare_exact "${name}" "${EXPECTED_DIR}/${name}.txt" "${actual}"
-}
-
-run_c99_perf_case() {
-  local name="$1"
-  local grammar="${REPO_ROOT}/resources/c99.y"
-  local parser_cpp="${TMP_DIR}/c99_perf_parser.cpp"
-  local parser_h="${TMP_DIR}/c99_perf_tokens.h"
-  local object_file="${TMP_DIR}/c99_perf_parser.o"
-  local stdout_file="${LOG_DIR}/${name}.stdout"
-  local stderr_file="${LOG_DIR}/${name}.stderr"
-  local compile_log="${LOG_DIR}/${name}.compile.log"
-  local actual="${RESULT_DIR}/${name}.txt"
-
-  local start_time end_time duration
-  start_time="$(date +%s)"
-  set +e
-  "${YACC_BIN}" "${grammar}" "${parser_cpp}" "${parser_h}" "lalr" > "${stdout_file}" 2> "${stderr_file}"
-  local generate_exit=$?
-  set -e
-  end_time="$(date +%s)"
-  duration=$((end_time - start_time))
-
-  local compile_exit=99
-  if [[ ${generate_exit} -eq 0 ]]; then
-    set +e
-    c++ -std=c++17 -c "${parser_cpp}" -o "${object_file}" > "${compile_log}" 2>&1
-    compile_exit=$?
-    set -e
-  fi
-
-  {
-    echo "generate_exit=${generate_exit}"
-    echo "compile_exit=${compile_exit}"
-    if [[ ${duration} -le 30 ]]; then
-      echo "within_30s=yes"
-    else
-      echo "within_30s=no"
-    fi
-  } > "${actual}"
-  echo "duration_seconds=${duration}" > "${LOG_DIR}/${name}.metrics"
 
   compare_exact "${name}" "${EXPECTED_DIR}/${name}.txt" "${actual}"
 }
@@ -504,14 +462,13 @@ run_negative_cli "15_error_missing_delimiters" "${CASE_DIR}/13_error_missing_del
 run_negative_cli "16_error_unterminated_action" "${CASE_DIR}/14_error_unterminated_action.y"
 
 generate_compile_only \
-  "17_resource_c99_generation_regression" \
-  "${REPO_ROOT}/resources/c99.y" \
-  "${TMP_DIR}/c99_parser.cpp" \
-  "${TMP_DIR}/c99_tokens.h" \
+  "17_resource_minic_generation_regression" \
+  "${REPO_ROOT}/resources/minic.y" \
+  "${TMP_DIR}/minic_parser.cpp" \
+  "${TMP_DIR}/minic_tokens.h" \
   "lalr"
 
 run_self_test_case "18_cli_self_test"
-run_c99_perf_case "19_large_grammar_build_perf"
 
 {
   echo

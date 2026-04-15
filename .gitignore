@@ -106,3 +106,5 @@ assets/images/security/badrudi-exploit.mp4
 /seuYacc/tests/yacc/results/
 /intermediate/tests/icg/results/
 /integration/tests/pipeline/results/
+/integration/tests/ir_pipeline/results/
+/build-review/

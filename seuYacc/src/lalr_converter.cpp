@@ -1,7 +1,6 @@
 /**
  * @file lalr_converter.cpp
- * @brief Canonical LR(1) core merging used to materialize an explicit
- *        LR(1) -> LALR(1) conversion path.
+ * @brief 实现从规范 LR(1) 自动机到 LALR(1) 自动机的显式合并过程。
  */
 
 #include "lalr_converter.h"
@@ -16,6 +15,9 @@
 namespace seu_yacc {
 namespace {
 
+/**
+ * @brief 生成一个项目的 LR(0) 核键值。
+ */
 std::string coreItemKey(const ITEM& item) {
   std::ostringstream oss;
   oss << item.left << "->";
@@ -31,6 +33,9 @@ std::string coreItemKey(const ITEM& item) {
   return oss.str();
 }
 
+/**
+ * @brief 生成一个状态中全部 LR(0) 核项目的稳定键值。
+ */
 std::string coreStateKey(const LRnode& node) {
   std::vector<std::string> keys;
   keys.reserve(node.items.size());
@@ -45,6 +50,9 @@ std::string coreStateKey(const LRnode& node) {
   return oss.str();
 }
 
+/**
+ * @brief 合并多个状态项目后去重，得到标准化项目列表。
+ */
 std::vector<ITEM> mergeItems(const std::vector<ITEM>& items) {
   std::vector<ITEM> merged = items;
   std::sort(merged.begin(), merged.end(), [](const ITEM& lhs, const ITEM& rhs) {
@@ -67,8 +75,11 @@ std::vector<ITEM> mergeItems(const std::vector<ITEM>& items) {
   return merged;
 }
 
-}  // namespace
+}  // 匿名命名空间
 
+/**
+ * @brief 按 LR(0) 核合并规范 LR(1) 状态，生成 LALR(1) 自动机。
+ */
 LALRResult LALRConverter::convert(const LRPDA& canonical) const {
   LALRResult result;
   result.old_to_new.assign(canonical.nodes.size(), -1);
@@ -76,8 +87,8 @@ LALRResult LALRConverter::convert(const LRPDA& canonical) const {
   std::map<std::string, int> core_to_state;
   std::vector<std::vector<int>> groups;
   for (std::size_t index = 0; index < canonical.nodes.size(); ++index) {
-    // States with the same LR(0) core are grouped together; lookaheads are
-    // merged afterwards so the resulting graph matches LALR(1) structure.
+    // LR(0) 核相同的状态先归为一组，随后再合并展望符，
+    // 得到的状态图才符合 LALR(1) 的结构定义。
     const std::string key = coreStateKey(canonical.nodes[index]);
     const auto found = core_to_state.find(key);
     if (found == core_to_state.end()) {
@@ -114,4 +125,4 @@ LALRResult LALRConverter::convert(const LRPDA& canonical) const {
   return result;
 }
 
-}  // namespace seu_yacc
+}  // 命名空间 seu_yacc

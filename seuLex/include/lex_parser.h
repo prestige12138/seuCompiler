@@ -6,13 +6,13 @@
 
 /**
  * @file lex_parser.h
- * @brief Lex source parser interfaces.
+ * @brief 词法规范源文件解析接口。
  */
 
 namespace seu_lex {
 
 /**
- * @brief One Lex rule.
+ * @brief 一条 Lex 规则。
  */
 struct LexRule {
   std::string regex;
@@ -23,7 +23,7 @@ struct LexRule {
 };
 
 /**
- * @brief Parsed Lex specification split into three sections.
+ * @brief 按三段结构拆分后的 Lex 规格。
  */
 struct LexSpecification {
   std::string definitionsSection;
@@ -34,16 +34,16 @@ struct LexSpecification {
 };
 
 /**
- * @brief Parse Lex source files into structured sections and rules.
+ * @brief 将 Lex 源文件解析为结构化三段与规则集合。
  */
 class LexParser {
  public:
   /**
-   * @brief Parse a Lex source file.
+   * @brief 解析一个 Lex 源文件。
    *
-   * Complexity: O(N), where N is the file size.
+   * 复杂度：O(N)，其中 N 为文件大小。
    */
   LexSpecification parseLexFile(const std::string& path) const;
 };
 
-}  // namespace seu_lex
+}  // 命名空间 seu_lex

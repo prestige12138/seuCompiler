@@ -7,64 +7,63 @@
 
 /**
  * @file ast_builder.h
- * @brief AST construction helpers that can be called from generated Yacc
- *        semantic actions.
+ * @brief 定义 AST 构造辅助接口，供生成出的 Yacc 语义动作直接调用。
  */
 
 namespace seu_icg {
 
 /**
- * @brief Stateless helper for constructing report-defined AST nodes.
+ * @brief 无状态 AST 构造器，负责按报告定义创建各类语法树结点。
  */
 class ASTBuilder {
  public:
   /**
-   * @brief Allocate one generic AST node.
+   * @brief 创建一个通用 AST 结点。
    *
-   * Complexity: O(|value| + |var_type|).
+   * 时间复杂度：O(|value| + |var_type|)。
    */
   ASTNode* makeNode(ASTNodeType type,
                     const std::string& value = "",
                     const std::string& var_type = "") const;
 
   /**
-   * @brief Allocate one identifier leaf node.
+   * @brief 创建一个标识符叶子结点。
    *
-   * Complexity: O(|name| + |var_type|).
+   * 时间复杂度：O(|name| + |var_type|)。
    */
   ASTNode* makeIdentifier(const std::string& name,
                           const std::string& var_type = "") const;
 
   /**
-   * @brief Allocate one constant leaf node.
+   * @brief 创建一个常量叶子结点。
    *
-   * Complexity: O(|value| + |var_type|).
+   * 时间复杂度：O(|value| + |var_type|)。
    */
   ASTNode* makeConstant(const std::string& value,
                         const std::string& var_type = "") const;
 
   /**
-   * @brief Allocate one variable-declaration node.
+   * @brief 创建一个变量声明结点。
    *
-   * When `initializer` is non-null, it becomes the only child.
-   * Complexity: O(|name| + |var_type|).
+   * 当 `initializer` 非空时，会作为唯一子结点挂到声明结点上。
+   * 时间复杂度：O(|name| + |var_type|)。
    */
   ASTNode* makeVarDecl(const std::string& name,
                        const std::string& var_type,
                        ASTNode* initializer = nullptr) const;
 
   /**
-   * @brief Allocate one assignment node.
+   * @brief 创建一个赋值结点。
    *
-   * `lhs` and `rhs` become children 0 and 1.
-   * Complexity: O(1).
+   * `lhs` 和 `rhs` 会依次成为第 0、1 个子结点。
+   * 时间复杂度：O(1)。
    */
   ASTNode* makeAssignment(ASTNode* lhs, ASTNode* rhs) const;
 
   /**
-   * @brief Allocate one binary node.
+   * @brief 创建一个二元运算结点。
    *
-   * Complexity: O(|op| + |var_type|).
+   * 时间复杂度：O(|op| + |var_type|)。
    */
   ASTNode* makeBinary(ASTNodeType type,
                       ASTNode* lhs,
@@ -73,20 +72,20 @@ class ASTBuilder {
                       const std::string& var_type = "") const;
 
   /**
-   * @brief Allocate one function-call node.
+   * @brief 创建一个函数调用结点。
    *
-   * `args` are appended in order as children.
-   * Complexity: O(|function_name| + |return_type| + args.size()).
+   * `args` 会按顺序附加为子结点。
+   * 时间复杂度：O(|function_name| + |return_type| + args.size())。
    */
   ASTNode* makeCall(const std::string& function_name,
                     const std::vector<ASTNode*>& args,
                     const std::string& return_type = "") const;
 
   /**
-   * @brief Allocate one function-definition node.
+   * @brief 创建一个函数定义结点。
    *
-   * Parameter declarations are appended first, then `body`.
-   * Complexity: O(|function_name| + |return_type| + parameters.size()).
+   * 形参声明会先加入子结点列表，随后再追加函数体 `body`。
+   * 时间复杂度：O(|function_name| + |return_type| + parameters.size())。
    */
   ASTNode* makeFunction(const std::string& function_name,
                         const std::string& return_type,
@@ -94,81 +93,81 @@ class ASTBuilder {
                         ASTNode* body) const;
 
   /**
-   * @brief Allocate one `if` node.
+   * @brief 创建一个 `if` 结点。
    *
-   * Children are condition, then-branch, and optional else-branch.
-   * Complexity: O(1).
+   * 子结点依次为条件、then 分支以及可选的 else 分支。
+   * 时间复杂度：O(1)。
    */
   ASTNode* makeIf(ASTNode* condition,
                   ASTNode* then_branch,
                   ASTNode* else_branch = nullptr) const;
 
   /**
-   * @brief Allocate one `while` node.
+   * @brief 创建一个 `while` 结点。
    *
-   * Children are condition and body.
-   * Complexity: O(1).
+   * 子结点依次为循环条件和循环体。
+   * 时间复杂度：O(1)。
    */
   ASTNode* makeWhile(ASTNode* condition, ASTNode* body) const;
 
   /**
-   * @brief Allocate one return node.
+   * @brief 创建一个 `return` 结点。
    *
-   * When `value` is non-null, it becomes the only child.
-   * Complexity: O(1).
+   * 当 `value` 非空时，它会成为唯一子结点。
+   * 时间复杂度：O(1)。
    */
   ASTNode* makeReturn(ASTNode* value = nullptr) const;
 
   /**
-   * @brief Allocate one program/list node.
+   * @brief 创建一个程序根结点或语句列表结点。
    *
-   * This is used both as the program root and as a generic statement-list
-   * container because the report's enum does not define a dedicated block node.
-   * Complexity: O(nodes.size()).
+   * 由于报告中的枚举没有单独定义 block 结点，这里同时承担程序根结点
+   * 和通用语句列表容器两种角色。
+   * 时间复杂度：O(nodes.size())。
    */
   ASTNode* makeProgram(const std::vector<ASTNode*>& nodes) const;
 
   /**
-   * @brief Append one child to an existing node.
+   * @brief 向已有结点追加一个子结点。
    *
-   * Complexity: amortized O(1).
+   * 时间复杂度：均摊 O(1)。
    */
   void appendChild(ASTNode* parent, ASTNode* child) const;
 
   /**
-   * @brief Overwrite the semantic type associated with a node.
+   * @brief 覆盖结点上记录的语义类型。
    *
-   * Complexity: O(|var_type|).
+   * 时间复杂度：O(|var_type|)。
    */
   void setNodeType(ASTNode* node, const std::string& var_type) const;
 
   /**
-   * @brief Recursively destroy an AST tree.
+   * @brief 递归释放一棵 AST。
    *
-   * Complexity: O(N), where N is the node count.
+   * 时间复杂度：O(N)，其中 N 为结点总数。
    */
   void destroyTree(ASTNode* root) const;
 };
 
 /**
- * @brief Export the current parse root for downstream IR generation.
+ * @brief 保存当前语法分析阶段产出的根结点，供后续 IR 阶段使用。
  *
- * Complexity: O(1).
+ * 时间复杂度：O(1)。
  */
 void setParseRoot(ASTNode* root);
 
 /**
- * @brief Return the current parse root without transferring ownership.
+ * @brief 返回当前保存的语法树根结点，但不转移所有权。
  *
- * Complexity: O(1).
+ * 时间复杂度：O(1)。
  */
 ASTNode* getParseRoot();
 
 /**
- * @brief Return the current parse root and clear the global slot.
+ * @brief 取出当前语法树根结点，并清空全局保存槽位。
  *
- * Complexity: O(1).
+ * 时间复杂度：O(1)。
  */
 ASTNode* releaseParseRoot();
 
-}  // namespace seu_icg
+}  // 命名空间 seu_icg

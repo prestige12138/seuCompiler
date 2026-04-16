@@ -1,7 +1,6 @@
 /**
  * @file regex_expander.cpp
- * @brief Expansion of Lex-style extended RE syntax into the explicit token
- *        stream consumed by Thompson construction.
+ * @brief 实现 Lex 扩展正则到显式基础正则 token 串的展开过程。
  */
 
 #include "regex_expander.h"
@@ -25,6 +24,9 @@ namespace {
 constexpr int kAsciiLimit = 128;
 constexpr int kMaxRepeatBound = 10000;
 
+/**
+ * @brief 判断一段文本是否可以作为命名定义引用名。
+ */
 bool isIdentifierLike(const std::string& text) {
   if (text.empty()) {
     return false;
@@ -37,6 +39,9 @@ bool isIdentifierLike(const std::string& text) {
   });
 }
 
+/**
+ * @brief 构造 ASCII 字符全集，可选择是否包含换行符。
+ */
 std::vector<char> buildAsciiUniverse(bool include_newline) {
   std::vector<char> chars;
   for (int value = 1; value < kAsciiLimit; ++value) {
@@ -49,6 +54,9 @@ std::vector<char> buildAsciiUniverse(bool include_newline) {
   return chars;
 }
 
+/**
+ * @brief 解析一个转义序列并返回对应字符。
+ */
 char decodeEscape(const std::string& text, std::size_t& index) {
   if (index >= text.size()) {
     throw std::runtime_error("dangling escape in regular expression");
@@ -88,10 +96,12 @@ struct RegexAst {
   std::unique_ptr<RegexAst> right;
 };
 
-// The extended RE parser first lowers every feature into a small AST and only
-// then serializes that AST into the explicit infix language expected by the
-// postfix/NFA stages.
+// 扩展正则会先被降低为一棵小型 AST，
+// 最后再统一序列化成后缀/NFA 阶段能识别的显式中缀语言。
 
+/**
+ * @brief 创建字面字符结点。
+ */
 std::unique_ptr<RegexAst> makeLiteral(char ch) {
   auto ast = std::make_unique<RegexAst>();
   ast->kind = RegexAst::Kind::kLiteral;
@@ -99,12 +109,18 @@ std::unique_ptr<RegexAst> makeLiteral(char ch) {
   return ast;
 }
 
+/**
+ * @brief 创建 epsilon 结点。
+ */
 std::unique_ptr<RegexAst> makeEpsilon() {
   auto ast = std::make_unique<RegexAst>();
   ast->kind = RegexAst::Kind::kEpsilon;
   return ast;
 }
 
+/**
+ * @brief 创建字符集合结点，并对字符集做排序去重。
+ */
 std::unique_ptr<RegexAst> makeSet(std::vector<char> charset) {
   auto ast = std::make_unique<RegexAst>();
   ast->kind = RegexAst::Kind::kSet;
@@ -116,6 +132,9 @@ std::unique_ptr<RegexAst> makeSet(std::vector<char> charset) {
   return ast;
 }
 
+/**
+ * @brief 创建连接结点。
+ */
 std::unique_ptr<RegexAst> makeConcat(std::unique_ptr<RegexAst> lhs,
                                      std::unique_ptr<RegexAst> rhs) {
   auto ast = std::make_unique<RegexAst>();
@@ -125,6 +144,9 @@ std::unique_ptr<RegexAst> makeConcat(std::unique_ptr<RegexAst> lhs,
   return ast;
 }
 
+/**
+ * @brief 创建并联结点。
+ */
 std::unique_ptr<RegexAst> makeUnion(std::unique_ptr<RegexAst> lhs,
                                     std::unique_ptr<RegexAst> rhs) {
   auto ast = std::make_unique<RegexAst>();
@@ -134,6 +156,9 @@ std::unique_ptr<RegexAst> makeUnion(std::unique_ptr<RegexAst> lhs,
   return ast;
 }
 
+/**
+ * @brief 创建 Kleene 星号结点。
+ */
 std::unique_ptr<RegexAst> makeStar(std::unique_ptr<RegexAst> expr) {
   auto ast = std::make_unique<RegexAst>();
   ast->kind = RegexAst::Kind::kStar;
@@ -141,6 +166,9 @@ std::unique_ptr<RegexAst> makeStar(std::unique_ptr<RegexAst> expr) {
   return ast;
 }
 
+/**
+ * @brief 深拷贝一棵正则 AST。
+ */
 std::unique_ptr<RegexAst> cloneAst(const RegexAst& ast) {
   auto copy = std::make_unique<RegexAst>();
   copy->kind = ast.kind;
@@ -155,6 +183,9 @@ std::unique_ptr<RegexAst> cloneAst(const RegexAst& ast) {
   return copy;
 }
 
+/**
+ * @brief 递归展开 `{NAME}` 形式的命名正则定义。
+ */
 std::string expandNamedDefinitions(const std::string& raw,
                                    std::unordered_set<std::string>& recursion_guard) {
   std::ostringstream oss;
@@ -199,8 +230,8 @@ std::string expandNamedDefinitions(const std::string& raw,
           throw std::runtime_error("cyclic regular definition reference: " + body);
         }
         recursion_guard.insert(body);
-        // Definitions are expanded recursively, but each reference is wrapped
-        // in parentheses so precedence is preserved after substitution.
+        // 命名定义递归展开时始终补上一层括号，
+        // 这样替换后不会破坏原有优先级。
         oss << "( " << expandNamedDefinitions(idreTable.at(body), recursion_guard) << " )";
         recursion_guard.erase(body);
         index = close;
@@ -217,8 +248,14 @@ std::string expandNamedDefinitions(const std::string& raw,
 
 class ExtendedRegexParser {
  public:
+  /**
+   * @brief 用待解析文本构造扩展正则语法分析器。
+   */
   explicit ExtendedRegexParser(std::string text) : text_(std::move(text)) {}
 
+  /**
+   * @brief 解析完整的扩展正则并返回 AST。
+   */
   std::unique_ptr<RegexAst> parse() {
     auto parsed = parseUnion();
     skipSpace();
@@ -229,6 +266,9 @@ class ExtendedRegexParser {
   }
 
  private:
+  /**
+   * @brief 解析并联表达式。
+   */
   std::unique_ptr<RegexAst> parseUnion() {
     auto lhs = parseConcat();
     skipSpace();
@@ -241,6 +281,9 @@ class ExtendedRegexParser {
     return lhs;
   }
 
+  /**
+   * @brief 解析连接表达式。
+   */
   std::unique_ptr<RegexAst> parseConcat() {
     skipSpace();
     std::vector<std::unique_ptr<RegexAst>> parts;
@@ -258,6 +301,9 @@ class ExtendedRegexParser {
     return result;
   }
 
+  /**
+   * @brief 解析带重复后缀的基础表达式。
+   */
   std::unique_ptr<RegexAst> parseRepeat() {
     auto base = parsePrimary();
     skipSpace();
@@ -268,8 +314,8 @@ class ExtendedRegexParser {
       } else if (peek() == '+') {
         ++pos_;
         auto duplicated = cloneAst(*base);
-        // `r+` is lowered to `r r*`, which lets the NFA stage stay small and
-        // only implement concatenation, union, star, and epsilon.
+        // `r+` 被改写成 `r r*`，这样 NFA 阶段只需支持连接、并联、
+        // 星号和 epsilon 四种核心构造即可。
         base = makeConcat(std::move(base), makeStar(std::move(duplicated)));
       } else if (peek() == '?') {
         ++pos_;
@@ -284,6 +330,9 @@ class ExtendedRegexParser {
     return base;
   }
 
+  /**
+   * @brief 解析 `{m}`、`{m,}`、`{m,n}` 形式的有界重复。
+   */
   std::unique_ptr<RegexAst> parseBoundedRepeat(std::unique_ptr<RegexAst> base) {
     expect('{');
     skipSpace();
@@ -309,8 +358,8 @@ class ExtendedRegexParser {
       throw std::runtime_error("repetition bound exceeds implementation limit");
     }
 
-    // Bounded repetition is desugared into concatenation plus optional tails.
-    // This keeps the downstream NFA builder independent from `{m,n}` syntax.
+    // 有界重复会被改写成若干连接和可选尾部，
+    // 这样下游 NFA 构造器不需要感知 `{m,n}` 语法。
     std::unique_ptr<RegexAst> result;
     if (lower == 0) {
       result = makeEpsilon();
@@ -333,6 +382,9 @@ class ExtendedRegexParser {
     return result ? std::move(result) : makeEpsilon();
   }
 
+  /**
+   * @brief 解析基础项，包括括号、字符串、字符类和字面字符。
+   */
   std::unique_ptr<RegexAst> parsePrimary() {
     skipSpace();
     const char ch = peek();
@@ -367,6 +419,9 @@ class ExtendedRegexParser {
     return makeLiteral(ch);
   }
 
+  /**
+   * @brief 解析双引号包裹的字符串字面量。
+   */
   std::unique_ptr<RegexAst> parseQuotedString() {
     expect('"');
     std::vector<char> chars;
@@ -395,6 +450,9 @@ class ExtendedRegexParser {
     return result;
   }
 
+  /**
+   * @brief 解析字符类表达式，包括取反和区间语法。
+   */
   std::unique_ptr<RegexAst> parseCharacterClass() {
     expect('[');
     bool negated = false;
@@ -457,6 +515,9 @@ class ExtendedRegexParser {
     return makeSet(std::move(chars));
   }
 
+  /**
+   * @brief 解析重复边界中的整数。
+   */
   int parseInteger() {
     if (!std::isdigit(static_cast<unsigned char>(peek()))) {
       throw std::runtime_error("expected integer in repetition bound");
@@ -472,16 +533,25 @@ class ExtendedRegexParser {
     return value;
   }
 
+  /**
+   * @brief 判断当前字符是否能作为一个基础项的起始。
+   */
   static bool canStartPrimary(char ch) {
     return ch != '\0' && ch != ')' && ch != '|';
   }
 
+  /**
+   * @brief 跳过当前解析位置之后的连续空白。
+   */
   void skipSpace() {
     while (pos_ < text_.size() && std::isspace(static_cast<unsigned char>(text_[pos_])) != 0) {
       ++pos_;
     }
   }
 
+  /**
+   * @brief 断言当前位置必须是指定字符，否则抛出异常。
+   */
   void expect(char expected) {
     if (peek() != expected) {
       throw std::runtime_error(std::string("expected '") + expected + "' in regular expression");
@@ -489,6 +559,9 @@ class ExtendedRegexParser {
     ++pos_;
   }
 
+  /**
+   * @brief 查看当前位置字符，不移动读指针。
+   */
   char peek() const {
     if (pos_ >= text_.size()) {
       return '\0';
@@ -500,6 +573,9 @@ class ExtendedRegexParser {
   std::size_t pos_ = 0;
 };
 
+/**
+ * @brief 将正则 AST 序列化为显式基础正则中缀表达式。
+ */
 std::string serializeAst(const RegexAst& ast) {
   switch (ast.kind) {
     case RegexAst::Kind::kLiteral:
@@ -510,8 +586,8 @@ std::string serializeAst(const RegexAst& ast) {
       if (ast.charset.empty()) {
         return "eps";
       }
-      // Character classes are lowered into an explicit union of literals so
-      // the postfix/NFA stages never need a dedicated "set" operator.
+      // 字符类最终被展开成若干字面字符的显式并联，
+      // 这样后续后缀化与 NFA 构造都不需要额外的“集合”运算符。
       std::ostringstream oss;
       oss << "( ";
       for (std::size_t index = 0; index < ast.charset.size(); ++index) {
@@ -533,8 +609,11 @@ std::string serializeAst(const RegexAst& ast) {
   throw std::runtime_error("unknown regex AST kind");
 }
 
-}  // namespace
+}  // 匿名命名空间
 
+/**
+ * @brief 对一条扩展正则执行命名定义展开和语法降级。
+ */
 std::string REExpander::expandRE(const std::string& raw) const {
   std::unordered_set<std::string> recursion_guard;
   const std::string expanded = expandNamedDefinitions(raw, recursion_guard);
@@ -542,4 +621,4 @@ std::string REExpander::expandRE(const std::string& raw) const {
   return serializeAst(*parser.parse());
 }
 
-}  // namespace seu_lex
+}  // 命名空间 seu_lex

@@ -1,6 +1,6 @@
 /**
  * @file intermediate_code.cpp
- * @brief Formatting and basic-block utilities for report-defined TAC.
+ * @brief 实现三地址码格式化、基本块划分和输出辅助逻辑。
  */
 
 #include "intermediate_code.h"
@@ -16,6 +16,9 @@
 namespace seu_icg {
 namespace {
 
+/**
+ * @brief 将文本解析为合法的正整数语句号。
+ */
 bool parseStatementNumber(const std::string& text, int* value) {
   if (value == nullptr || text.empty()) {
     return false;
@@ -33,6 +36,9 @@ bool parseStatementNumber(const std::string& text, int* value) {
   }
 }
 
+/**
+ * @brief 把一个基本块中的语句号列表格式化为 `[a,b,c]` 形式。
+ */
 std::string formatBlockStatements(const IntermediateCode& block) {
   std::ostringstream out;
   out << '[';
@@ -46,6 +52,9 @@ std::string formatBlockStatements(const IntermediateCode& block) {
   return out.str();
 }
 
+/**
+ * @brief 计算某个基本块的后继块描述文本。
+ */
 std::string describeSuccessors(const std::vector<IntermediateCode>& blocks,
                                const std::unordered_map<int, std::size_t>& leader_to_block,
                                std::size_t block_index) {
@@ -85,11 +94,17 @@ std::string describeSuccessors(const std::vector<IntermediateCode>& blocks,
   return "none";
 }
 
-}  // namespace
+}  // 匿名命名空间
 
+/**
+ * @brief 构造一个 AST 结点，并保存其类型和值。
+ */
 ASTNode::ASTNode(ASTNodeType t, std::string val)
     : type(t), value(std::move(val)) {}
 
+/**
+ * @brief 构造一条完整形式的三地址语句。
+ */
 TriAddrStmt::TriAddrStmt(int no, TriOp o, std::string a1, std::string a2, std::string res)
     : stmtNo(no),
       op(o),
@@ -97,6 +112,9 @@ TriAddrStmt::TriAddrStmt(int no, TriOp o, std::string a1, std::string a2, std::s
       arg2(std::move(a2)),
       result(std::move(res)) {}
 
+/**
+ * @brief 构造一条省略第二操作数的三地址语句。
+ */
 TriAddrStmt::TriAddrStmt(int no, TriOp o, std::string a1, std::string res)
     : stmtNo(no),
       op(o),
@@ -104,8 +122,14 @@ TriAddrStmt::TriAddrStmt(int no, TriOp o, std::string a1, std::string res)
       arg2(""),
       result(std::move(res)) {}
 
+/**
+ * @brief 构造一个空的中间代码序列。
+ */
 IntermediateCode::IntermediateCode() : stmtCount(0) {}
 
+/**
+ * @brief 将一条语句追加到中间代码序列尾部。
+ */
 void IntermediateCode::addStmt(TriAddrStmt stmt) {
   if (stmt.stmtNo <= 0) {
     stmt.stmtNo = stmtCount + 1;
@@ -116,6 +140,9 @@ void IntermediateCode::addStmt(TriAddrStmt stmt) {
   stmts.push_back(std::move(stmt));
 }
 
+/**
+ * @brief 返回 AST 结点类型的稳定名称。
+ */
 const char* astNodeTypeName(ASTNodeType type) {
   switch (type) {
     case NODE_PROGRAM:
@@ -144,6 +171,9 @@ const char* astNodeTypeName(ASTNodeType type) {
   return "NODE_UNKNOWN";
 }
 
+/**
+ * @brief 返回三地址操作类型的稳定名称。
+ */
 const char* triOpName(TriOp op) {
   switch (op) {
     case OP_ADD:
@@ -170,6 +200,9 @@ const char* triOpName(TriOp op) {
   return "OP_UNKNOWN";
 }
 
+/**
+ * @brief 将一条三地址语句格式化为文本。
+ */
 std::string formatTriAddrStmt(const TriAddrStmt& stmt) {
   std::ostringstream out;
   out << stmt.stmtNo << ": ";
@@ -215,6 +248,9 @@ std::string formatTriAddrStmt(const TriAddrStmt& stmt) {
   return out.str();
 }
 
+/**
+ * @brief 将整段三地址代码序列格式化为多行文本。
+ */
 std::string formatIntermediateCode(const IntermediateCode& code) {
   std::ostringstream out;
   for (std::size_t index = 0; index < code.stmts.size(); ++index) {
@@ -226,6 +262,9 @@ std::string formatIntermediateCode(const IntermediateCode& code) {
   return out.str();
 }
 
+/**
+ * @brief 根据标准 leader 规则把三地址码切分为基本块。
+ */
 std::vector<IntermediateCode> splitBasicBlocks(const IntermediateCode& code) {
   std::vector<IntermediateCode> blocks;
   if (code.stmts.empty()) {
@@ -239,8 +278,8 @@ std::vector<IntermediateCode> splitBasicBlocks(const IntermediateCode& code) {
   }
 
   std::set<int> leaders;
-  // Leaders follow the standard rules: first statement, jump targets, and the
-  // fallthrough immediately after a jump-producing statement.
+  // 基本块入口遵循标准规则：第一条语句、跳转目标语句，
+  // 以及任意跳转语句之后的顺序后继语句。
   leaders.insert(code.stmts.front().stmtNo);
   for (std::size_t index = 0; index < code.stmts.size(); ++index) {
     const TriAddrStmt& stmt = code.stmts[index];
@@ -274,6 +313,9 @@ std::vector<IntermediateCode> splitBasicBlocks(const IntermediateCode& code) {
   return blocks;
 }
 
+/**
+ * @brief 将基本块划分结果格式化为包含后继信息的文本。
+ */
 std::string formatBasicBlocks(const std::vector<IntermediateCode>& blocks) {
   std::unordered_map<int, std::size_t> leader_to_block;
   leader_to_block.reserve(blocks.size());
@@ -302,12 +344,18 @@ std::string formatBasicBlocks(const std::vector<IntermediateCode>& blocks) {
   return out.str();
 }
 
+/**
+ * @brief 将完整三地址码序列输出到指定流。
+ */
 void dumpIntermediateCode(const IntermediateCode& code, std::ostream& out) {
   out << formatIntermediateCode(code);
 }
 
+/**
+ * @brief 将基本块划分结果输出到指定流。
+ */
 void dumpBasicBlocks(const std::vector<IntermediateCode>& blocks, std::ostream& out) {
   out << formatBasicBlocks(blocks);
 }
 
-}  // namespace seu_icg
+}  // 命名空间 seu_icg

@@ -1,6 +1,6 @@
 /**
  * @file dfa_builder.cpp
- * @brief NFA determinization via subset construction.
+ * @brief 实现基于子集构造法的 NFA 确定化过程。
  */
 
 #include "dfa_builder.h"
@@ -25,6 +25,9 @@ namespace {
 
 constexpr char kEpsilon = '\0';
 
+/**
+ * @brief 将状态编号集合拼成稳定键值，便于哈希和比较。
+ */
 std::string joinKey(const std::vector<int>& ids) {
   std::ostringstream oss;
   for (std::size_t index = 0; index < ids.size(); ++index) {
@@ -36,6 +39,9 @@ std::string joinKey(const std::vector<int>& ids) {
   return oss.str();
 }
 
+/**
+ * @brief 从一个 NFA 状态集合中选出最终应继承的动作。
+ */
 std::string pickActionFromSet(const std::set<node*>& states) {
   std::size_t best_priority = std::numeric_limits<std::size_t>::max();
   std::string chosen;
@@ -49,8 +55,8 @@ std::string pickActionFromSet(const std::set<node*>& states) {
       continue;
     }
     if (found_priority->second < best_priority) {
-      // The smallest original rule index wins, matching Lex's "earlier rule"
-      // disambiguation once longest-match has already selected the state set.
+      // 在已完成最长匹配之后，优先级最小的原始规则获胜，
+      // 对应 Lex 的“更早出现规则优先”策略。
       best_priority = found_priority->second;
       chosen = nfaterstatetoaction.at(label);
     }
@@ -58,10 +64,16 @@ std::string pickActionFromSet(const std::set<node*>& states) {
   return chosen;
 }
 
-}  // namespace
+}  // 匿名命名空间
 
+/**
+ * @brief 用给定起点构造一个 DFA 对象。
+ */
 dfa::dfa(node* st) : start(st) {}
 
+/**
+ * @brief 计算状态集合的 epsilon 闭包。
+ */
 void dfa::Eclosure(std::set<node*>& x) {
   std::queue<node*> work;
   for (node* item : x) {
@@ -85,6 +97,9 @@ void dfa::Eclosure(std::set<node*>& x) {
   }
 }
 
+/**
+ * @brief 以控制台文本形式打印 DFA 结构，便于调试。
+ */
 void dfa::printDFA() {
   for (const node& state : nodeVec) {
     std::cout << "state " << state.GetState();
@@ -100,6 +115,9 @@ void dfa::printDFA() {
   }
 }
 
+/**
+ * @brief 使用子集构造法把 NFA 转换为 DFA。
+ */
 dfa DFABuilder::subsetConstruct(const nfa& automaton) const {
   if (automaton.start == nullptr) {
     dfaterminals.clear();
@@ -167,8 +185,8 @@ dfa DFABuilder::subsetConstruct(const nfa& automaton) const {
   }
 
   dfa result;
-  // The deterministic graph is materialized only after all subsets are known,
-  // which keeps pointer wiring local to `result.nodeVec`.
+  // 先收集完所有子集状态，再一次性落地成确定化图，
+  // 可以把指针连边限定在 `result.nodeVec` 内部完成。
   result.nodeVec.resize(state_sets.size());
   result.endNode.clear();
   dfaterminals.clear();
@@ -195,4 +213,4 @@ dfa DFABuilder::subsetConstruct(const nfa& automaton) const {
   return result;
 }
 
-}  // namespace seu_lex
+}  // 命名空间 seu_lex

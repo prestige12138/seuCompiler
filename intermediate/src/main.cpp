@@ -1,6 +1,6 @@
 /**
  * @file main.cpp
- * @brief Self-test and utility entry point for the intermediate-code module.
+ * @brief 实现中间代码模块的自测入口与命令行工具逻辑。
  */
 
 #include "ast_builder.h"
@@ -23,6 +23,9 @@ using seu_icg::IntermediateCode;
 using seu_icg::SymbolTable;
 using seu_icg::TriAddrGenerator;
 
+/**
+ * @brief 比较两段文本是否完全一致，并输出自测结果。
+ */
 bool expectEqual(const std::string& name,
                  const std::string& actual,
                  const std::string& expected) {
@@ -35,6 +38,9 @@ bool expectEqual(const std::string& name,
   return false;
 }
 
+/**
+ * @brief 检查输出文本是否包含所有给定片段。
+ */
 bool expectContainsAll(const std::string& name,
                        const std::string& actual,
                        const std::vector<std::string>& fragments) {
@@ -49,6 +55,9 @@ bool expectContainsAll(const std::string& name,
   return true;
 }
 
+/**
+ * @brief 验证 AST 构造器能否正确拼出嵌套赋值表达式树。
+ */
 bool runAstConstructionTest(const ASTBuilder& builder) {
   ASTNode* root = builder.makeAssignment(
       builder.makeIdentifier("a", "int"),
@@ -82,6 +91,9 @@ bool runAstConstructionTest(const ASTBuilder& builder) {
   return ok;
 }
 
+/**
+ * @brief 验证语法树根结点的保存、读取和释放接口。
+ */
 bool runParseRootTest(const ASTBuilder& builder) {
   ASTNode* root = builder.makeProgram({});
   seu_icg::setParseRoot(root);
@@ -97,6 +109,9 @@ bool runParseRootTest(const ASTBuilder& builder) {
   return ok;
 }
 
+/**
+ * @brief 验证符号表的作用域、重复声明和查找逻辑。
+ */
 bool runSymbolTableTest() {
   SymbolTable table;
   table.reset();
@@ -128,6 +143,9 @@ bool runSymbolTableTest() {
   return ok;
 }
 
+/**
+ * @brief 验证算术表达式和赋值语句的三地址码生成结果。
+ */
 bool runArithmeticAssignmentTest(const ASTBuilder& builder) {
   SymbolTable symbols;
   TriAddrGenerator generator(&symbols);
@@ -156,6 +174,9 @@ bool runArithmeticAssignmentTest(const ASTBuilder& builder) {
   return ok;
 }
 
+/**
+ * @brief 验证 if/while/函数调用混合场景下的控制流翻译。
+ */
 bool runControlFlowAndCallTest(const ASTBuilder& builder) {
   SymbolTable symbols;
   TriAddrGenerator generator(&symbols);
@@ -214,6 +235,9 @@ bool runControlFlowAndCallTest(const ASTBuilder& builder) {
   return ok;
 }
 
+/**
+ * @brief 验证函数体内部语句序列的三地址码生成结果。
+ */
 bool runFunctionBodyTest(const ASTBuilder& builder) {
   SymbolTable symbols;
   TriAddrGenerator generator(&symbols);
@@ -244,6 +268,9 @@ bool runFunctionBodyTest(const ASTBuilder& builder) {
   return ok;
 }
 
+/**
+ * @brief 验证基本块划分逻辑是否符合标准入口规则。
+ */
 bool runBasicBlockTest() {
   IntermediateCode code;
   code.addStmt(seu_icg::TriAddrStmt(1, seu_icg::OP_IF_GOTO, "x > 0", "3"));
@@ -286,6 +313,9 @@ bool runBasicBlockTest() {
   return ok;
 }
 
+/**
+ * @brief 验证 LLVM IR 输出器能生成关键指令骨架。
+ */
 bool runLlvmEmitterTest(const ASTBuilder& builder) {
   ASTNode* function = builder.makeFunction(
       "main",
@@ -313,6 +343,9 @@ bool runLlvmEmitterTest(const ASTBuilder& builder) {
   return ok;
 }
 
+/**
+ * @brief 验证 Jimple 输出器能生成关键类与方法文本。
+ */
 bool runJimpleEmitterTest(const ASTBuilder& builder) {
   ASTNode* function = builder.makeFunction(
       "main",
@@ -340,6 +373,9 @@ bool runJimpleEmitterTest(const ASTBuilder& builder) {
   return ok;
 }
 
+/**
+ * @brief 顺序执行中间代码模块的全部内置自测。
+ */
 bool runSelfTests() {
   const ASTBuilder builder;
   return runAstConstructionTest(builder) && runParseRootTest(builder) &&
@@ -350,12 +386,18 @@ bool runSelfTests() {
          runJimpleEmitterTest(builder);
 }
 
+/**
+ * @brief 输出命令行帮助信息。
+ */
 void printUsage(const char* program) {
   std::cout << "Usage: " << program << " --self-test\n";
 }
 
-}  // namespace
+}  // 匿名命名空间
 
+/**
+ * @brief 中间代码模块命令行入口，目前支持自测模式。
+ */
 int main(int argc, char** argv) {
   try {
     if (argc == 2 && std::string(argv[1]) == "--self-test") {

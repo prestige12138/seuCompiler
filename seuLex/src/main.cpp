@@ -1,6 +1,6 @@
 /**
  * @file main.cpp
- * @brief CLI entry for the standalone seuLex generator.
+ * @brief 实现独立版 seuLex 命令行程序入口。
  */
 
 #include "code_generator.h"
@@ -12,6 +12,9 @@
 
 namespace {
 
+/**
+ * @brief 获取当前工作目录，用于定位仓库资源和测试目录。
+ */
 std::string currentWorkingDirectory() {
   char buffer[4096];
   if (::getcwd(buffer, sizeof(buffer)) == nullptr) {
@@ -20,8 +23,11 @@ std::string currentWorkingDirectory() {
   return std::string(buffer);
 }
 
-}  // namespace
+}  // 匿名命名空间
 
+/**
+ * @brief 解析命令行参数并驱动 seuLex 的完整生成流程。
+ */
 int main(int argc, char** argv) {
   try {
     seu_lex::SeuLexDriver driver;

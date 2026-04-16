@@ -9,13 +9,13 @@
 
 /**
  * @file dfa.h
- * @brief Report-defined DFA type and shared DFA-stage tables.
+ * @brief 中期报告规定的 DFA 结构与共享 DFA 阶段表。
  */
 
 namespace seu_lex {
 
 /**
- * @brief Report-defined DFA aggregate.
+ * @brief 中期报告规定的 DFA 聚合结构。
  */
 typedef struct dfa {
   node* start;
@@ -23,40 +23,40 @@ typedef struct dfa {
   std::vector<node> endNode;
 
   /**
-   * @brief Construct a DFA with the given start node.
+   * @brief 用给定起始结点构造 DFA。
    *
-   * Complexity: O(1).
+   * 复杂度：O(1)。
    */
   dfa(node* st = nullptr);
 
   /**
-   * @brief Expand epsilon closure over an NFA-state set.
+   * @brief 对 NFA 状态集合求 epsilon 闭包。
    *
-   * Complexity: O(V + E) over the reachable epsilon subgraph.
+   * 复杂度：在可达 epsilon 子图上为 O(V + E)。
    */
   void Eclosure(std::set<node*>& x);
 
   /**
-   * @brief Print DFA transitions for debugging.
+   * @brief 打印 DFA 转移，供调试使用。
    *
-   * Complexity: O(V + E).
+   * 复杂度：O(V + E)。
    */
   void printDFA();
 } dfa;
 
 /**
- * @brief Accepting DFA states after determinization or minimization.
+ * @brief 确定化或最小化之后的 DFA 终态集合。
  */
 extern std::vector<node*> dfaterminals;
 
 /**
- * @brief Action table for the current DFA before minimization.
+ * @brief 最小化前当前 DFA 的动作表。
  */
 extern std::map<int, std::string> TerStateActionTable;
 
 /**
- * @brief Action table for the minimized DFA used by code emission.
+ * @brief 最小化后供代码生成使用的动作表。
  */
 extern std::map<int, std::string> mindfareturn;
 
-}  // namespace seu_lex
+}  // 命名空间 seu_lex

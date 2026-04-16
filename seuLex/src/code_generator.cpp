@@ -1,7 +1,6 @@
 /**
  * @file code_generator.cpp
- * @brief DFA visualization, standalone lexer emission, and built-in
- *        end-to-end self-tests for seuLex.
+ * @brief 实现词法分析器代码生成、自动机可视化和内置端到端自测。
  */
 
 #include "code_generator.h"
@@ -45,6 +44,9 @@ constexpr const char* kSelfTestCompiler = SEU_LEX_TEST_CXX;
 constexpr const char* kSelfTestCompiler = "c++";
 #endif
 
+/**
+ * @brief 去除字符串首尾空白。
+ */
 std::string trim(const std::string& input) {
   std::size_t begin = 0;
   while (begin < input.size() && std::isspace(static_cast<unsigned char>(input[begin])) != 0) {
@@ -57,6 +59,9 @@ std::string trim(const std::string& input) {
   return input.substr(begin, end - begin);
 }
 
+/**
+ * @brief 取得路径中的目录部分。
+ */
 std::string dirnameOf(const std::string& path) {
   const std::size_t slash = path.find_last_of("/\\");
   if (slash == std::string::npos) {
@@ -65,6 +70,9 @@ std::string dirnameOf(const std::string& path) {
   return path.substr(0, slash);
 }
 
+/**
+ * @brief 取得路径中的文件名部分。
+ */
 std::string basenameOf(const std::string& path) {
   const std::size_t slash = path.find_last_of("/\\");
   if (slash == std::string::npos) {
@@ -73,6 +81,9 @@ std::string basenameOf(const std::string& path) {
   return path.substr(slash + 1);
 }
 
+/**
+ * @brief 以平台无关方式拼接两个路径片段。
+ */
 std::string joinPath(const std::string& left, const std::string& right) {
   if (left.empty()) {
     return right;
@@ -83,6 +94,9 @@ std::string joinPath(const std::string& left, const std::string& right) {
   return left + "/" + right;
 }
 
+/**
+ * @brief 将相对路径转换为绝对路径。
+ */
 std::string absolutePath(const std::string& path) {
   char buffer[4096];
   if (::getcwd(buffer, sizeof(buffer)) == nullptr) {
@@ -97,6 +111,9 @@ std::string absolutePath(const std::string& path) {
   return joinPath(std::string(buffer), path);
 }
 
+/**
+ * @brief 尽可能规范化目录路径。
+ */
 std::string canonicalizeDirectory(const std::string& path) {
   const std::string absolute = absolutePath(path);
   char buffer[4096];
@@ -106,6 +123,9 @@ std::string canonicalizeDirectory(const std::string& path) {
   return absolute;
 }
 
+/**
+ * @brief 规范化文件路径，但在文件尚不存在时仍保留文件名。
+ */
 std::string canonicalizeFilePath(const std::string& path) {
   const std::string absolute = absolutePath(path);
   const std::string directory = dirnameOf(absolute);
@@ -113,6 +133,9 @@ std::string canonicalizeFilePath(const std::string& path) {
   return joinPath(canonicalizeDirectory(directory.empty() ? "." : directory), base);
 }
 
+/**
+ * @brief 将路径拆解为层级片段。
+ */
 std::vector<std::string> splitPath(const std::string& path) {
   std::vector<std::string> parts;
   std::string current;
@@ -144,6 +167,9 @@ std::vector<std::string> splitPath(const std::string& path) {
   return parts;
 }
 
+/**
+ * @brief 计算一个生成文件相对于另一个文件的包含路径。
+ */
 std::string relativeIncludePath(const std::string& from_path, const std::string& to_path) {
   const std::string from_dir = dirnameOf(from_path);
   const std::vector<std::string> from_parts =
@@ -173,6 +199,9 @@ std::string relativeIncludePath(const std::string& from_path, const std::string&
   return relative;
 }
 
+/**
+ * @brief 递归创建目录，确保输出路径可写。
+ */
 void ensureDirectory(const std::string& path) {
   if (path.empty() || path == ".") {
     return;
@@ -196,6 +225,9 @@ void ensureDirectory(const std::string& path) {
   }
 }
 
+/**
+ * @brief 创建临时工作目录，供自测阶段使用。
+ */
 std::string makeTempDir() {
   char pattern[] = "/tmp/seuLex_runtimeXXXXXX";
   char* created = ::mkdtemp(pattern);
@@ -205,11 +237,17 @@ std::string makeTempDir() {
   return std::string(created);
 }
 
+/**
+ * @brief 判断一个路径是否存在。
+ */
 bool fileExists(const std::string& path) {
   struct stat info {};
   return ::stat(path.c_str(), &info) == 0;
 }
 
+/**
+ * @brief 对 dot 边标签中的字符做可打印转义。
+ */
 std::string escapeDotLabel(char ch) {
   switch (ch) {
     case '\n':
@@ -239,6 +277,9 @@ std::string escapeDotLabel(char ch) {
   }
 }
 
+/**
+ * @brief 对 C++ 字符串字面量做转义。
+ */
 std::string escapeCppString(const std::string& raw) {
   std::ostringstream oss;
   for (char ch : raw) {
@@ -266,6 +307,9 @@ std::string escapeCppString(const std::string& raw) {
   return oss.str();
 }
 
+/**
+ * @brief 返回给定 DFA 状态对应的接受动作文本。
+ */
 std::string actionForState(int stateId) {
   const auto minimal = mindfareturn.find(stateId);
   if (minimal != mindfareturn.end()) {
@@ -278,6 +322,9 @@ std::string actionForState(int stateId) {
   return "";
 }
 
+/**
+ * @brief 在内存中的 DFA 上直接评估一个输入串，供自测使用。
+ */
 int evaluateDFA(const dfa& automaton, const std::string& yytext) {
   if (automaton.start == nullptr) {
     return -1;
@@ -299,8 +346,8 @@ int evaluateDFA(const dfa& automaton, const std::string& yytext) {
   if (!current->IsAccepted()) {
     return -1;
   }
-  // Self-tests only need an observable token id, so `return IDENTIFIER;` style
-  // actions are mapped into stable integers when they are not numeric already.
+  // 自测只需要一个可比较的 token 编号，因此像 `return IDENTIFIER;`
+  // 这类动作会在不是数字时被映射成稳定整数。
   const std::string action = actionForState(current->GetState());
   if (action.find("return") == std::string::npos) {
     return 0;
@@ -332,6 +379,9 @@ int evaluateDFA(const dfa& automaton, const std::string& yytext) {
   return inserted.first->second;
 }
 
+/**
+ * @brief 从当前目录附近推断仓库根目录。
+ */
 std::string resolveRepoRoot(const std::string& workspaceRoot) {
   const std::vector<std::string> candidates = {
       workspaceRoot,
@@ -347,6 +397,9 @@ std::string resolveRepoRoot(const std::string& workspaceRoot) {
   throw std::runtime_error("failed to locate repository resources directory");
 }
 
+/**
+ * @brief 运行外部进程并返回退出码。
+ */
 int runProcess(const std::string& program, const std::vector<std::string>& args) {
   std::vector<char*> argv;
   argv.reserve(args.size() + 2);
@@ -376,8 +429,11 @@ int runProcess(const std::string& program, const std::vector<std::string>& args)
   return WEXITSTATUS(status);
 }
 
-}  // namespace
+}  // 匿名命名空间
 
+/**
+ * @brief 根据最小 DFA 输出一个可独立编译运行的词法分析器源文件。
+ */
 void CodeGenerator::emitLexer(const dfa& automaton,
                               const LexSpecification& specification,
                               const std::string& outPath,
@@ -519,8 +575,8 @@ void CodeGenerator::emitLexer(const dfa& automaton,
   }
   output << "};\n\n";
 
-  // Accept-state metadata is emitted separately so the generated runtime can
-  // implement longest match without inspecting action source strings.
+  // 接受态元数据单独输出，这样生成出的运行时就能实现最长匹配，
+  // 而不必在扫描阶段反复解析动作源码字符串。
   output << "static const std::vector<int> kAcceptStates = {";
   for (std::size_t index = 0; index < automaton.nodeVec.size(); ++index) {
     if (index != 0) {
@@ -722,6 +778,9 @@ void CodeGenerator::emitLexer(const dfa& automaton,
   }
 }
 
+/**
+ * @brief 将 NFA 结构导出为 dot 图文件。
+ */
 void Visualizer::dumpNFA(const nfa& automaton, const std::string& path) const {
   ensureDirectory(dirnameOf(path));
   std::ofstream output(path);
@@ -750,6 +809,9 @@ void Visualizer::dumpNFA(const nfa& automaton, const std::string& path) const {
   output << "}\n";
 }
 
+/**
+ * @brief 将 DFA 结构导出为 dot 图文件。
+ */
 void Visualizer::dumpDFA(const dfa& automaton, const std::string& path) const {
   ensureDirectory(dirnameOf(path));
   std::ofstream output(path);
@@ -769,12 +831,15 @@ void Visualizer::dumpDFA(const dfa& automaton, const std::string& path) const {
   output << "}\n";
 }
 
+/**
+ * @brief 按报告要求执行 seuLex 的完整生成流程。
+ */
 void SeuLexDriver::generate(const std::string& lexPath,
                             const std::string& outCppPath,
                             const std::string& dotDir,
                             const std::string& tokenHeaderPath) const {
-  // The full pipeline mirrors the report order: parse -> expand RE ->
-  // postfix -> NFA -> DFA -> minimize -> emit code and visualizations.
+  // 完整流程严格对应报告顺序：解析输入、扩展正则、转后缀、
+  // 构造 NFA、确定化、最小化，最后输出代码和可视化结果。
   resetGlobalTables();
 
   LexParser parser;
@@ -803,6 +868,9 @@ void SeuLexDriver::generate(const std::string& lexPath,
   generator.emitLexer(minDfa, spec, outCppPath, tokenHeaderPath);
 }
 
+/**
+ * @brief 运行 seuLex 内置自测，覆盖生成、编译、运行与回归检查。
+ */
 bool SeuLexDriver::runSelfTests(const std::string& workspaceRoot) const {
   const std::string repoRoot = resolveRepoRoot(workspaceRoot);
   const std::string tempDir = makeTempDir();
@@ -842,7 +910,7 @@ bool SeuLexDriver::runSelfTests(const std::string& workspaceRoot) const {
       "%%\n"
       "int yywrap() { return 1; }\n";
 
-  // 1. Generate and execute a representative standalone lexer.
+  // 1. 生成并执行一个具有代表性的独立词法分析器。
   {
     std::ofstream sampleFile(specPath);
     sampleFile << sampleSpec;
@@ -875,7 +943,7 @@ bool SeuLexDriver::runSelfTests(const std::string& workspaceRoot) const {
     throw std::runtime_error("generated sample lexer failed runtime validation");
   }
 
-  // 2. Check runtime safeguards such as yytext capacity overflow handling.
+  // 2. 检查运行时保护逻辑，例如 yytext 容量溢出处理。
   const std::string overflowSpecPath = joinPath(tempDir, "overflow.l");
   const std::string overflowOutPath = joinPath(tempDir, "generated_overflow_lexer.cpp");
   const std::string overflowDriverPath = joinPath(tempDir, "generated_overflow_driver.cpp");
@@ -916,7 +984,7 @@ bool SeuLexDriver::runSelfTests(const std::string& workspaceRoot) const {
     throw std::runtime_error("generated overflow lexer failed overflow validation");
   }
 
-  // 3. Validate the parser-token ABI path used by the Lex -> Yacc integration.
+  // 3. 验证 Lex -> Yacc 联调时使用的解析器 token ABI 通路。
   const std::string abiSpecPath = joinPath(tempDir, "abi_sample.l");
   const std::string abiHeaderPath = joinPath(tempDir, "abi_tokens.h");
   const std::string abiOutPath = joinPath(tempDir, "generated_abi_lexer.cpp");
@@ -962,7 +1030,7 @@ bool SeuLexDriver::runSelfTests(const std::string& workspaceRoot) const {
       "  int column = 0;\n"
       "  YYSTYPE semantic{};\n"
       "};\n\n"
-      "}  // namespace sample_parser\n\n"
+      "}  // 命名空间 sample_parser\n\n"
       "#define SEU_YACC_TOKEN_NAMESPACE sample_parser\n"
       "#define SEU_YACC_TOKEN_TYPE sample_parser::Token\n"
       "#define SEU_YACC_SEMANTIC_TYPE sample_parser::YYSTYPE\n";
@@ -1025,8 +1093,7 @@ bool SeuLexDriver::runSelfTests(const std::string& workspaceRoot) const {
     throw std::runtime_error("generated ABI lexer failed runtime validation");
   }
 
-  // 4. Rebuild a DFA in-memory so regex edge cases can be tested without
-  // repeatedly compiling generated code.
+  // 4. 在内存中重建 DFA，用于验证正则边界情况，避免反复编译生成代码。
   resetGlobalTables();
   LexParser parser;
   REExpander expander;
@@ -1157,4 +1224,4 @@ bool SeuLexDriver::runSelfTests(const std::string& workspaceRoot) const {
   return allPassed;
 }
 
-}  // namespace seu_lex
+}  // 命名空间 seu_lex

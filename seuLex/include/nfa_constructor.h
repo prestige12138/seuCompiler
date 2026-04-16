@@ -10,50 +10,50 @@
 
 /**
  * @file nfa_constructor.h
- * @brief Thompson NFA construction and shared generation-state reset.
+ * @brief 汤普森非确定有限自动机构造与共享生成状态重置接口。
  *
- * This header keeps the historical include surface stable by re-exporting the
- * split regex-expansion and DFA-construction interfaces.
+ * 该头文件保持历史 include 入口稳定，同时重新导出拆分后的 RE 展开与
+ * 同时重新导出确定有限自动机构造接口。
  */
 
 namespace seu_lex {
 
 /**
- * @brief Convert normalized RE to postfix and Thompson NFA.
+ * @brief 将规范化 RE 转成后缀表达式并构造 Thompson NFA。
  */
 class NFABuilder {
  public:
   /**
-   * @brief Convert infix RE with explicit concatenation to postfix.
+   * @brief 将显式拼接的中缀 RE 转成后缀 RE。
    *
-   * Complexity: O(T), where T is the number of tokens.
+   * 复杂度：O(T)，其中 T 为记号数。
    */
   std::string toPostfix(const std::string& infix) const;
 
   /**
-   * @brief Build one NFA from one postfix RE.
+   * @brief 根据一条后缀 RE 构造一张 NFA。
    *
-   * Complexity: O(T + E).
+   * 复杂度：O(T + E)。
    */
   nfa buildNFA(const std::string& postfix,
                const std::string& action,
                std::size_t priority) const;
 
   /**
-   * @brief Merge rule NFAs under a fresh epsilon start node.
+   * @brief 在一个新的 epsilon 起点下合并多条规则的 NFA。
    *
-   * Complexity: O(R), where R is the number of input NFAs.
+   * 复杂度：O(R)，其中 R 为输入 NFA 数量。
    */
   nfa mergeNFA(const std::vector<nfa>& automata) const;
 };
 
 /**
- * @brief Reset all report-defined global tables and construction state.
+ * @brief 重置所有报告规定的全局表与构造状态。
  *
- * Complexity: O(S), where S is the total size of stored global state.
+ * 复杂度：O(S)，其中 S 为已存全局状态总大小。
  *
- * @note All previously returned NFA-state pointers become invalid after reset.
+ * @note 重置后，之前返回的所有 NFA 状态指针都会失效。
  */
 void resetGlobalTables();
 
-}  // namespace seu_lex
+}  // 命名空间 seu_lex

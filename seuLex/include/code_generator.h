@@ -8,20 +8,20 @@
 
 /**
  * @file code_generator.h
- * @brief Lexer emission, visualization, and orchestration interfaces.
+ * @brief 词法分析器生成、自动机可视化与总控接口。
  */
 
 namespace seu_lex {
 
 /**
- * @brief Emit a standalone lexer C++ source file.
+ * @brief 输出独立可编译的词法分析器 C++ 源文件。
  */
 class CodeGenerator {
  public:
   /**
-   * @brief Emit lexer source code from a minimized DFA.
+   * @brief 根据最小化 DFA 生成词法分析器源码。
    *
-   * Complexity: O(V * |Sigma| + A), where A is emitted action size.
+   * 复杂度：O(V * |Sigma| + A)，其中 A 为动作代码输出总长度。
    */
   void emitLexer(const dfa& automaton,
                  const LexSpecification& specification,
@@ -30,34 +30,34 @@ class CodeGenerator {
 };
 
 /**
- * @brief Export automata visualizations in dot format.
+ * @brief 以 dot 格式导出自动机可视化结果。
  */
 class Visualizer {
  public:
   /**
-   * @brief Dump NFA to Graphviz dot.
+   * @brief 将 NFA 导出为 Graphviz dot 文件。
    *
-   * Complexity: O(V + E).
+   * 复杂度：O(V + E)。
    */
   void dumpNFA(const nfa& automaton, const std::string& path) const;
 
   /**
-   * @brief Dump DFA to Graphviz dot.
+   * @brief 将 DFA 导出为 Graphviz dot 文件。
    *
-   * Complexity: O(V + E).
+   * 复杂度：O(V + E)。
    */
   void dumpDFA(const dfa& automaton, const std::string& path) const;
 };
 
 /**
- * @brief End-to-end seuLex orchestration facade.
+ * @brief 词法分析模块端到端总控入口接口。
  */
 class SeuLexDriver {
  public:
   /**
-   * @brief Run the full seuLex generation pipeline.
+   * @brief 执行完整的 seuLex 生成流水线。
    *
-   * Complexity: dominated by determinization and minimization.
+   * 复杂度：主要由确定化与最小化阶段决定。
    */
   void generate(const std::string& lexPath,
                 const std::string& outCppPath,
@@ -65,11 +65,11 @@ class SeuLexDriver {
                 const std::string& tokenHeaderPath = "") const;
 
   /**
-   * @brief Run built-in smoke tests.
+   * @brief 运行内置自测。
    *
-   * Complexity: proportional to the embedded test workload.
+   * 复杂度：与内置测试工作量成正比。
    */
   bool runSelfTests(const std::string& workspaceRoot) const;
 };
 
-}  // namespace seu_lex
+}  // 命名空间 seu_lex

@@ -1,7 +1,6 @@
 /**
  * @file lex_state.h
- * @brief Internal allocation helpers and shared construction tables for
- *        seuLex implementation files.
+ * @brief 词法分析模块实现文件共享的状态分配辅助接口与全局表声明。
  */
 
 #pragma once
@@ -14,18 +13,17 @@
 namespace seu_lex {
 
 /**
- * @brief Internal rule-priority table used during NFA-to-DFA determinization.
+ * @brief 非确定有限自动机转确定有限自动机阶段使用的内部规则优先级表。
  *
- * This symbol is intentionally private to the implementation layer and must
- * not be included from public headers.
+ * 该符号只应在实现层内部使用，不应暴露到公共头文件中。
  */
 extern std::map<int, std::size_t> nfaPriorityTableInternal;
 
 /**
- * @brief Allocate one NFA-state node from the shared construction arena.
+ * @brief 从共享构造池中分配一个 NFA 状态结点。
  *
- * The returned pointer remains valid until `resetGlobalTables()` is called.
+ * 返回指针在调用 `resetGlobalTables()` 之前始终有效。
  */
 node* createState(bool accepted = false);
 
-}  // namespace seu_lex
+}  // 命名空间 seu_lex

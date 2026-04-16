@@ -1,7 +1,6 @@
 /**
  * @file yacc_parser.cpp
- * @brief Yacc three-section parsing, directive extraction, and production
- *        normalization implementation.
+ * @brief 实现 Yacc 三段解析、指令提取以及产生式规范化逻辑。
  */
 
 #include "yacc_parser.h"
@@ -18,6 +17,9 @@
 namespace seu_yacc {
 namespace {
 
+/**
+ * @brief 读取整个 `.y` 文件内容。
+ */
 std::string readWholeFile(const std::string& path) {
   std::ifstream input(path);
   if (!input) {
@@ -28,6 +30,9 @@ std::string readWholeFile(const std::string& path) {
   return buffer.str();
 }
 
+/**
+ * @brief 去除字符串首尾空白。
+ */
 std::string trim(const std::string& input) {
   const auto begin = std::find_if_not(input.begin(), input.end(), [](unsigned char ch) {
     return std::isspace(ch) != 0;
@@ -41,12 +46,15 @@ std::string trim(const std::string& input) {
   return std::string(begin, end);
 }
 
+/**
+ * @brief 在顶层作用域中查找 `%%` 分段标记。
+ */
 std::size_t findSectionDelimiter(const std::string& content, std::size_t start_pos) {
   bool in_verbatim = false;
   bool line_start = true;
   for (std::size_t index = start_pos; index + 1 < content.size(); ++index) {
-    // `%{ ... %}` may legally contain `%%`, so only top-level markers split
-    // the Definitions / Rules / User subroutines sections.
+    // `%{ ... %}` 原样代码块内部允许出现 `%%`，
+    // 因此只有顶层标记才能切开三段结构。
     if (line_start) {
       std::size_t marker = index;
       while (marker < content.size() &&
@@ -82,6 +90,9 @@ std::size_t findSectionDelimiter(const std::string& content, std::size_t start_p
   return std::string::npos;
 }
 
+/**
+ * @brief 提取定义段中的 `%{ ... %}` 原样代码块。
+ */
 std::string takeVerbatimDefinitions(const std::string& text,
                                     std::vector<std::pair<std::size_t, std::size_t>>* ranges) {
   std::ostringstream extracted;
@@ -104,6 +115,9 @@ std::string takeVerbatimDefinitions(const std::string& text,
   return extracted.str();
 }
 
+/**
+ * @brief 从文本中移除若干区间，得到规范化视图。
+ */
 std::string removeRanges(const std::string& text,
                          const std::vector<std::pair<std::size_t, std::size_t>>& ranges) {
   std::ostringstream oss;
@@ -120,6 +134,9 @@ std::string removeRanges(const std::string& text,
   return oss.str();
 }
 
+/**
+ * @brief 按行切分文本，并保留尾部空行语义。
+ */
 std::vector<std::string> splitByLines(const std::string& text) {
   std::vector<std::string> lines;
   std::stringstream ss(text);
@@ -133,6 +150,9 @@ std::vector<std::string> splitByLines(const std::string& text) {
   return lines;
 }
 
+/**
+ * @brief 解析带引号的终结符文本。
+ */
 std::string parseQuotedToken(const std::string& text, std::size_t* pos) {
   const char quote = text[*pos];
   std::ostringstream oss;
@@ -158,6 +178,9 @@ std::string parseQuotedToken(const std::string& text, std::size_t* pos) {
   throw std::runtime_error("unterminated quoted token in grammar section");
 }
 
+/**
+ * @brief 解析一段带嵌套结构的语义动作代码块。
+ */
 std::string parseActionBlock(const std::string& text, std::size_t* pos) {
   if (text[*pos] != '{') {
     throw std::runtime_error("expected action block");
@@ -232,6 +255,9 @@ std::string parseActionBlock(const std::string& text, std::size_t* pos) {
   throw std::runtime_error("unterminated action block in grammar section");
 }
 
+/**
+ * @brief 跳过空白与注释，并在需要时维护当前行号。
+ */
 void skipSpaceAndComments(const std::string& text, std::size_t* pos, int* line) {
   while (*pos < text.size()) {
     const char ch = text[*pos];
@@ -269,6 +295,9 @@ void skipSpaceAndComments(const std::string& text, std::size_t* pos, int* line) 
   }
 }
 
+/**
+ * @brief 解析一个标识符或 `%token` 这类指令名。
+ */
 std::string parseIdentifier(const std::string& text, std::size_t* pos) {
   if (*pos >= text.size()) {
     return "";
@@ -289,6 +318,9 @@ std::string parseIdentifier(const std::string& text, std::size_t* pos) {
   return text.substr(begin, *pos - begin);
 }
 
+/**
+ * @brief 解析文法中的一个符号，可为带引号终结符或普通标识符。
+ */
 std::string parseGrammarSymbol(const std::string& text, std::size_t* pos) {
   if (*pos >= text.size()) {
     return "";
@@ -299,6 +331,9 @@ std::string parseGrammarSymbol(const std::string& text, std::size_t* pos) {
   return parseIdentifier(text, pos);
 }
 
+/**
+ * @brief 在 `%union` 声明处解析其花括号代码块。
+ */
 std::string parseUnionBlock(const std::string& text, std::size_t* pos) {
   if (*pos >= text.size() || text[*pos] != '{') {
     return "";
@@ -306,6 +341,9 @@ std::string parseUnionBlock(const std::string& text, std::size_t* pos) {
   return parseActionBlock(text, pos);
 }
 
+/**
+ * @brief 解析定义段中的 `%token`、`%type`、`%start` 等指令。
+ */
 void parseDefinitionLines(const std::string& text, YaccSpecification* spec) {
   std::string normalized_text = text;
   const std::size_t union_pos = normalized_text.find("%union");
@@ -377,6 +415,9 @@ void parseDefinitionLines(const std::string& text, YaccSpecification* spec) {
   }
 }
 
+/**
+ * @brief 解析规则段中的全部产生式，并规范化中间动作。
+ */
 std::vector<YaccRule> parseRules(const std::string& text) {
   std::vector<YaccRule> rules;
   std::size_t pos = 0;
@@ -418,8 +459,8 @@ std::vector<YaccRule> parseRules(const std::string& text) {
             continue;
           }
 
-          // Mid-rule actions are lowered into synthetic nonterminals so later
-          // LR construction only needs ordinary productions plus final actions.
+          // 中间动作会被改写成合成非终结符，
+          // 这样后续 LR 构造阶段只需要处理普通产生式和最终动作。
           YaccRule synthetic;
           synthetic.grammar.left =
               "__midrule_" + left + "_" + std::to_string(midrule_index++);
@@ -460,8 +501,11 @@ std::vector<YaccRule> parseRules(const std::string& text) {
   return rules;
 }
 
-}  // namespace
+}  // 匿名命名空间
 
+/**
+ * @brief 解析一个 Yacc 输入文件，并返回结构化规格说明。
+ */
 YaccSpecification YaccParser::parseYaccFile(const std::string& path) const {
   YaccSpecification spec;
   const std::string content = readWholeFile(path);
@@ -478,9 +522,8 @@ YaccSpecification YaccParser::parseYaccFile(const std::string& path) const {
   spec.rulesSection = content.substr(first + 2, second - (first + 2));
   spec.userSubroutines = content.substr(second + 2);
 
-  // Definition directives are parsed after verbatim blocks are removed from the
-  // normalized view, but the verbatim text itself is still preserved for code
-  // generation.
+  // 指令解析基于移除了原样代码块的规范化视图进行，
+  // 但原样文本本身仍会保留，供最终代码生成阶段直接拼接。
   std::vector<std::pair<std::size_t, std::size_t>> verbatim_ranges;
   spec.verbatimDefinitions = takeVerbatimDefinitions(spec.definitionsSection, &verbatim_ranges);
   const std::string normalized_definitions = removeRanges(spec.definitionsSection, verbatim_ranges);
@@ -495,4 +538,4 @@ YaccSpecification YaccParser::parseYaccFile(const std::string& path) const {
   return spec;
 }
 
-}  // namespace seu_yacc
+}  // 命名空间 seu_yacc

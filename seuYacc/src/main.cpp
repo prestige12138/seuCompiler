@@ -1,6 +1,6 @@
 /**
  * @file main.cpp
- * @brief CLI entry for the standalone seuYacc generator.
+ * @brief 实现独立版 seuYacc 命令行程序入口。
  */
 
 #include "parse_table.h"
@@ -12,6 +12,9 @@
 
 namespace {
 
+/**
+ * @brief 获取当前工作目录，供自测与资源定位使用。
+ */
 std::string currentWorkingDirectory() {
   char buffer[4096];
   if (::getcwd(buffer, sizeof(buffer)) == nullptr) {
@@ -20,8 +23,11 @@ std::string currentWorkingDirectory() {
   return std::string(buffer);
 }
 
-}  // namespace
+}  // 匿名命名空间
 
+/**
+ * @brief 解析命令行参数并启动 seuYacc 生成流程。
+ */
 int main(int argc, char** argv) {
   try {
     seu_yacc::SeuYaccDriver driver;

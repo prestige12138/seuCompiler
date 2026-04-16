@@ -1,6 +1,6 @@
 /**
  * @file target_ir_emitter.cpp
- * @brief Lowering from three-address code into LLVM IR and Jimple text.
+ * @brief 实现从三地址码到 LLVM IR 与 Jimple 的文本级降低。
  */
 
 #include "target_ir_emitter.h"
@@ -21,6 +21,9 @@
 namespace seu_icg {
 namespace {
 
+/**
+ * @brief 表示一个函数级目标 IR 输出单元。
+ */
 struct FunctionUnit {
   std::string name;
   std::string return_type;
@@ -29,6 +32,9 @@ struct FunctionUnit {
   IntermediateCode code;
 };
 
+/**
+ * @brief 保存解析后的条件表达式三元组。
+ */
 struct ParsedCondition {
   std::string lhs;
   std::string op;
@@ -36,6 +42,9 @@ struct ParsedCondition {
   bool valid = false;
 };
 
+/**
+ * @brief 去除字符串首尾空白。
+ */
 std::string trim(const std::string& text) {
   std::size_t start = 0;
   while (start < text.size() &&
@@ -51,6 +60,9 @@ std::string trim(const std::string& text) {
   return text.substr(start, end - start);
 }
 
+/**
+ * @brief 清理注释文本中的换行，避免生成输出格式被破坏。
+ */
 std::string sanitizeCommentText(const std::string& text) {
   std::string sanitized;
   sanitized.reserve(text.size());
@@ -64,6 +76,9 @@ std::string sanitizeCommentText(const std::string& text) {
   return sanitized;
 }
 
+/**
+ * @brief 判断一个字符串是否是整数常量。
+ */
 bool isIntegerLiteral(const std::string& text) {
   if (text.empty()) {
     return false;
@@ -83,6 +98,9 @@ bool isIntegerLiteral(const std::string& text) {
   return true;
 }
 
+/**
+ * @brief 将文本解析为语句编号。
+ */
 bool parseStatementNumber(const std::string& text, int* value) {
   if (value == nullptr || !isIntegerLiteral(text)) {
     return false;
@@ -95,6 +113,9 @@ bool parseStatementNumber(const std::string& text, int* value) {
   }
 }
 
+/**
+ * @brief 判断一个字符串是否是合法标识符。
+ */
 bool isIdentifier(const std::string& text) {
   if (text.empty()) {
     return false;
@@ -111,6 +132,9 @@ bool isIdentifier(const std::string& text) {
   return true;
 }
 
+/**
+ * @brief 断言并返回一个合法标识符，否则抛出上下文相关异常。
+ */
 std::string requireIdentifier(const std::string& text, const char* context) {
   if (!isIdentifier(text)) {
     throw std::runtime_error(std::string("invalid ") + context + ": " + text);
@@ -118,6 +142,9 @@ std::string requireIdentifier(const std::string& text, const char* context) {
   return text;
 }
 
+/**
+ * @brief 将操作数规范化为可直接输出到目标 IR 的文本。
+ */
 std::string renderOperand(const std::string& value, const char* context) {
   if (isIntegerLiteral(value)) {
     return value;
@@ -125,6 +152,9 @@ std::string renderOperand(const std::string& value, const char* context) {
   return requireIdentifier(value, context);
 }
 
+/**
+ * @brief 将任意名字清洗为适合目标 IR 使用的标识符。
+ */
 std::string sanitizeName(const std::string& name) {
   if (name.empty()) {
     return "tmp";
@@ -144,10 +174,16 @@ std::string sanitizeName(const std::string& name) {
   return sanitized;
 }
 
+/**
+ * @brief 判断某个 AST 结点是否是函数定义。
+ */
 bool isFunctionNode(const ASTNode* node) {
   return node != nullptr && node->type == NODE_FUNC_DEF;
 }
 
+/**
+ * @brief 将内部类型名归一化为当前输出阶段支持的简化类型集合。
+ */
 std::string normalizedType(const std::string& type_name) {
   if (type_name == "void") {
     return "void";
@@ -155,6 +191,9 @@ std::string normalizedType(const std::string& type_name) {
   return "int";
 }
 
+/**
+ * @brief 若值尚未出现，则将其追加到顺序容器中。
+ */
 void appendUnique(std::vector<std::string>* values, const std::string& value) {
   if (values == nullptr || value.empty()) {
     return;
@@ -164,6 +203,9 @@ void appendUnique(std::vector<std::string>* values, const std::string& value) {
   }
 }
 
+/**
+ * @brief 递归收集 AST 中的变量声明名字。
+ */
 void collectVarDecls(const ASTNode* node, std::vector<std::string>* locals) {
   if (node == nullptr || locals == nullptr) {
     return;
@@ -176,6 +218,9 @@ void collectVarDecls(const ASTNode* node, std::vector<std::string>* locals) {
   }
 }
 
+/**
+ * @brief 将逗号分隔的实参串切分为参数列表。
+ */
 std::vector<std::string> splitArguments(const std::string& text) {
   std::vector<std::string> args;
   std::string current;
@@ -189,6 +234,9 @@ std::vector<std::string> splitArguments(const std::string& text) {
   return args;
 }
 
+/**
+ * @brief 解析条件文本，拆出左右操作数和比较运算符。
+ */
 ParsedCondition parseCondition(const std::string& text) {
   ParsedCondition parsed;
   const std::string normalized = trim(text);
@@ -212,6 +260,9 @@ ParsedCondition parseCondition(const std::string& text) {
   return parsed;
 }
 
+/**
+ * @brief 收集中间代码中被引用的变量名和临时变量名。
+ */
 void collectReferencedNames(const IntermediateCode& code, std::vector<std::string>* names) {
   if (names == nullptr) {
     return;
@@ -260,11 +311,17 @@ void collectReferencedNames(const IntermediateCode& code, std::vector<std::strin
   }
 }
 
+/**
+ * @brief 针对一棵 AST 临时生成一次三地址码。
+ */
 IntermediateCode generateCodeForAst(const ASTNode* node) {
   TriAddrGenerator generator;
   return generator.generate(const_cast<ASTNode*>(node));
 }
 
+/**
+ * @brief 截取中间代码序列中的一个连续片段。
+ */
 IntermediateCode sliceCode(const IntermediateCode& code, std::size_t begin, std::size_t count) {
   IntermediateCode slice;
   const std::size_t end = begin + count;
@@ -274,6 +331,9 @@ IntermediateCode sliceCode(const IntermediateCode& code, std::size_t begin, std:
   return slice;
 }
 
+/**
+ * @brief 构造一个函数级输出单元，补齐形参与局部变量信息。
+ */
 FunctionUnit buildFunctionUnit(const ASTNode* function_node,
                                const IntermediateCode& function_code,
                                const TargetIrOptions& options) {
@@ -304,8 +364,8 @@ FunctionUnit buildFunctionUnit(const ASTNode* function_node,
 
   unit.code = function_code;
 
-  // Referenced temporaries and variables are added after declarations so the
-  // target emitters still have storage for values introduced during lowering.
+  // 先根据声明收集一轮局部变量，再把三地址码里新出现的临时变量补进来，
+  // 这样目标 IR 输出时不会遗漏存储槽位。
   std::vector<std::string> referenced;
   collectReferencedNames(unit.code, &referenced);
   for (const std::string& name : referenced) {
@@ -318,6 +378,9 @@ FunctionUnit buildFunctionUnit(const ASTNode* function_node,
   return unit;
 }
 
+/**
+ * @brief 按函数粒度把 AST 与三地址码拆成多个输出单元。
+ */
 std::vector<FunctionUnit> buildFunctionUnits(const ASTNode* root,
                                              const IntermediateCode& code,
                                              const TargetIrOptions& options) {
@@ -346,8 +409,8 @@ std::vector<FunctionUnit> buildFunctionUnits(const ASTNode* root,
       has_function = true;
       const IntermediateCode function_shape = generateCodeForAst(child);
       const std::size_t function_size = function_shape.stmts.size();
-      // The current subset emits function TAC consecutively, so the already
-      // produced flat code stream can be partitioned back into per-function views.
+      // 当前子集会把每个函数的三地址码连续输出，所以可以再按函数长度
+      // 从整体代码流中切回函数级视图。
       if (offset + function_size > code.stmts.size()) {
         throw std::runtime_error("function partition exceeds provided intermediate code");
       }
@@ -369,10 +432,16 @@ std::vector<FunctionUnit> buildFunctionUnits(const ASTNode* root,
   return units;
 }
 
+/**
+ * @brief 将内部类型名映射到 LLVM IR 类型名。
+ */
 std::string llvmTypeFor(const std::string& type_name) {
   return normalizedType(type_name) == "void" ? "void" : "i32";
 }
 
+/**
+ * @brief 将比较运算符映射为 LLVM IR 比较指令名。
+ */
 std::string llvmCmpOp(const std::string& op) {
   if (op == "<") {
     return "icmp slt";
@@ -392,6 +461,9 @@ std::string llvmCmpOp(const std::string& op) {
   return "icmp ne";
 }
 
+/**
+ * @brief 将三地址算术操作映射到 LLVM IR 指令。
+ */
 std::string llvmBinaryOp(TriOp op) {
   switch (op) {
     case OP_ADD:
@@ -409,10 +481,16 @@ std::string llvmBinaryOp(TriOp op) {
   }
 }
 
+/**
+ * @brief 将内部类型名映射到 Jimple 方法签名类型。
+ */
 std::string jimpleSignatureType(const std::string& type_name) {
   return normalizedType(type_name) == "void" ? "void" : "int";
 }
 
+/**
+ * @brief 将三地址算术操作映射到 Jimple 运算符。
+ */
 std::string jimpleBinaryOp(TriOp op) {
   switch (op) {
     case OP_ADD:
@@ -430,6 +508,9 @@ std::string jimpleBinaryOp(TriOp op) {
   }
 }
 
+/**
+ * @brief 将函数级三地址码划分为基本块。
+ */
 std::vector<IntermediateCode> partitionBlocks(const FunctionUnit& unit) {
   std::vector<IntermediateCode> blocks = splitBasicBlocks(unit.code);
   if (!blocks.empty()) {
@@ -441,6 +522,9 @@ std::vector<IntermediateCode> partitionBlocks(const FunctionUnit& unit) {
   return {};
 }
 
+/**
+ * @brief 生成参数与局部变量的统一存储顺序。
+ */
 std::vector<std::string> collectStorageOrder(const FunctionUnit& unit) {
   std::vector<std::string> names;
   for (const std::string& parameter : unit.parameters) {
@@ -452,6 +536,9 @@ std::vector<std::string> collectStorageOrder(const FunctionUnit& unit) {
   return names;
 }
 
+/**
+ * @brief 为 LLVM IR 中需要落栈的变量建立槽位表。
+ */
 std::unordered_map<std::string, std::string> buildLlvmSlots(
     const std::vector<std::string>& names) {
   std::unordered_map<std::string, std::string> slots;
@@ -463,6 +550,9 @@ std::unordered_map<std::string, std::string> buildLlvmSlots(
   return slots;
 }
 
+/**
+ * @brief 生成一个函数的 LLVM IR 文本。
+ */
 std::string emitLlvmFunction(const FunctionUnit& unit) {
   const std::string function_name = requireIdentifier(unit.name, "function name");
   const std::vector<std::string> names = collectStorageOrder(unit);
@@ -471,6 +561,8 @@ std::string emitLlvmFunction(const FunctionUnit& unit) {
 
   std::unordered_map<int, std::string> block_labels;
   block_labels.reserve(blocks.size());
+  // 先把基本块入口语句号映射成稳定标签，后续所有跳转都统一引用这里，
+  // 避免在输出阶段反复扫描目标块位置。
   for (const IntermediateCode& block : blocks) {
     if (!block.stmts.empty()) {
       block_labels.emplace(block.stmts.front().stmtNo,
@@ -522,6 +614,8 @@ std::string emitLlvmFunction(const FunctionUnit& unit) {
   out << ") {\n";
   out << "entry:\n";
 
+  // LLVM 中间表示使用显式栈槽保存所有局部值，这样三地址码里的“变量名”
+  // 可以直接对应到 `alloca` 出来的可写地址。
   for (const std::string& name : names) {
     out << "  " << slots.at(name) << " = alloca i32\n";
   }
@@ -548,6 +642,8 @@ std::string emitLlvmFunction(const FunctionUnit& unit) {
     out << '\n' << block_labels.at(leader) << ":\n";
 
     bool terminated = false;
+    // 每个基本块按三地址语句原顺序线性降低；
+    // 一旦遇到跳转或返回，该块就被视为已经终结。
     for (const TriAddrStmt& stmt : block.stmts) {
       switch (stmt.op) {
         case OP_ADD:
@@ -610,8 +706,8 @@ std::string emitLlvmFunction(const FunctionUnit& unit) {
           } else {
             needs_exit_block = true;
           }
-          // TAC conditional jumps carry only the true target; the false edge is
-          // represented as block fallthrough and is materialized explicitly here.
+          // 三地址条件跳转只显式保存真分支目标，假分支在原始代码中表现为顺序落空，
+          // 到 LLVM IR 这里需要把这条假边显式补成第二个跳转目标。
           out << "  br i1 " << cond_reg << ", label %" << true_label << ", label %"
               << false_label << '\n';
           terminated = true;
@@ -677,6 +773,9 @@ std::string emitLlvmFunction(const FunctionUnit& unit) {
   return out.str();
 }
 
+/**
+ * @brief 生成一个函数的 Jimple 文本。
+ */
 std::string emitJimpleFunction(const FunctionUnit& unit, const TargetIrOptions& options) {
   const std::string function_name = requireIdentifier(unit.name, "function name");
   const std::string class_name = requireIdentifier(options.className, "class name");
@@ -685,6 +784,8 @@ std::string emitJimpleFunction(const FunctionUnit& unit, const TargetIrOptions& 
 
   std::unordered_map<int, std::string> block_labels;
   block_labels.reserve(blocks.size());
+  // Jimple 中间表示同样基于基本块语句号建标签，但这里直接输出成文本标签，
+  // 不再需要像 LLVM IR 那样显式维护 SSA 寄存器。
   for (const IntermediateCode& block : blocks) {
     if (!block.stmts.empty()) {
       block_labels.emplace(block.stmts.front().stmtNo,
@@ -705,6 +806,7 @@ std::string emitJimpleFunction(const FunctionUnit& unit, const TargetIrOptions& 
   }
   out << ")\n{\n";
 
+  // 形参已在方法签名里出现，因此这里只声明真正需要单独存储的局部变量。
   for (const std::string& local : names) {
     if (std::find(unit.parameters.begin(), unit.parameters.end(), local) != unit.parameters.end()) {
       continue;
@@ -773,8 +875,8 @@ std::string emitJimpleFunction(const FunctionUnit& unit, const TargetIrOptions& 
           } else {
             needs_exit_label = true;
           }
-          // Jimple has no implicit fallthrough branch node in this text form, so
-          // the false edge becomes an explicit `goto` to the next block.
+          // 这里的 Jimple 文本表示没有隐式落空边，因此需要显式补一条
+          // 指向下一个基本块的 `goto` 来表示假分支。
           {
             const ParsedCondition condition = parseCondition(stmt.arg1);
             out << "  if " << renderOperand(condition.lhs, "condition operand") << ' '
@@ -843,13 +945,16 @@ std::string emitJimpleFunction(const FunctionUnit& unit, const TargetIrOptions& 
   return out.str();
 }
 
-}  // namespace
+}  // 匿名命名空间
 
+/**
+ * @brief 生成完整的 LLVM IR 文本输出。
+ */
 std::string formatLlvmIr(const ASTNode* root,
                          const IntermediateCode& code,
                          const TargetIrOptions& options) {
-  // Formatting is per-function, but module-level comments are emitted once so
-  // generated files remain deterministic and easy to diff.
+  // 函数内容逐个独立输出，但模块级注释只写一次，
+  // 这样生成结果更稳定，也更容易做文本比对。
   const std::vector<FunctionUnit> units = buildFunctionUnits(root, code, options);
   std::ostringstream out;
   if (options.emitComments) {
@@ -864,6 +969,9 @@ std::string formatLlvmIr(const ASTNode* root,
   return out.str();
 }
 
+/**
+ * @brief 生成完整的 Jimple 文本输出。
+ */
 std::string formatJimple(const ASTNode* root,
                          const IntermediateCode& code,
                          const TargetIrOptions& options) {
@@ -882,6 +990,9 @@ std::string formatJimple(const ASTNode* root,
   return out.str();
 }
 
+/**
+ * @brief 将 LLVM IR 文本写入给定输出流。
+ */
 void dumpLlvmIr(const ASTNode* root,
                 const IntermediateCode& code,
                 std::ostream& out,
@@ -889,6 +1000,9 @@ void dumpLlvmIr(const ASTNode* root,
   out << formatLlvmIr(root, code, options);
 }
 
+/**
+ * @brief 将 Jimple 文本写入给定输出流。
+ */
 void dumpJimple(const ASTNode* root,
                 const IntermediateCode& code,
                 std::ostream& out,
@@ -896,4 +1010,4 @@ void dumpJimple(const ASTNode* root,
   out << formatJimple(root, code, options);
 }
 
-}  // namespace seu_icg
+}  // 命名空间 seu_icg

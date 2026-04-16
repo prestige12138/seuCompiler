@@ -1,6 +1,6 @@
 /**
  * @file nfa_constructor.cpp
- * @brief Infix-to-postfix conversion and Thompson NFA construction.
+ * @brief 实现中缀正则转后缀以及 Thompson NFA 构造流程。
  */
 
 #include "nfa_constructor.h"
@@ -20,11 +20,17 @@ namespace {
 constexpr char kEpsilon = '\0';
 constexpr int kAsciiLimit = 128;
 
+/**
+ * @brief 暂存一个 Thompson 片段的起点和终点。
+ */
 struct Fragment {
   node* start = nullptr;
   node* accept = nullptr;
 };
 
+/**
+ * @brief 将以空格分隔的显式正则记号序列切分为 token 列表。
+ */
 std::vector<std::string> splitSpaceTokens(const std::string& text) {
   std::stringstream stream(text);
   std::vector<std::string> tokens;
@@ -35,11 +41,14 @@ std::vector<std::string> splitSpaceTokens(const std::string& text) {
   return tokens;
 }
 
-}  // namespace
+}  // 匿名命名空间
 
+/**
+ * @brief 将扩展器输出的显式中缀正则转换为后缀形式。
+ */
 std::string NFABuilder::toPostfix(const std::string& infix) const {
-  // The RE expander emits a space-separated explicit infix language. Here we
-  // only need shunting-yard over `|`, explicit concatenation `&`, and `*`.
+  // 正规式展开阶段已经把表达式改写成显式的中缀记号串，
+  // 这里仅需对 `|`、显式连接符 `&` 和 `*` 做一次调度场转换。
   const std::vector<std::string> tokens = splitSpaceTokens(infix);
   std::vector<std::string> output;
   std::stack<std::string> operators;
@@ -107,6 +116,9 @@ std::string NFABuilder::toPostfix(const std::string& infix) const {
   return stream.str();
 }
 
+/**
+ * @brief 根据后缀正则表达式构造单条规则对应的 NFA。
+ */
 nfa NFABuilder::buildNFA(const std::string& postfix,
                          const std::string& action,
                          std::size_t priority) const {
@@ -143,8 +155,8 @@ nfa NFABuilder::buildNFA(const std::string& postfix,
       Fragment lhs = fragments.top();
       fragments.pop();
       lhs.accept->SetAccept(false);
-      // Thompson concatenation: wire lhs accept state into rhs start with
-      // epsilon so only one fragment boundary remains on the stack.
+      // 汤普森连接规则：把左片段的接受态用空转移接到右片段起点，
+      // 这样栈上最终仍只保留一个片段边界。
       lhs.accept->Addoutstate(kEpsilon, rhs.start);
       fragments.push({lhs.start, rhs.accept});
       continue;
@@ -195,8 +207,8 @@ nfa NFABuilder::buildNFA(const std::string& postfix,
   }
 
   const Fragment built_fragment = fragments.top();
-  // Accept states keep both the user action and the original rule priority so
-  // DFA determinization can still implement Lex's first-rule tie-breaking.
+  // 接受态同时记录动作和原始优先级，这样确定化阶段仍能实现
+  // 词法分析中的“最长匹配后再按先出现规则优先”冲突消解。
   nfaterstatetoaction[built_fragment.accept->GetState()] = action;
   nfaPriorityTableInternal[built_fragment.accept->GetState()] = priority;
 
@@ -206,10 +218,13 @@ nfa NFABuilder::buildNFA(const std::string& postfix,
   return automaton;
 }
 
+/**
+ * @brief 将多条规则生成的 NFA 通过新起点的 epsilon 边合并为总 NFA。
+ */
 nfa NFABuilder::mergeNFA(const std::vector<nfa>& automata) const {
   nfa merged {};
   merged.start = createState(false);
-  // All rule NFAs are connected under one fresh start state with epsilon edges.
+  // 所有规则 NFA 都挂到新的统一起点下，后续确定化即可把它们视为一个整体。
   for (const nfa& automaton : automata) {
     merged.start->Addoutstate(kEpsilon, automaton.start);
     for (node* terminal : automaton.terminal) {
@@ -219,4 +234,4 @@ nfa NFABuilder::mergeNFA(const std::vector<nfa>& automata) const {
   return merged;
 }
 
-}  // namespace seu_lex
+}  // 命名空间 seu_lex

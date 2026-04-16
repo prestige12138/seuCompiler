@@ -1,6 +1,6 @@
 /**
  * @file lr1_pda.cpp
- * @brief FIRST/FOLLOW computation and LR(1)/LALR(1) PDA construction.
+ * @brief 实现 FIRST/FOLLOW 计算以及 LR(1)/LALR(1) 自动机构造。
  */
 
 #include "lr1_pda.h"
@@ -20,18 +20,27 @@ constexpr const char* kEpsilon = "<epsilon>";
 constexpr const char* kEndMarker = "$";
 constexpr const char* kAugmentedStart = "__SEU_YACC_AUGMENTED_START__";
 
+/**
+ * @brief 仅保留核心信息的 LR 项，用于 LR(0) 核状态构造。
+ */
 struct CoreItem {
   std::string left;
   std::vector<std::string> right;
   int dotpos = 0;
 };
 
+/**
+ * @brief 仅基于 LR(0) 核信息构造出的中间状态结构。
+ */
 struct CoreState {
   int stateindex = 0;
   std::vector<CoreItem> items;
   std::map<std::string, int> nextnode;
 };
 
+/**
+ * @brief 生成一个 LR 项的稳定字符串键。
+ */
 std::string itemKey(const ITEM& item, bool include_predict) {
   std::ostringstream oss;
   oss << item.left << "->";
@@ -50,6 +59,9 @@ std::string itemKey(const ITEM& item, bool include_predict) {
   return oss.str();
 }
 
+/**
+ * @brief 生成一个 LR(0) 核项目的稳定字符串键。
+ */
 std::string coreItemKey(const CoreItem& item) {
   std::ostringstream oss;
   oss << item.left << "->";
@@ -65,6 +77,9 @@ std::string coreItemKey(const CoreItem& item) {
   return oss.str();
 }
 
+/**
+ * @brief 对 LR(1) 项集合排序并去重。
+ */
 std::vector<ITEM> normalizeItems(std::vector<ITEM> items) {
   std::sort(items.begin(), items.end(), [](const ITEM& lhs, const ITEM& rhs) {
     return itemKey(lhs, true) < itemKey(rhs, true);
@@ -77,6 +92,9 @@ std::vector<ITEM> normalizeItems(std::vector<ITEM> items) {
   return items;
 }
 
+/**
+ * @brief 对 LR(0) 核项目集合排序并去重。
+ */
 std::vector<CoreItem> normalizeCoreItems(std::vector<CoreItem> items) {
   std::sort(items.begin(), items.end(), [](const CoreItem& lhs, const CoreItem& rhs) {
     return coreItemKey(lhs) < coreItemKey(rhs);
@@ -88,6 +106,9 @@ std::vector<CoreItem> normalizeCoreItems(std::vector<CoreItem> items) {
   return items;
 }
 
+/**
+ * @brief 生成一个 LR(1) 状态的稳定字符串键。
+ */
 std::string stateKey(const std::vector<ITEM>& items, bool include_predict) {
   std::ostringstream oss;
   for (const ITEM& item : items) {
@@ -96,6 +117,9 @@ std::string stateKey(const std::vector<ITEM>& items, bool include_predict) {
   return oss.str();
 }
 
+/**
+ * @brief 生成一个 LR(0) 核状态的稳定字符串键。
+ */
 std::string coreStateKey(const std::vector<CoreItem>& items) {
   std::ostringstream oss;
   for (const CoreItem& item : items) {
@@ -104,6 +128,9 @@ std::string coreStateKey(const std::vector<CoreItem>& items) {
   return oss.str();
 }
 
+/**
+ * @brief 在原产生式集合前补上增广开始产生式。
+ */
 std::vector<producer> buildAugmentedProductions(const std::string& start_symbol) {
   std::vector<producer> all;
   producer augmented;
@@ -114,6 +141,9 @@ std::vector<producer> buildAugmentedProductions(const std::string& start_symbol)
   return all;
 }
 
+/**
+ * @brief 按产生式左部分组，便于闭包扩展时快速索引。
+ */
 std::map<std::string, std::vector<producer>> buildProductionMap(
     const std::vector<producer>& all_productions) {
   std::map<std::string, std::vector<producer>> by_left;
@@ -123,11 +153,17 @@ std::map<std::string, std::vector<producer>> buildProductionMap(
   return by_left;
 }
 
+/**
+ * @brief 判断一个符号是否是非终结符或增广开始符号。
+ */
 bool isNonterminalSymbol(const std::string& symbol) {
   return std::find(nonterminals.begin(), nonterminals.end(), symbol) != nonterminals.end() ||
          symbol == kAugmentedStart;
 }
 
+/**
+ * @brief 计算一个符号串后缀的 FIRST 集，并在可空时补入展望符。
+ */
 std::set<std::string> firstOfSequence(
     const std::vector<std::string>& sequence,
     std::size_t start_index,
@@ -158,6 +194,9 @@ std::set<std::string> firstOfSequence(
   return result;
 }
 
+/**
+ * @brief 将一个核心项目和展望符拼成完整 LR(1) 项。
+ */
 ITEM makeItem(const CoreItem& core, const std::string& predict) {
   ITEM item;
   item.left = core.left;
@@ -167,6 +206,9 @@ ITEM makeItem(const CoreItem& core, const std::string& predict) {
   return item;
 }
 
+/**
+ * @brief 收集一组 LR(1) 项中点号后可能出现的全部符号。
+ */
 std::set<std::string> symbolsAfterDots(const std::vector<ITEM>& items) {
   std::set<std::string> symbols;
   for (const ITEM& item : items) {
@@ -177,6 +219,9 @@ std::set<std::string> symbolsAfterDots(const std::vector<ITEM>& items) {
   return symbols;
 }
 
+/**
+ * @brief 收集一组 LR(0) 核项目中点号后的全部符号。
+ */
 std::set<std::string> coreSymbolsAfterDots(const std::vector<CoreItem>& items) {
   std::set<std::string> symbols;
   for (const CoreItem& item : items) {
@@ -187,6 +232,9 @@ std::set<std::string> coreSymbolsAfterDots(const std::vector<CoreItem>& items) {
   return symbols;
 }
 
+/**
+ * @brief 基于产生式表计算 LR(1) 闭包。
+ */
 std::vector<ITEM> closureWithProductions(
     const std::vector<ITEM>& kernel,
     const std::map<std::string, std::set<std::string>>& first_sets,
@@ -218,8 +266,8 @@ std::vector<ITEM> closureWithProductions(
     const std::set<std::string> predicts =
         firstOfSequence(item.right, static_cast<std::size_t>(item.dotpos + 1), first_sets, item.predict);
     for (const producer& production : found_productions->second) {
-      // Each propagated lookahead becomes a distinct LR(1) item. Duplicates are
-      // normalized away after closure growth stabilizes.
+      // 每个传播出的展望符都对应独立的 LR(1) 项，
+      // 最终再通过标准化阶段统一去重。
       for (const std::string& predict : predicts) {
         ITEM next;
         next.left = production.left;
@@ -238,6 +286,9 @@ std::vector<ITEM> closureWithProductions(
   return normalizeItems(result);
 }
 
+/**
+ * @brief 基于产生式表计算 LR(0) 闭包。
+ */
 std::vector<CoreItem> lr0Closure(
     const std::vector<CoreItem>& kernel,
     const std::map<std::string, std::vector<producer>>& productions_by_left) {
@@ -281,6 +332,9 @@ std::vector<CoreItem> lr0Closure(
   return normalizeCoreItems(result);
 }
 
+/**
+ * @brief 计算 LR(0) 自动机中的 GOTO(items, symbol)。
+ */
 std::vector<CoreItem> lr0Goto(
     const std::vector<CoreItem>& items,
     const std::string& symbol,
@@ -299,6 +353,9 @@ std::vector<CoreItem> lr0Goto(
   return lr0Closure(moved, productions_by_left);
 }
 
+/**
+ * @brief 构造不带展望符的 LR(0) 核自动机。
+ */
 std::vector<CoreState> buildLR0Automaton(
     const std::string& start_symbol,
     const std::map<std::string, std::vector<producer>>& productions_by_left) {
@@ -350,8 +407,11 @@ std::vector<CoreState> buildLR0Automaton(
   return automaton;
 }
 
-}  // namespace
+}  // 匿名命名空间
 
+/**
+ * @brief 计算当前文法的 FIRST 集。
+ */
 std::map<std::string, std::set<std::string>> LR1Builder::computeFirstSets() const {
   std::map<std::string, std::set<std::string>> first_sets;
   for (const std::string& terminal : terminals) {
@@ -366,7 +426,7 @@ std::map<std::string, std::set<std::string>> LR1Builder::computeFirstSets() cons
   bool changed = true;
   while (changed) {
     changed = false;
-    // Standard fixed-point iteration over productions until no FIRST set grows.
+    // 对产生式执行不动点迭代，直到没有任何 FIRST 集继续增长。
     for (const producer& production : producers) {
       auto& target = first_sets[production.left];
       if (production.right.empty()) {
@@ -399,6 +459,9 @@ std::map<std::string, std::set<std::string>> LR1Builder::computeFirstSets() cons
   return first_sets;
 }
 
+/**
+ * @brief 基于 FIRST 集计算 FOLLOW 集。
+ */
 std::map<std::string, std::set<std::string>> LR1Builder::computeFollowSets(
     const std::map<std::string, std::set<std::string>>& first_sets,
     const std::string& start_symbol) const {
@@ -450,6 +513,9 @@ std::map<std::string, std::set<std::string>> LR1Builder::computeFollowSets(
   return follow_sets;
 }
 
+/**
+ * @brief 计算给定核心项目集的 LR(1) 闭包。
+ */
 std::vector<ITEM> LR1Builder::closure(
     const std::vector<ITEM>& kernel,
     const std::map<std::string, std::set<std::string>>& first_sets,
@@ -459,6 +525,9 @@ std::vector<ITEM> LR1Builder::closure(
   return closureWithProductions(kernel, first_sets, productions_by_left);
 }
 
+/**
+ * @brief 计算规范 LR(1) 自动机上的 GOTO(items, symbol)。
+ */
 std::vector<ITEM> LR1Builder::gotoSet(
     const std::vector<ITEM>& items,
     const std::string& symbol,
@@ -480,6 +549,9 @@ std::vector<ITEM> LR1Builder::gotoSet(
   return closureWithProductions(moved, first_sets, productions_by_left);
 }
 
+/**
+ * @brief 直接在 LR(0) 核图上传播展望符，构造 LALR(1) 自动机。
+ */
 LRPDA LR1Builder::buildLALRPDA(
     const std::string& start_symbol,
     std::map<std::string, std::set<std::string>>* first_sets,
@@ -544,8 +616,8 @@ LRPDA LR1Builder::buildLALRPDA(
           propagated_predicts.insert(predicts.begin(), predicts.end());
         }
 
-        // The direct LALR path keeps one LR(0) core graph, then saturates
-        // lookahead propagation inside each core before pushing it across edges.
+        // 直接 LALR 路径先固定 LR(0) 核图，再在每个核状态内部迭代扩展
+        // 展望符，最后再沿边把展望符继续传播到后继状态。
         for (const producer& production : found_productions->second) {
           CoreItem target_core;
           target_core.left = production.left;
@@ -615,6 +687,9 @@ LRPDA LR1Builder::buildLALRPDA(
   return automaton;
 }
 
+/**
+ * @brief 构造规范 LR(1) 项目集自动机。
+ */
 LRPDA LR1Builder::buildCanonicalPDA(
     const std::string& start_symbol,
     std::map<std::string, std::set<std::string>>* first_sets,
@@ -665,8 +740,8 @@ LRPDA LR1Builder::buildCanonicalPDA(
       if (target.empty()) {
         continue;
       }
-      // Canonical LR(1) distinguishes states by full item+lookahead content,
-      // so state reuse keys include prediction symbols.
+      // 规范 LR(1) 会把“项目内容 + 展望符”一起作为状态判等依据，
+      // 因此状态复用键必须包含 prediction 字段。
       const std::string key = stateKey(target, true);
       int target_state = -1;
       const auto found = known_states.find(key);
@@ -687,4 +762,4 @@ LRPDA LR1Builder::buildCanonicalPDA(
   return automaton;
 }
 
-}  // namespace seu_yacc
+}  // 命名空间 seu_yacc

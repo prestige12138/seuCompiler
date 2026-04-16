@@ -6,13 +6,13 @@
 
 /**
  * @file lalr_converter.h
- * @brief LR(1) to LALR(1) state merging interfaces.
+ * @brief 定义 LR(1) 自动机向 LALR(1) 自动机压缩时所需的状态合并接口。
  */
 
 namespace seu_yacc {
 
 /**
- * @brief Result of LR(1) to LALR(1) conversion.
+ * @brief 保存 LR(1) 自动机压缩为 LALR(1) 自动机后的结果。
  */
 struct LALRResult {
   LRPDA automaton;
@@ -20,16 +20,16 @@ struct LALRResult {
 };
 
 /**
- * @brief Merge LR(1) states with identical LR(0) cores.
+ * @brief 负责将 LR(0) 核相同的 LR(1) 状态合并为 LALR(1) 状态。
  */
 class LALRConverter {
  public:
   /**
-   * @brief Convert a canonical LR(1) PDA into an LALR(1) PDA.
+   * @brief 将规范 LR(1) 下推自动机转换为 LALR(1) 下推自动机。
    *
-   * Complexity: O(S * I log I), where S is state count and I is item count.
+   * 时间复杂度：O(S * I log I)，其中 S 为状态数，I 为项目数。
    */
   LALRResult convert(const LRPDA& canonical) const;
 };
 
-}  // namespace seu_yacc
+}  // 命名空间 seu_yacc

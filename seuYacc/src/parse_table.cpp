@@ -1,7 +1,6 @@
 /**
  * @file parse_table.cpp
- * @brief Parse-table construction, parser code emission, and seuYacc driver
- *        orchestration.
+ * @brief 实现分析表构造、语法分析器代码生成和 seuYacc 总控逻辑。
  */
 
 #include "parse_table.h"
@@ -36,15 +35,24 @@ constexpr const char* kSelfTestCompiler = SEU_YACC_TEST_CXX;
 constexpr const char* kSelfTestCompiler = "c++";
 #endif
 
+/**
+ * @brief 判断一个符号是否是终结符。
+ */
 bool isTerminalSymbol(const std::string& symbol) {
   return std::find(terminals.begin(), terminals.end(), symbol) != terminals.end() || symbol == kEndMarker;
 }
 
+/**
+ * @brief 判断一个符号是否是非终结符或增广开始符号。
+ */
 bool isNonterminalSymbol(const std::string& symbol) {
   return std::find(nonterminals.begin(), nonterminals.end(), symbol) != nonterminals.end() ||
          symbol == kAugmentedStart;
 }
 
+/**
+ * @brief 将单引号包裹的终结符字面量解码成整数 token 值。
+ */
 int decodeQuotedTerminal(const std::string& symbol) {
   if (symbol.size() < 3 || symbol.front() != '\'' || symbol.back() != '\'') {
     throw std::runtime_error("not a quoted terminal: " + symbol);
@@ -70,6 +78,9 @@ int decodeQuotedTerminal(const std::string& symbol) {
   }
 }
 
+/**
+ * @brief 为一个终结符分配或推导其 token 编号。
+ */
 int tokenCodeForSymbol(const std::string& symbol) {
   if (symbol == kEndMarker) {
     return 0;
@@ -90,6 +101,9 @@ int tokenCodeForSymbol(const std::string& symbol) {
   throw std::runtime_error("failed to assign token code for symbol: " + symbol);
 }
 
+/**
+ * @brief 返回路径中的文件名部分。
+ */
 std::string basenameOf(const std::string& path) {
   const std::size_t slash = path.find_last_of("/\\");
   if (slash == std::string::npos) {
@@ -98,6 +112,9 @@ std::string basenameOf(const std::string& path) {
   return path.substr(slash + 1);
 }
 
+/**
+ * @brief 返回路径中的目录部分。
+ */
 std::string dirnameOf(const std::string& path) {
   const std::size_t slash = path.find_last_of("/\\");
   if (slash == std::string::npos) {
@@ -106,6 +123,9 @@ std::string dirnameOf(const std::string& path) {
   return path.substr(0, slash);
 }
 
+/**
+ * @brief 递归确保某个目录路径存在。
+ */
 void ensureDirectory(const std::string& path) {
   if (path.empty() || path == ".") {
     return;
@@ -126,6 +146,9 @@ void ensureDirectory(const std::string& path) {
   }
 }
 
+/**
+ * @brief 创建一个临时目录，供自测编译产物使用。
+ */
 std::string makeTempDir() {
   char pattern[] = "/tmp/seuYacc_runtimeXXXXXX";
   char* created = ::mkdtemp(pattern);
@@ -135,11 +158,17 @@ std::string makeTempDir() {
   return std::string(created);
 }
 
+/**
+ * @brief 判断一个文件或目录是否存在。
+ */
 bool fileExists(const std::string& path) {
   struct stat info {};
   return ::stat(path.c_str(), &info) == 0;
 }
 
+/**
+ * @brief 以平台无关方式拼接两个路径片段。
+ */
 std::string joinPath(const std::string& left, const std::string& right) {
   if (left.empty()) {
     return right;
@@ -150,6 +179,9 @@ std::string joinPath(const std::string& left, const std::string& right) {
   return left + "/" + right;
 }
 
+/**
+ * @brief 将相对路径转换为绝对路径。
+ */
 std::string absolutePath(const std::string& path) {
   char buffer[4096];
   if (::getcwd(buffer, sizeof(buffer)) == nullptr) {
@@ -164,6 +196,9 @@ std::string absolutePath(const std::string& path) {
   return joinPath(std::string(buffer), path);
 }
 
+/**
+ * @brief 尽可能规范化一个目录路径。
+ */
 std::string canonicalizeDirectory(const std::string& path) {
   const std::string absolute = absolutePath(path);
   char buffer[4096];
@@ -173,6 +208,9 @@ std::string canonicalizeDirectory(const std::string& path) {
   return absolute;
 }
 
+/**
+ * @brief 规范化文件路径，但在文件不存在时仍保留文件名部分。
+ */
 std::string canonicalizeFilePath(const std::string& path) {
   const std::string absolute = absolutePath(path);
   const std::string directory = dirnameOf(absolute);
@@ -180,6 +218,9 @@ std::string canonicalizeFilePath(const std::string& path) {
   return joinPath(canonicalizeDirectory(directory.empty() ? "." : directory), base);
 }
 
+/**
+ * @brief 把路径切成各级目录名列表。
+ */
 std::vector<std::string> splitPath(const std::string& path) {
   std::vector<std::string> parts;
   std::string current;
@@ -211,6 +252,9 @@ std::vector<std::string> splitPath(const std::string& path) {
   return parts;
 }
 
+/**
+ * @brief 计算一个文件相对另一个文件应使用的 `#include` 路径。
+ */
 std::string relativeIncludePath(const std::string& from_path, const std::string& to_path) {
   const std::string from_dir = dirnameOf(from_path);
   const std::vector<std::string> from_parts =
@@ -240,6 +284,9 @@ std::string relativeIncludePath(const std::string& from_path, const std::string&
   return relative;
 }
 
+/**
+ * @brief 从当前工作目录附近推断仓库根目录。
+ */
 std::string resolveRepoRoot(const std::string& workspace_root) {
   const std::vector<std::string> candidates = {
       workspace_root,
@@ -255,6 +302,9 @@ std::string resolveRepoRoot(const std::string& workspace_root) {
   throw std::runtime_error("failed to locate repository resources directory");
 }
 
+/**
+ * @brief 运行一个外部进程，并返回其退出码。
+ */
 int runProcess(const std::string& program, const std::vector<std::string>& args) {
   std::vector<char*> argv;
   argv.reserve(args.size() + 2);
@@ -299,6 +349,9 @@ int runProcess(const std::string& program, const std::vector<std::string>& args)
   return WEXITSTATUS(status);
 }
 
+/**
+ * @brief 根据 LR 归约项目查找对应的产生式编号。
+ */
 int productionIndexFromItem(const ITEM& item) {
   for (std::size_t index = 0; index < producers.size(); ++index) {
     if (producers[index].left == item.left && producers[index].right == item.right) {
@@ -308,6 +361,9 @@ int productionIndexFromItem(const ITEM& item) {
   return -1;
 }
 
+/**
+ * @brief 求出一条产生式在冲突消解时应参考的优先级终结符。
+ */
 std::string productionPrecedenceSymbol(const YaccSpecification& specification, int production_index) {
   if (production_index < 0 || production_index >= static_cast<int>(specification.rules.size())) {
     return "";
@@ -324,6 +380,9 @@ std::string productionPrecedenceSymbol(const YaccSpecification& specification, i
   return "";
 }
 
+/**
+ * @brief 查询某个符号在规格中的优先级和结合性声明。
+ */
 std::pair<int, std::string> precedenceOfSymbol(const YaccSpecification& specification,
                                                const std::string& symbol) {
   for (const PrecedenceDeclaration& decl : specification.precedenceDeclarations) {
@@ -334,6 +393,9 @@ std::pair<int, std::string> precedenceOfSymbol(const YaccSpecification& specific
   return {-1, ""};
 }
 
+/**
+ * @brief 按 Yacc 规则解决移进/归约与归约/归约冲突。
+ */
 std::string resolveConflict(const std::string& existing,
                             const std::string& incoming,
                             const std::string& lookahead,
@@ -365,8 +427,8 @@ std::string resolveConflict(const std::string& existing,
     const auto token_precedence = precedenceOfSymbol(specification, lookahead);
     const auto production_precedence = precedenceOfSymbol(specification, precedence_symbol);
     pushConflict("shift/reduce");
-    // Yacc-style precedence resolution: missing metadata falls back to shift,
-    // otherwise compare precedence level first and associativity second.
+    // 按 Yacc 的传统规则消解：若缺少优先级信息则默认偏向移进，
+    // 否则先比优先级，再比结合性。
     if (token_precedence.first < 0 || production_precedence.first < 0) {
       return shift_action;
     }
@@ -394,6 +456,9 @@ std::string resolveConflict(const std::string& existing,
   return existing;
 }
 
+/**
+ * @brief 将任意符号名清洗成可用于 C++ 标识符的形式。
+ */
 std::string sanitizeIdentifier(const std::string& raw) {
   std::string out;
   for (char ch : raw) {
@@ -409,6 +474,9 @@ std::string sanitizeIdentifier(const std::string& raw) {
   return out;
 }
 
+/**
+ * @brief 判断一个字符串是否已是合法的 C++ 标识符。
+ */
 bool isValidIdentifier(const std::string& raw) {
   if (raw.empty()) {
     return false;
@@ -426,6 +494,9 @@ bool isValidIdentifier(const std::string& raw) {
   return true;
 }
 
+/**
+ * @brief 对字符串做 C++ 字面量转义。
+ */
 std::string escapeCppString(const std::string& raw) {
   std::ostringstream oss;
   for (char ch : raw) {
@@ -453,6 +524,9 @@ std::string escapeCppString(const std::string& raw) {
   return oss.str();
 }
 
+/**
+ * @brief 为终结符生成枚举常量名。
+ */
 std::string tokenEnumName(const std::string& symbol, int code) {
   if (isValidIdentifier(symbol)) {
     return symbol;
@@ -460,6 +534,9 @@ std::string tokenEnumName(const std::string& symbol, int code) {
   return "TOK_" + sanitizeIdentifier(symbol) + "_" + std::to_string(code);
 }
 
+/**
+ * @brief 去掉动作代码最外层的大括号。
+ */
 std::string stripOuterBraces(const std::string& action) {
   if (action.size() >= 2 && action.front() == '{' && action.back() == '}') {
     return action.substr(1, action.size() - 2);
@@ -467,6 +544,9 @@ std::string stripOuterBraces(const std::string& action) {
   return action;
 }
 
+/**
+ * @brief 根据符号声明推断其在 `YYSTYPE` 中对应的字段名。
+ */
 std::string semanticFieldForSymbol(const YaccSpecification& specification, const std::string& symbol) {
   const auto nonterminal = specification.nonterminalTypes.find(symbol);
   if (nonterminal != specification.nonterminalTypes.end()) {
@@ -479,6 +559,9 @@ std::string semanticFieldForSymbol(const YaccSpecification& specification, const
   return "";
 }
 
+/**
+ * @brief 生成带显式类型标记的语义值访问表达式。
+ */
 std::string typedValueAccess(const YaccRule& rule,
                              const std::string& tag,
                              int rhs_index) {
@@ -497,6 +580,9 @@ std::string typedValueAccess(const YaccRule& rule,
   return "";
 }
 
+/**
+ * @brief 根据推断类型生成 `$n` 或 `$$` 的访问表达式。
+ */
 std::string inferredValueAccess(const YaccSpecification& specification,
                                 const YaccRule& rule,
                                 int rhs_index) {
@@ -514,6 +600,9 @@ std::string inferredValueAccess(const YaccSpecification& specification,
   return "";
 }
 
+/**
+ * @brief 将 Yacc 语义动作改写成生成语法分析器可直接执行的 C++ 代码。
+ */
 std::string translateSemanticAction(const std::string& action,
                                     const YaccRule& rule,
                                     const YaccSpecification& specification) {
@@ -588,8 +677,8 @@ std::string translateSemanticAction(const std::string& action,
       continue;
     }
     if (ch == '$') {
-      // `$n`, `$$`, and `$<tag>n` are rewritten into accesses over the runtime
-      // reduction frame emitted below in `emitParser`.
+      // `$n`、`$$` 和 `$<tag>n` 都会被改写成对归约帧数据结构的显式访问，
+      // 以便生成出的解析器在运行时直接执行。
       if (index + 1 < body.size() && body[index + 1] == '$') {
         out << inferredValueAccess(specification, rule, 0);
         index += 2;
@@ -638,6 +727,9 @@ std::string translateSemanticAction(const std::string& action,
   return out.str();
 }
 
+/**
+ * @brief 根据输出文件名推导生成解析器使用的命名空间名。
+ */
 std::string parserNamespace(const std::string& out_cpp_path) {
   const std::string base = basenameOf(out_cpp_path);
   const std::size_t dot = base.find('.');
@@ -645,30 +737,51 @@ std::string parserNamespace(const std::string& out_cpp_path) {
   return sanitizeIdentifier(stem) + "_generated";
 }
 
-}  // namespace
+}  // 匿名命名空间
 
+/**
+ * @brief 用 LR 状态编号初始化一行分析表。
+ */
 parse_table_item::parse_table_item(LRnode x) : state(x.stateindex) {}
 
+/**
+ * @brief 返回当前行的 ACTION 表项。
+ */
 std::map<std::string, std::string> parse_table_item::GetAction() const {
   return action;
 }
 
+/**
+ * @brief 返回当前行的 GOTO 表项。
+ */
 std::map<std::string, int> parse_table_item::GetGoto() const {
   return gotos;
 }
 
+/**
+ * @brief 写入一项 ACTION 表项。
+ */
 void parse_table_item::AddtoAction(const std::string& ter, const std::string& rs) {
   action[ter] = rs;
 }
 
+/**
+ * @brief 写入一项 GOTO 表项。
+ */
 void parse_table_item::AddtoGoto(const std::string& nonter, int s) {
   gotos[nonter] = s;
 }
 
+/**
+ * @brief 返回该行所属的 LR 状态编号。
+ */
 int parse_table_item::State() const {
   return state;
 }
 
+/**
+ * @brief 根据规范 LR 自动机构造 ACTION/GOTO 表。
+ */
 std::vector<parse_table_item> ParseTableBuilder::buildLR1Table(
     const LRPDA& automaton,
     const YaccSpecification& specification,
@@ -683,6 +796,8 @@ std::vector<parse_table_item> ParseTableBuilder::buildLR1Table(
 
   for (const LRnode& state : automaton.nodes) {
     parse_table_item& row = table[static_cast<std::size_t>(state.stateindex)];
+    // 先处理自动机已有的出边：终结符边写入 ACTION 的移进项，
+    // 非终结符边写入 GOTO。
     for (const auto& edge : state.nextnode) {
       if (isTerminalSymbol(edge.first)) {
         const std::string incoming = "s" + std::to_string(edge.second);
@@ -703,6 +818,8 @@ std::vector<parse_table_item> ParseTableBuilder::buildLR1Table(
       }
     }
 
+    // 再检查可归约项目。若点号已经走到产生式末尾，
+    // 就根据展望符在 ACTION 表上填入 reduce 或 accept。
     for (const ITEM& item : state.items) {
       if (item.dotpos != static_cast<int>(item.right.size())) {
         continue;
@@ -733,6 +850,9 @@ std::vector<parse_table_item> ParseTableBuilder::buildLR1Table(
   return table;
 }
 
+/**
+ * @brief 对当前实现而言，LALR 分析表复用 LR1 表构造逻辑。
+ */
 std::vector<parse_table_item> ParseTableBuilder::buildLALRTable(
     const LRPDA& automaton,
     const YaccSpecification& specification,
@@ -741,6 +861,9 @@ std::vector<parse_table_item> ParseTableBuilder::buildLALRTable(
   return buildLR1Table(automaton, specification, start_symbol, conflicts);
 }
 
+/**
+ * @brief 生成可独立编译运行的语法分析器源文件和 token 头文件。
+ */
 void ParserCodeGenerator::emitParser(const std::vector<parse_table_item>& table,
                                      const LRPDA& automaton,
                                      const YaccSpecification& specification,
@@ -749,9 +872,8 @@ void ParserCodeGenerator::emitParser(const std::vector<parse_table_item>& table,
                                      const std::string& out_header_path) const {
   (void)automaton;
   (void)start_symbol;
-  // The emitted parser is intentionally standalone: one token ABI header plus
-  // one `.cpp` with ACTION/GOTO tables, semantic-action dispatch, and a tiny
-  // runtime symbol table for scope observation.
+  // 这里故意生成“头文件 + 单个 `.cpp`”的独立解析器，
+  // 让 ACTION/GOTO 表、语义动作分发和运行时符号表都自包含。
   ensureDirectory(dirnameOf(out_cpp_path));
   ensureDirectory(dirnameOf(out_header_path));
 
@@ -763,6 +885,8 @@ void ParserCodeGenerator::emitParser(const std::vector<parse_table_item>& table,
   if (!header) {
     throw std::runtime_error("failed to open generated parser header path: " + out_header_path);
   }
+  // 头文件只暴露稳定 ABI：token、语义值和 `yyparse` 入口。
+  // 这样 Lex 和外部驱动都只依赖这一层，不需要了解内部表结构。
   header << "#pragma once\n\n"
          << "#include <string>\n"
          << "#include <vector>\n\n"
@@ -794,7 +918,7 @@ void ParserCodeGenerator::emitParser(const std::vector<parse_table_item>& table,
          << "using yytoken_type = Token;\n"
          << "using yysemantic_type = YYSTYPE;\n\n"
          << "bool yyparse(const std::vector<Token>& tokens);\n\n"
-         << "}  // namespace " << name_space << "\n\n"
+         << "}  // 命名空间 " << name_space << "\n\n"
          << "#if defined(SEU_YACC_TOKEN_NAMESPACE) || defined(SEU_YACC_TOKEN_TYPE) || \\\n"
          << "    defined(SEU_YACC_SEMANTIC_TYPE)\n"
          << "#error \"multiple generated seuYacc token ABI headers included in one translation unit\"\n"
@@ -864,6 +988,7 @@ void ParserCodeGenerator::emitParser(const std::vector<parse_table_item>& table,
   output << "};\n\n"
          << "const std::vector<std::unordered_map<int, std::string>> kAction = {\n";
 
+  // 把运行时分析表直接序列化成常量数组，生成出的解析器无需再重建表。
   for (std::size_t row = 0; row < table.size(); ++row) {
     output << "  {";
     const auto actions = table[row].GetAction();
@@ -971,7 +1096,7 @@ void ParserCodeGenerator::emitParser(const std::vector<parse_table_item>& table,
          << "      break;\n"
          << "  }\n"
          << "}\n\n"
-         << "}  // namespace\n\n"
+         << "}  // 匿名命名空间\n\n"
          << "bool yyparse(const std::vector<Token>& input_tokens) {\n"
          << "  std::vector<Token> tokens = input_tokens;\n"
          << "  if (tokens.empty() || tokens.back().type != 0) {\n"
@@ -982,6 +1107,8 @@ void ParserCodeGenerator::emitParser(const std::vector<parse_table_item>& table,
          << "  RuntimeSymbolTable symbol_table;\n"
          << "  std::size_t index = 0;\n"
          << "  while (index < tokens.size()) {\n"
+         << "    // 经典 LR 主循环：查看栈顶状态与当前输入符号，\n"
+         << "    // 再按 ACTION 表决定移进、归约、接受或报错。\n"
          << "    const int state = states.back();\n"
          << "    const int token = tokens[index].type;\n"
          << "    const auto action_it = kAction[static_cast<std::size_t>(state)].find(token);\n"
@@ -1012,8 +1139,8 @@ void ParserCodeGenerator::emitParser(const std::vector<parse_table_item>& table,
          << "    }\n"
          << "    if (!action.empty() && action[0] == 'r') {\n"
          << "      const int production = std::stoi(action.substr(1));\n"
-         << "      // Reduction pops RHS symbols, executes the translated action,\n"
-         << "      // then consults GOTO with the produced LHS symbol.\n"
+         << "      // 归约时先弹出右部符号，执行改写后的语义动作，\n"
+         << "      // 再依据左部符号查询 GOTO 并压回新状态。\n"
          << "      const int pop_count = kProductionSize[static_cast<std::size_t>(production)];\n"
          << "      std::vector<SemanticValue> rhs(static_cast<std::size_t>(pop_count));\n"
          << "      for (int offset = pop_count - 1; offset >= 0; --offset) {\n"
@@ -1047,15 +1174,18 @@ void ParserCodeGenerator::emitParser(const std::vector<parse_table_item>& table,
          << "  }\n"
          << "  return false;\n"
          << "}\n\n"
-         << "}  // namespace " << name_space << "\n";
+         << "}  // 命名空间 " << name_space << "\n";
 }
 
+/**
+ * @brief 按完整流程执行 seuYacc 生成任务。
+ */
 void SeuYaccDriver::generate(const std::string& yacc_path,
                              const std::string& out_cpp_path,
                              const std::string& out_header_path,
                              const std::string& mode) const {
-  // The driver mirrors the report pipeline: parse specification, rebuild the
-  // report-defined symbol tables, construct LR automata, build tables, emit.
+  // 总控流程严格对应报告顺序：解析输入、重建报告规定的符号表、
+  // 构造 LR 自动机、生成分析表、最后输出解析器代码。
   SymbolTableManager symbols;
   symbols.reset();
 
@@ -1120,6 +1250,9 @@ void SeuYaccDriver::generate(const std::string& yacc_path,
   generator.emitParser(table, lalr_automaton, specification, specification.startSymbol, out_cpp_path, out_header_path);
 }
 
+/**
+ * @brief 运行 seuYacc 内置自测，验证生成链路和回归样例。
+ */
 bool SeuYaccDriver::runSelfTests(const std::string& workspace_root) const {
   const std::string repo_root = resolveRepoRoot(workspace_root);
   const std::string temp_dir = makeTempDir();
@@ -1165,9 +1298,8 @@ bool SeuYaccDriver::runSelfTests(const std::string& workspace_root) const {
       "%%\n"
       "int semantic_helper() { return result_value; }\n";
 
-  // The built-in suite covers grammar parsing, canonical LR(1), explicit
-  // LR(1)->LALR merging, generated parser compilation, semantic actions, and
-  // current `resources/minic.y` regression generation.
+  // 内置自测覆盖：文法解析、规范 LR(1)、显式 LR(1)->LALR 合并、
+  // 生成解析器编译、语义动作执行，以及当前 `resources/minic.y` 回归生成。
   {
     std::ofstream file(grammar_path);
     file << grammar;
@@ -1328,4 +1460,4 @@ bool SeuYaccDriver::runSelfTests(const std::string& workspace_root) const {
   return true;
 }
 
-}  // namespace seu_yacc
+}  // 命名空间 seu_yacc

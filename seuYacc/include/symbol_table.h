@@ -9,7 +9,7 @@
 
 /**
  * @file symbol_table.h
- * @brief Grammar symbol tables and semantic symbol-table management.
+ * @brief 定义文法符号表和语义符号表的统一管理接口。
  */
 
 namespace seu_yacc {
@@ -20,7 +20,7 @@ extern std::vector<std::string> nonterminals;
 extern std::vector<producer> producers;
 
 /**
- * @brief One semantic symbol entry managed by the generated parser runtime.
+ * @brief 生成的语法分析器运行时维护的一条语义符号记录。
  */
 struct SemanticSymbol {
   std::string name;
@@ -32,148 +32,148 @@ struct SemanticSymbol {
 };
 
 /**
- * @brief Maintain grammar symbol tables and semantic scopes.
+ * @brief 维护文法层符号信息以及语义作用域栈。
  */
 class SymbolTableManager {
  public:
   /**
-   * @brief Reset all grammar and semantic tables.
+   * @brief 重置全部文法表和语义表。
    *
-   * Complexity: O(S), where S is the total stored state size.
+   * 时间复杂度：O(S)，其中 S 为所有已存储状态的总规模。
    */
   void reset();
 
   /**
-   * @brief Register one terminal symbol if it is new.
+   * @brief 若终结符尚未出现，则将其登记到终结符表中。
    *
-   * Complexity: amortized O(1).
+   * 时间复杂度：均摊 O(1)。
    */
   void registerTerminal(const std::string& symbol);
 
   /**
-   * @brief Register one nonterminal symbol if it is new.
+   * @brief 若非终结符尚未出现，则将其登记到非终结符表中。
    *
-   * Complexity: amortized O(1).
+   * 时间复杂度：均摊 O(1)。
    */
   void registerNonterminal(const std::string& symbol);
 
   /**
-   * @brief Append one precedence group.
+   * @brief 追加一个优先级与结合性分组。
    *
-   * Complexity: O(K), where K is the number of symbols in the group.
+   * 时间复杂度：O(K)，其中 K 为该分组中的符号数量。
    */
   void addOperatorGroup(const operators& group,
                         const std::vector<std::string>& precedence_symbols);
 
   /**
-   * @brief Append one production to the report-defined table.
+   * @brief 向报告规定的产生式表中追加一条产生式。
    *
-   * Complexity: O(R), where R is the right-hand-side length.
+   * 时间复杂度：O(R)，其中 R 为产生式右部长度。
    */
   void addProducer(const producer& production);
 
   /**
-   * @brief Set the grammar start symbol.
+   * @brief 设置文法开始符号。
    *
-   * Complexity: O(1).
+   * 时间复杂度：O(1)。
    */
   void setStartSymbol(const std::string& symbol);
 
   /**
-   * @brief Return the grammar start symbol.
+   * @brief 返回当前文法开始符号。
    *
-   * Complexity: O(1).
+   * 时间复杂度：O(1)。
    */
   const std::string& startSymbol() const;
 
   /**
-   * @brief Record a semantic type for a token declaration.
+   * @brief 为 token 声明记录语义类型。
    *
-   * Complexity: amortized O(1).
+   * 时间复杂度：均摊 O(1)。
    */
   void setTokenType(const std::string& symbol, const std::string& type_name);
 
   /**
-   * @brief Record a semantic type for a nonterminal declaration.
+   * @brief 为非终结符声明记录语义类型。
    *
-   * Complexity: amortized O(1).
+   * 时间复杂度：均摊 O(1)。
    */
   void setNonterminalType(const std::string& symbol, const std::string& type_name);
 
   /**
-   * @brief Query whether a symbol is terminal.
+   * @brief 查询某个符号是否为终结符。
    *
-   * Complexity: amortized O(1).
+   * 时间复杂度：均摊 O(1)。
    */
   bool isTerminal(const std::string& symbol) const;
 
   /**
-   * @brief Query whether a symbol is nonterminal.
+   * @brief 查询某个符号是否为非终结符。
    *
-   * Complexity: amortized O(1).
+   * 时间复杂度：均摊 O(1)。
    */
   bool isNonterminal(const std::string& symbol) const;
 
   /**
-   * @brief Return the integer code for a terminal symbol.
+   * @brief 返回终结符对应的整数编号。
    *
-   * Complexity: amortized O(1).
+   * 时间复杂度：均摊 O(1)。
    */
   int terminalId(const std::string& symbol) const;
 
   /**
-   * @brief Return the integer code for a nonterminal symbol.
+   * @brief 返回非终结符对应的整数编号。
    *
-   * Complexity: amortized O(1).
+   * 时间复杂度：均摊 O(1)。
    */
   int nonterminalId(const std::string& symbol) const;
 
   /**
-   * @brief Return the declared semantic type of a symbol if present.
+   * @brief 返回某个符号声明过的语义类型。
    *
-   * Complexity: amortized O(1).
+   * 时间复杂度：均摊 O(1)。
    */
   std::string symbolType(const std::string& symbol) const;
 
   /**
-   * @brief Return precedence level and associativity for one terminal if present.
+   * @brief 返回终结符对应的优先级和结合性信息。
    *
-   * Complexity: amortized O(1).
+   * 时间复杂度：均摊 O(1)。
    */
   std::pair<int, std::string> precedenceOf(const std::string& symbol) const;
 
   /**
-   * @brief Enter a new semantic scope.
+   * @brief 进入一个新的语义作用域。
    *
-   * Complexity: amortized O(1).
+   * 时间复杂度：均摊 O(1)。
    */
   void enterScope();
 
   /**
-   * @brief Exit the current semantic scope.
+   * @brief 退出当前语义作用域。
    *
-   * Complexity: amortized O(1).
+   * 时间复杂度：均摊 O(1)。
    */
   void exitScope();
 
   /**
-   * @brief Declare one semantic symbol in the current scope.
+   * @brief 在当前作用域中声明一个语义符号。
    *
-   * Complexity: amortized O(1).
+   * 时间复杂度：均摊 O(1)。
    */
   void declareSymbol(const SemanticSymbol& symbol);
 
   /**
-   * @brief Look up one semantic symbol from inner to outer scope.
+   * @brief 按由内到外的顺序查找一个语义符号。
    *
-   * Complexity: O(D), where D is the scope depth.
+   * 时间复杂度：O(D)，其中 D 为作用域深度。
    */
   const SemanticSymbol* lookupSymbol(const std::string& name) const;
 
   /**
-   * @brief Return all semantic scopes for inspection.
+   * @brief 返回全部语义作用域，便于调试或测试检查。
    *
-   * Complexity: O(1).
+   * 时间复杂度：O(1)。
    */
   const std::vector<std::unordered_map<std::string, SemanticSymbol>>& semanticScopes() const;
 
@@ -189,4 +189,4 @@ class SymbolTableManager {
   int next_nonterminal_id_ = 1;
 };
 
-}  // namespace seu_yacc
+}  // 命名空间 seu_yacc

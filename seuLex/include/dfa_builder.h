@@ -5,22 +5,22 @@
 
 /**
  * @file dfa_builder.h
- * @brief DFA subset-construction interface.
+ * @brief 确定有限自动机子集构造接口。
  */
 
 namespace seu_lex {
 
 /**
- * @brief Determinize an NFA with subset construction.
+ * @brief 使用子集构造法将 NFA 确定化。
  */
 class DFABuilder {
  public:
   /**
-   * @brief Build a DFA from an NFA.
+   * @brief 从 NFA 构造 DFA。
    *
-   * Complexity: O(2^V * |Sigma|) in the worst case.
+   * 复杂度：最坏情况下为 O(2^V * |Sigma|)。
    */
   dfa subsetConstruct(const nfa& automaton) const;
 };
 
-}  // namespace seu_lex
+}  // 命名空间 seu_lex

@@ -1,6 +1,6 @@
 /**
  * @file lex_parser.cpp
- * @brief Lex three-section parsing and rule extraction implementation.
+ * @brief 实现 Lex 三段结构解析、命名定义提取和规则抽取逻辑。
  */
 
 #include "lex_parser.h"
@@ -18,12 +18,15 @@
 namespace seu_lex {
 namespace {
 
+/**
+ * @brief 在 `.l` 文件文本中定位顶层 `%%` 分段标记。
+ */
 std::size_t findSectionDelimiter(const std::string& content, std::size_t startPos) {
   bool inVerbatim = false;
   bool lineStart = true;
   for (std::size_t index = startPos; index + 1 < content.size(); ++index) {
-    // `%%` only splits sections when it appears at the beginning of a logical
-    // line and outside `%{ ... %}` verbatim blocks.
+    // 只有当 `%%` 出现在逻辑行开头且不在 `%{ ... %}` 原样代码块内部时，
+    // 才能作为定义段、规则段和用户代码段的分隔符。
     if (lineStart) {
       std::size_t marker = index;
       while (marker < content.size() &&
@@ -59,6 +62,9 @@ std::size_t findSectionDelimiter(const std::string& content, std::size_t startPo
   return std::string::npos;
 }
 
+/**
+ * @brief 去掉字符串首尾空白字符。
+ */
 std::string trim(const std::string& input) {
   const auto begin = std::find_if_not(input.begin(), input.end(), [](unsigned char ch) {
     return std::isspace(ch) != 0;
@@ -72,6 +78,9 @@ std::string trim(const std::string& input) {
   return std::string(begin, end);
 }
 
+/**
+ * @brief 按行切分字符串，同时保留结尾空行语义。
+ */
 std::vector<std::string> splitByLines(const std::string& text) {
   std::vector<std::string> lines;
   std::stringstream ss(text);
@@ -85,6 +94,9 @@ std::vector<std::string> splitByLines(const std::string& text) {
   return lines;
 }
 
+/**
+ * @brief 去除一行中位于字符串字面量之外的块注释起始部分。
+ */
 std::string stripInlineComment(const std::string& line) {
   bool inQuote = false;
   for (std::size_t i = 0; i + 1 < line.size(); ++i) {
@@ -98,6 +110,9 @@ std::string stripInlineComment(const std::string& line) {
   return line;
 }
 
+/**
+ * @brief 判断一个动作代码块的大括号是否已经完整闭合。
+ */
 bool isActionBalanced(const std::string& action) {
   if (action.empty()) {
     return false;
@@ -105,8 +120,8 @@ bool isActionBalanced(const std::string& action) {
   if (action.front() != '{') {
     return true;
   }
-  // Actions may contain strings, chars, or comments. The parser therefore
-  // tracks lexical context instead of naively counting braces.
+  // 动作中可能出现字符串、字符常量和注释，所以这里不能只数大括号，
+  // 必须同时跟踪当前所处的词法上下文。
   int braceDepth = 0;
   bool inString = false;
   bool inChar = false;
@@ -168,6 +183,9 @@ bool isActionBalanced(const std::string& action) {
   return braceDepth == 0;
 }
 
+/**
+ * @brief 把一条规则文本拆成“正则部分”和“动作部分”。
+ */
 std::pair<std::string, std::string> splitRegexAndAction(const std::string& ruleText) {
   bool inQuote = false;
   bool inClass = false;
@@ -196,8 +214,8 @@ std::pair<std::string, std::string> splitRegexAndAction(const std::string& ruleT
       continue;
     }
     if (!inQuote && !inClass && std::isspace(static_cast<unsigned char>(ch)) != 0) {
-      // The first whitespace outside literals and character classes separates
-      // the rule's regex from its action block.
+      // 只有位于普通上下文中的首个空白符才能切开正则和动作，
+      // 字符串和字符类里的空白都必须原样保留。
       separator = i;
       break;
     }
@@ -208,6 +226,9 @@ std::pair<std::string, std::string> splitRegexAndAction(const std::string& ruleT
   return {trim(ruleText.substr(0, separator)), trim(ruleText.substr(separator))};
 }
 
+/**
+ * @brief 读取整个 `.l` 文件内容。
+ */
 std::string readWholeFile(const std::string& path) {
   std::ifstream input(path);
   if (!input) {
@@ -218,6 +239,9 @@ std::string readWholeFile(const std::string& path) {
   return buffer.str();
 }
 
+/**
+ * @brief 抽取指定左右标记之间的原样代码块，并记录其原始区间。
+ */
 std::string takeBetweenMarkers(const std::string& text,
                                const std::string& left,
                                const std::string& right,
@@ -233,8 +257,8 @@ std::string takeBetweenMarkers(const std::string& text,
     if (end == std::string::npos) {
       throw std::runtime_error("unterminated marker block in definitions section");
     }
-    // The extracted body is preserved verbatim and also removed from the
-    // normalized definitions view so directive parsing does not see it twice.
+    // 原样代码既要保留下来供最终代码生成使用，也要从标准化视图中移除，
+    // 避免后续把它再次误当成定义段指令进行解析。
     extracted << text.substr(begin + left.size(), end - begin - left.size()) << '\n';
     if (ranges != nullptr) {
       ranges->push_back({begin, end + right.size()});
@@ -244,6 +268,9 @@ std::string takeBetweenMarkers(const std::string& text,
   return extracted.str();
 }
 
+/**
+ * @brief 从文本中删除若干指定区间，得到适合继续解析的规范化内容。
+ */
 std::string removeRanges(const std::string& text,
                          const std::vector<std::pair<std::size_t, std::size_t>>& ranges) {
   if (ranges.empty()) {
@@ -263,8 +290,11 @@ std::string removeRanges(const std::string& text,
   return oss.str();
 }
 
-}  // namespace
+}  // 匿名命名空间
 
+/**
+ * @brief 解析一个 Lex 输入文件，并返回三段结构化结果。
+ */
 LexSpecification LexParser::parseLexFile(const std::string& path) const {
   LexSpecification spec;
   idreTable.clear();
@@ -283,8 +313,8 @@ LexSpecification LexParser::parseLexFile(const std::string& path) const {
   spec.rulesSection = content.substr(first + 2, second - (first + 2));
   spec.userSubroutines = content.substr(second + 2);
 
-  // Parse named definitions first so later RE expansion can resolve `{NAME}`
-  // references without revisiting the original source file.
+  // 先解析命名定义，后续扩展正则时才能直接替换 `{NAME}` 引用，
+  // 不需要再回头重新扫描原始文件。
   std::vector<std::pair<std::size_t, std::size_t>> verbatimRanges;
   spec.verbatimDefinitions =
       takeBetweenMarkers(spec.definitionsSection, "%{", "%}", &verbatimRanges);
@@ -318,8 +348,8 @@ LexSpecification LexParser::parseLexFile(const std::string& path) const {
     pendingRule += rawLine;
     const auto parts = splitRegexAndAction(pendingRule);
     if (parts.first.empty() || !isActionBalanced(parts.second)) {
-      // Multi-line actions are accumulated until the block is structurally
-      // complete, which keeps parsing simple without losing source fidelity.
+      // 多行动作会持续累积，直到代码块结构完整为止，
+      // 这样既能保持实现简单，也不会破坏原始代码内容。
       continue;
     }
     LexRule rule;
@@ -335,4 +365,4 @@ LexSpecification LexParser::parseLexFile(const std::string& path) const {
   return spec;
 }
 
-}  // namespace seu_lex
+}  // 命名空间 seu_lex

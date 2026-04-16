@@ -7,15 +7,15 @@
 
 /**
  * @file yacc_parser.h
- * @brief Yacc source parser interfaces and report-defined grammar structures.
+ * @brief 定义 Yacc 源文件解析接口以及中期报告要求的文法数据结构。
  */
 
 namespace seu_yacc {
 
 /**
- * @brief Report-defined operator precedence group.
+ * @brief 中期报告中定义的运算符优先级分组结构。
  *
- * `rl` stores associativity as a C-style string to match the report.
+ * `rl` 以 C 风格字符串保存结合性，保持与报告定义完全一致。
  */
 typedef struct operators {
   std::vector<char> op;
@@ -24,7 +24,7 @@ typedef struct operators {
 } LROP;
 
 /**
- * @brief Report-defined production structure.
+ * @brief 中期报告中定义的产生式结构。
  */
 typedef struct produce {
   std::string left;
@@ -32,7 +32,7 @@ typedef struct produce {
 } producer;
 
 /**
- * @brief One parsed Yacc alternative with attached metadata.
+ * @brief 一条已经解析完成的 Yacc 规则分支及其附加信息。
  */
 struct YaccRule {
   produce grammar;
@@ -42,7 +42,7 @@ struct YaccRule {
 };
 
 /**
- * @brief One precedence/associativity declaration group.
+ * @brief 一个优先级与结合性声明分组。
  */
 struct PrecedenceDeclaration {
   std::string associativity;
@@ -51,7 +51,7 @@ struct PrecedenceDeclaration {
 };
 
 /**
- * @brief Parsed Yacc specification split into three sections.
+ * @brief 将 `.y` 文件按定义段、规则段、用户代码段拆解后的完整结果。
  */
 struct YaccSpecification {
   std::string definitionsSection;
@@ -68,16 +68,16 @@ struct YaccSpecification {
 };
 
 /**
- * @brief Parse `.y` input files into structured grammar data.
+ * @brief 负责把 `.y` 输入文件解析为结构化文法数据。
  */
 class YaccParser {
  public:
   /**
-   * @brief Parse a Yacc source file.
+   * @brief 解析一个 Yacc 源文件。
    *
-   * Complexity: O(N), where N is the file size.
+   * 时间复杂度：O(N)，其中 N 为文件长度。
    */
   YaccSpecification parseYaccFile(const std::string& path) const;
 };
 
-}  // namespace seu_yacc
+}  // 命名空间 seu_yacc

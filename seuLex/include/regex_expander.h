@@ -4,22 +4,22 @@
 
 /**
  * @file regex_expander.h
- * @brief Extended Lex regular-expression expansion interface.
+ * @brief 扩展 Lex 正则表达式展开接口。
  */
 
 namespace seu_lex {
 
 /**
- * @brief Expand extended Lex regular expressions into ordinary RE tokens.
+ * @brief 将扩展 Lex 正则表达式展开为普通 RE 记号流。
  */
 class REExpander {
  public:
   /**
-   * @brief Expand one extended RE using `idreTable`.
+   * @brief 借助 `idreTable` 展开一条扩展 RE。
    *
-   * Complexity: O(M + K), where M is input length and K is normalized output.
+   * 复杂度：O(M + K)，其中 M 为输入长度，K 为规范化输出长度。
    */
   std::string expandRE(const std::string& raw) const;
 };
 
-}  // namespace seu_lex
+}  // 命名空间 seu_lex

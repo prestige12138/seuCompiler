@@ -6,13 +6,13 @@
 
 /**
  * @file symbol_table.h
- * @brief Semantic symbol-table support for the intermediate-code stage.
+ * @brief 定义中间代码阶段使用的语义符号表接口。
  */
 
 namespace seu_icg {
 
 /**
- * @brief One semantic symbol entry.
+ * @brief 一条语义符号记录。
  */
 struct SymbolEntry {
   std::string name;
@@ -24,79 +24,79 @@ struct SymbolEntry {
 };
 
 /**
- * @brief Scope-aware semantic symbol table.
+ * @brief 支持作用域嵌套的语义符号表。
  */
 class SymbolTable {
  public:
   /**
-   * @brief Reset the symbol table to one empty global scope.
+   * @brief 将符号表重置为仅包含空全局作用域的初始状态。
    *
-   * Complexity: O(S), where S is the total number of stored symbols.
+   * 时间复杂度：O(S)，其中 S 为当前保存的符号总数。
    */
   void reset();
 
   /**
-   * @brief Enter one nested local scope.
+   * @brief 进入一个新的局部作用域。
    *
-   * Complexity: amortized O(1).
+   * 时间复杂度：均摊 O(1)。
    */
   void enterScope();
 
   /**
-   * @brief Exit the current scope while preserving outer scopes.
+   * @brief 退出当前作用域，并保留外层作用域信息。
    *
-   * Complexity: O(K), where K is the number of symbols in the current scope.
+   * 时间复杂度：O(K)，其中 K 为当前作用域内的符号数。
    */
   void exitScope();
 
   /**
-   * @brief Declare one symbol in the current scope.
+   * @brief 在当前作用域中声明一个符号。
    *
-   * Duplicate declarations in the same scope are rejected.
-   * Complexity: amortized O(1).
+   * 同一作用域内的重复声明会被拒绝。
+   * 时间复杂度：均摊 O(1)。
    */
   bool declare(const SymbolEntry& entry);
 
   /**
-   * @brief Declare one variable.
+   * @brief 声明一个变量符号。
    *
-   * Offsets are auto-assigned when `offset < 0`.
-   * Complexity: amortized O(1).
+   * 当 `offset < 0` 时会自动分配偏移量。
+   * 时间复杂度：均摊 O(1)。
    */
   bool declareVariable(const std::string& name, const std::string& type);
 
   /**
-   * @brief Declare one function in the global scope.
+   * @brief 在全局作用域中声明一个函数。
    *
-   * Complexity: amortized O(1).
+   * 时间复杂度：均摊 O(1)。
    */
   bool declareFunction(const std::string& name, const std::string& return_type);
 
   /**
-   * @brief Declare one parameter in the current scope.
+   * @brief 在当前作用域中声明一个函数参数。
    *
-   * Complexity: amortized O(1).
+   * 时间复杂度：均摊 O(1)。
    */
   bool declareParameter(const std::string& name, const std::string& type);
 
   /**
-   * @brief Look up one symbol from inner to outer scope.
+   * @brief 按由内到外的顺序查找符号。
    *
-   * Complexity: O(D), where D is the scope depth.
+   * 时间复杂度：O(D)，其中 D 为作用域深度。
    */
   const SymbolEntry* lookup(const std::string& name) const;
 
   /**
-   * @brief Look up one symbol only in the current scope.
+   * @brief 只在当前作用域中查找符号。
    *
-   * Complexity: amortized O(1).
+   * 时间复杂度：均摊 O(1)。
    */
   const SymbolEntry* lookupCurrentScope(const std::string& name) const;
 
   /**
-   * @brief Return the current scope level.
+   * @brief 返回当前作用域层级。
    *
-   * Complexity: O(1).
+   * 时间复杂度：O(1)。
    */
   int currentScopeLevel() const;
 
@@ -111,4 +111,4 @@ class SymbolTable {
   int nextGlobalOffset_ = 0;
 };
 
-}  // namespace seu_icg
+}  // 命名空间 seu_icg

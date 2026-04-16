@@ -4,22 +4,22 @@
 
 /**
  * @file dfa_minimizer.h
- * @brief DFA minimization interface.
+ * @brief 确定有限自动机最小化接口。
  */
 
 namespace seu_lex {
 
 /**
- * @brief Minimize a DFA by partition refinement.
+ * @brief 使用划分细化法最小化 DFA。
  */
 class DFAMinimizer {
  public:
   /**
-   * @brief Minimize a DFA while preserving accepting actions.
+   * @brief 在保持接受动作不变的前提下最小化 DFA。
    *
-   * Complexity: O(P * V * |Sigma|), where P is the refinement round count.
+   * 复杂度：O(P * V * |Sigma|)，其中 P 为划分细化轮数。
    */
   dfa minimizeDFA(const dfa& automaton) const;
 };
 
-}  // namespace seu_lex
+}  // 命名空间 seu_lex

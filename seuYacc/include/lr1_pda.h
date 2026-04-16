@@ -10,13 +10,13 @@
 
 /**
  * @file lr1_pda.h
- * @brief LR(1) item-set automaton construction interfaces.
+ * @brief 定义 FIRST/FOLLOW 集、LR(1) 项目集闭包以及 LR 自动机构造接口。
  */
 
 namespace seu_yacc {
 
 /**
- * @brief Report-defined LR(1) item.
+ * @brief 中期报告中定义的 LR(1) 项结构。
  */
 typedef struct ITEM {
   std::string left;
@@ -26,7 +26,7 @@ typedef struct ITEM {
 } LRItem;
 
 /**
- * @brief Report-defined LR automaton node.
+ * @brief 中期报告中定义的 LR 自动机状态结点。
  */
 typedef struct node {
   int stateindex = 0;
@@ -35,38 +35,38 @@ typedef struct node {
 } LRnode;
 
 /**
- * @brief Report-defined LR pushdown automaton.
+ * @brief 中期报告中定义的 LR 下推自动机结构。
  */
 typedef struct PDA {
   std::vector<LRnode> nodes;
 } LRPDA;
 
 /**
- * @brief Build FIRST/FOLLOW sets and the canonical LR(1) automaton.
+ * @brief 负责构造 FIRST/FOLLOW 集、规范 LR(1) 自动机以及直接 LALR 自动机。
  */
 class LR1Builder {
  public:
   /**
-   * @brief Compute FIRST sets for the current grammar.
+   * @brief 计算当前文法中所有符号的 FIRST 集。
    *
-   * Complexity: O(P * K * I), where P is production count, K is average RHS
-   * length, and I is refinement rounds.
+   * 时间复杂度：O(P * K * I)，其中 P 为产生式数量，K 为右部平均长度，
+   * I 为迭代收敛轮数。
    */
   std::map<std::string, std::set<std::string>> computeFirstSets() const;
 
   /**
-   * @brief Compute FOLLOW sets for the current grammar.
+   * @brief 基于 FIRST 集计算当前文法的 FOLLOW 集。
    *
-   * Complexity: O(P * K * I).
+   * 时间复杂度：O(P * K * I)。
    */
   std::map<std::string, std::set<std::string>> computeFollowSets(
       const std::map<std::string, std::set<std::string>>& first_sets,
       const std::string& start_symbol) const;
 
   /**
-   * @brief Compute LR(1) closure of one kernel item set.
+   * @brief 计算一个核心项目集对应的 LR(1) 闭包。
    *
-   * Complexity: O(P * T) over reachable closure items.
+   * 时间复杂度：对可达闭包项目而言为 O(P * T)。
    */
   std::vector<ITEM> closure(
       const std::vector<ITEM>& kernel,
@@ -74,9 +74,9 @@ class LR1Builder {
       const std::string& start_symbol) const;
 
   /**
-   * @brief Compute GOTO(items, symbol).
+   * @brief 计算 GOTO(items, symbol) 转移结果。
    *
-   * Complexity: O(I + C), where I is input item count and C is closure cost.
+   * 时间复杂度：O(I + C)，其中 I 为输入项目数，C 为闭包计算代价。
    */
   std::vector<ITEM> gotoSet(
       const std::vector<ITEM>& items,
@@ -85,12 +85,11 @@ class LR1Builder {
       const std::string& start_symbol) const;
 
   /**
-   * @brief Build an LALR(1) automaton directly on LR(0) cores by propagating
-   * LR(1) lookaheads until a fixed point.
+   * @brief 直接在 LR(0) 核上迭代传播展望符，构造 LALR(1) 自动机。
    *
-   * Complexity: O(S * I * L * F) per propagation round in the worst case,
-   * where S is LR(0) state count, I is items per state, L is lookahead count,
-   * and F is FIRST-sequence cost.
+   * 时间复杂度：最坏情况下每轮传播为 O(S * I * L * F)，其中
+   * S 为 LR(0) 状态数，I 为每个状态中的项目数，L 为展望符数量，
+   * F 为 FIRST 串计算代价。
    */
   LRPDA buildLALRPDA(
       const std::string& start_symbol,
@@ -98,9 +97,9 @@ class LR1Builder {
       std::map<std::string, std::set<std::string>>* follow_sets = nullptr) const;
 
   /**
-   * @brief Build the canonical LR(1) item-set automaton.
+   * @brief 构造规范 LR(1) 项目集自动机。
    *
-   * Complexity: exponential in the worst case.
+   * 时间复杂度：最坏情况下呈指数级。
    */
   LRPDA buildCanonicalPDA(
       const std::string& start_symbol,
@@ -108,4 +107,4 @@ class LR1Builder {
       std::map<std::string, std::set<std::string>>* follow_sets = nullptr) const;
 };
 
-}  // namespace seu_yacc
+}  // 命名空间 seu_yacc

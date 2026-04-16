@@ -1,6 +1,6 @@
 /**
  * @file dfa_minimizer.cpp
- * @brief DFA minimization by iterative partition refinement.
+ * @brief 实现基于分区细化的 DFA 最小化过程。
  */
 
 #include "dfa_minimizer.h"
@@ -16,6 +16,9 @@
 namespace seu_lex {
 namespace {
 
+/**
+ * @brief 查询某个状态当前应当对应的接受动作。
+ */
 std::string actionForState(int stateId) {
   const auto minimal = mindfareturn.find(stateId);
   if (minimal != mindfareturn.end()) {
@@ -28,8 +31,11 @@ std::string actionForState(int stateId) {
   return "";
 }
 
-}  // namespace
+}  // 匿名命名空间
 
+/**
+ * @brief 对 DFA 进行最小化，并同步更新接受态动作映射。
+ */
 dfa DFAMinimizer::minimizeDFA(const dfa& automaton) const {
   if (automaton.nodeVec.empty()) {
     return automaton;
@@ -70,8 +76,8 @@ dfa DFAMinimizer::minimizeDFA(const dfa& automaton) const {
       std::map<std::string, std::vector<int>> buckets;
       for (int stateId : group) {
         std::ostringstream signature;
-        // Two states stay equivalent only if their outgoing transitions and
-        // accepting actions point to the same partition signature.
+        // 两个状态只有在出边落点分区和接受动作都一致时，
+        // 才能继续保留在同一个等价类里。
         signature << stateToPartition[stateId] << '#';
         signature << actionForState(stateId) << '#';
         const auto transitions = automaton.nodeVec[stateId].getMultimap();
@@ -141,4 +147,4 @@ dfa DFAMinimizer::minimizeDFA(const dfa& automaton) const {
   return result;
 }
 
-}  // namespace seu_lex
+}  // 命名空间 seu_lex

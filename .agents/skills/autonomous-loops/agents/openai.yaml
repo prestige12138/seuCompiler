@@ -1,7 +1,0 @@
-interface:
-  display_name: "Autonomous Loops"
-  short_description: "Controlled multi-agent loop execution patterns"
-  brand_color: "#6366F1"
-  default_prompt: "Design a controlled autonomous loop with checkpoints and stop conditions"
-policy:
-  allow_implicit_invocation: true

@@ -1,7 +1,0 @@
-interface:
-  display_name: "Git Workflow"
-  short_description: "Git branching, commits, and collaboration best practices"
-  brand_color: "#F97316"
-  default_prompt: "Apply safe git workflow guidance for commits, branches, and reviews"
-policy:
-  allow_implicit_invocation: true

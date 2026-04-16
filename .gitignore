@@ -108,3 +108,8 @@ assets/images/security/badrudi-exploit.mp4
 /integration/tests/pipeline/results/
 /integration/tests/ir_pipeline/results/
 /build-review/
+
+# Local agent / harness metadata
+/AGENTS.md
+/.codex/
+/.agents/

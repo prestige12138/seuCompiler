@@ -68,6 +68,7 @@ tasks/
 # Personal configs (if any)
 personal/
 private/
+resources/
 
 # Session templates (not committed)
 examples/sessions/*.tmp

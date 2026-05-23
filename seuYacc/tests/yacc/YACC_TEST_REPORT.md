@@ -303,3 +303,289 @@
   - 代码生成与运行时：5 项
   - 错误处理与回归：2 项
 - 代码行覆盖率：当前项目未配置 gcov / llvm-cov / CTest 覆盖率采集，因此无法提供真实行覆盖率百分比；本报告仅给出能力覆盖率与实际运行结果。
+
+## 7. Yacc-A 现场 CLI 演示操作记录
+
+本节记录可现场复现的 CLI 操作。操作 01-14 展示 Yacc-A 重点路径，操作 15-27 补充展示其余 Yacc 测试结果，确保 18 个测试用例在运行层面和结果展示层面均有覆盖。ACTION/GOTO 分析表与 parser 代码生成属于 Yacc-B，在本节中仅作为完整测试套件结果展示。
+
+### 操作 01：进入项目根目录
+
+```bash
+cd /Users/llawliet/代码/seuCompiler
+```
+
+- 目的：确保后续相对路径均从仓库根目录解析。
+- 结果路径：无文件输出。
+
+### 操作 02：确认当前分支
+
+```bash
+git branch --show-current
+```
+
+- 预期输出：当前用于答辩的分支名，例如 `minic-plus`。
+- 结果路径：终端标准输出。
+
+### 操作 03：查看 Yacc-A 相关测试输入清单
+
+```bash
+ls seuYacc/tests/yacc/test_cases/0*.y
+```
+
+- 预期输出：至少包含 `01_parse_sections_basic.y`、`02_parse_union_precedence_midrule.y`、`03_first_follow_expr.y`、`04_first_follow_nullable_chain.y`、`05_closure_lookahead.y`。
+- 结果路径：`seuYacc/tests/yacc/test_cases/`
+
+### 操作 04：展示 `.y` 三段解析输入
+
+```bash
+sed -n '1,120p' seuYacc/tests/yacc/test_cases/01_parse_sections_basic.y
+```
+
+- 预期输出：显示 definitions、rules、user subroutines 三段结构。
+- 结果路径：`seuYacc/tests/yacc/test_cases/01_parse_sections_basic.y`
+
+### 操作 05：展示声明、优先级与 mid-rule action 输入
+
+```bash
+sed -n '1,160p' seuYacc/tests/yacc/test_cases/02_parse_union_precedence_midrule.y
+```
+
+- 预期输出：显示 `%union`、typed token、typed nonterminal、优先级声明与 mid-rule action。
+- 结果路径：`seuYacc/tests/yacc/test_cases/02_parse_union_precedence_midrule.y`
+
+### 操作 06：展示 closure lookahead 输入
+
+```bash
+sed -n '1,160p' seuYacc/tests/yacc/test_cases/05_closure_lookahead.y
+```
+
+- 预期输出：显示用于验证 LR(1) closure lookahead 传播的文法。
+- 结果路径：`seuYacc/tests/yacc/test_cases/05_closure_lookahead.y`
+
+### 操作 07：构建 seuYacc
+
+```bash
+cmake -S seuYacc -B seuYacc/build
+cmake --build seuYacc/build -j
+```
+
+- 预期输出：构建成功，终端出现 `Built target seuYacc`。
+- 结果路径：`seuYacc/build/seuYacc`
+
+### 操作 08：运行完整 Yacc 测试
+
+```bash
+bash seuYacc/tests/yacc/run_yacc_tests.sh
+```
+
+- 预期输出：`Total: 18`、`Passed: 18`、`Failed: 0`，并打印 `Result directory`。
+- 结果路径：`seuYacc/tests/yacc/results/<时间戳>/`
+
+### 操作 09：记录本次结果目录
+
+```bash
+RESULT_DIR=seuYacc/tests/yacc/results/<时间戳>
+```
+
+- 说明：将 `<时间戳>` 替换为操作 08 输出的实际目录名。
+- 示例：`RESULT_DIR=seuYacc/tests/yacc/results/20260519_185751`
+- 结果路径：`$RESULT_DIR`
+
+### 操作 10：展示测试汇总
+
+```bash
+cat "$RESULT_DIR/SUMMARY.md"
+```
+
+- 预期输出：18 个测试条目均为 `PASS`。
+- 结果路径：`$RESULT_DIR/SUMMARY.md`
+
+### 操作 11：展示三段解析实际结果与预期结果
+
+```bash
+cat "$RESULT_DIR/01_parse_sections_basic.txt"
+cat seuYacc/tests/yacc/expected/01_parse_sections_basic.txt
+```
+
+- 预期输出：实际结果与预期结果一致。
+- 实际结果路径：`$RESULT_DIR/01_parse_sections_basic.txt`
+- 预期结果路径：`seuYacc/tests/yacc/expected/01_parse_sections_basic.txt`
+
+### 操作 12：展示 `%union`、优先级与 mid-rule action 结果
+
+```bash
+cat "$RESULT_DIR/02_parse_union_precedence_midrule.txt"
+cat seuYacc/tests/yacc/expected/02_parse_union_precedence_midrule.txt
+```
+
+- 预期输出：`typed_tokens=1`、`typed_nonterminals=1`、`precedence_groups=2`、`midrule_rules=1` 等字段匹配。
+- 实际结果路径：`$RESULT_DIR/02_parse_union_precedence_midrule.txt`
+- 预期结果路径：`seuYacc/tests/yacc/expected/02_parse_union_precedence_midrule.txt`
+
+### 操作 13：展示 FIRST / FOLLOW 与 nullable chain 结果
+
+```bash
+cat "$RESULT_DIR/03_first_follow_expr.txt"
+cat "$RESULT_DIR/04_first_follow_nullable_chain.txt"
+```
+
+- 预期输出：表达式文法 FIRST/FOLLOW 正确；nullable chain 中 `<epsilon>` 与 FOLLOW 传播结果正确。
+- 结果路径：
+  - `$RESULT_DIR/03_first_follow_expr.txt`
+  - `$RESULT_DIR/04_first_follow_nullable_chain.txt`
+
+### 操作 14：展示 closure lookahead 与 LR(1) 模式结果
+
+```bash
+cat "$RESULT_DIR/05_closure_lookahead.txt"
+cat "$RESULT_DIR/14_mode_lr1_generation_compile.txt"
+```
+
+- 预期输出：
+  - `05_closure_lookahead.txt` 中包含带正确 lookahead 的 LR(1) item。
+  - `14_mode_lr1_generation_compile.txt` 中包含 `generate_exit=0`、`compile_exit=0`、`mode=lr1`。
+- 结果路径：
+  - `$RESULT_DIR/05_closure_lookahead.txt`
+  - `$RESULT_DIR/14_mode_lr1_generation_compile.txt`
+
+### 操作 15：展示 direct LALR 与 merged LALR 对比结果
+
+```bash
+cat "$RESULT_DIR/06_direct_lalr_vs_merge_lalr.txt"
+cat seuYacc/tests/yacc/expected/06_direct_lalr_vs_merge_lalr.txt
+```
+
+- 预期输出：direct LALR 与 canonical LR(1) 合并后的 LALR 在状态数和表内容上匹配。
+- 实际结果路径：`$RESULT_DIR/06_direct_lalr_vs_merge_lalr.txt`
+- 预期结果路径：`seuYacc/tests/yacc/expected/06_direct_lalr_vs_merge_lalr.txt`
+
+### 操作 16：展示左结合优先级运行时结果
+
+```bash
+cat "$RESULT_DIR/07_precedence_left_assoc_runtime.txt"
+cat seuYacc/tests/yacc/expected/07_precedence_left_assoc_runtime.txt
+```
+
+- 预期输出：`parse=true`，`value=5`。
+- 实际结果路径：`$RESULT_DIR/07_precedence_left_assoc_runtime.txt`
+- 预期结果路径：`seuYacc/tests/yacc/expected/07_precedence_left_assoc_runtime.txt`
+
+### 操作 17：展示 nonassoc 拒绝结果
+
+```bash
+cat "$RESULT_DIR/08_precedence_nonassoc_reject.txt"
+cat seuYacc/tests/yacc/expected/08_precedence_nonassoc_reject.txt
+```
+
+- 预期输出：`parse=false`。
+- 实际结果路径：`$RESULT_DIR/08_precedence_nonassoc_reject.txt`
+- 预期结果路径：`seuYacc/tests/yacc/expected/08_precedence_nonassoc_reject.txt`
+
+### 操作 18：展示 reduce/reduce 冲突记录结果
+
+```bash
+cat "$RESULT_DIR/09_reduce_reduce_resolution.txt"
+cat seuYacc/tests/yacc/expected/09_reduce_reduce_resolution.txt
+```
+
+- 预期输出：包含 reduce/reduce 冲突统计与最终保留动作。
+- 实际结果路径：`$RESULT_DIR/09_reduce_reduce_resolution.txt`
+- 预期结果路径：`seuYacc/tests/yacc/expected/09_reduce_reduce_resolution.txt`
+
+### 操作 19：展示符号表作用域遮蔽结果
+
+```bash
+cat "$RESULT_DIR/10_symbol_table_scope_shadowing.txt"
+cat seuYacc/tests/yacc/expected/10_symbol_table_scope_shadowing.txt
+```
+
+- 预期输出：外层 `x`、内层 `x`、退出作用域后的 `x` 查询结果符合遮蔽与恢复规则。
+- 实际结果路径：`$RESULT_DIR/10_symbol_table_scope_shadowing.txt`
+- 预期结果路径：`seuYacc/tests/yacc/expected/10_symbol_table_scope_shadowing.txt`
+
+### 操作 20：展示 Lex token 契约正例结果
+
+```bash
+cat "$RESULT_DIR/11_lex_token_contract_accept.txt"
+cat seuYacc/tests/yacc/expected/11_lex_token_contract_accept.txt
+```
+
+- 预期输出：`parse=true`。
+- 实际结果路径：`$RESULT_DIR/11_lex_token_contract_accept.txt`
+- 预期结果路径：`seuYacc/tests/yacc/expected/11_lex_token_contract_accept.txt`
+
+### 操作 21：展示 generated parser 拒绝路径结果
+
+```bash
+cat "$RESULT_DIR/12_generated_parse_failure.txt"
+cat seuYacc/tests/yacc/expected/12_generated_parse_failure.txt
+```
+
+- 预期输出：`parse=false`。
+- 实际结果路径：`$RESULT_DIR/12_generated_parse_failure.txt`
+- 预期结果路径：`seuYacc/tests/yacc/expected/12_generated_parse_failure.txt`
+
+### 操作 22：展示语义动作与用户代码结果
+
+```bash
+cat "$RESULT_DIR/13_generated_semantic_actions_and_user_code.txt"
+cat seuYacc/tests/yacc/expected/13_generated_semantic_actions_and_user_code.txt
+```
+
+- 预期输出：`parse=true`，`semantic_total=7`。
+- 实际结果路径：`$RESULT_DIR/13_generated_semantic_actions_and_user_code.txt`
+- 预期结果路径：`seuYacc/tests/yacc/expected/13_generated_semantic_actions_and_user_code.txt`
+
+### 操作 23：展示缺失分隔符错误结果
+
+```bash
+cat "$RESULT_DIR/15_error_missing_delimiters.txt"
+cat seuYacc/tests/yacc/expected/15_error_missing_delimiters.txt
+```
+
+- 预期输出：`exit_code=1`，stderr 包含缺失第二个 `%%` 的错误信息。
+- 实际结果路径：`$RESULT_DIR/15_error_missing_delimiters.txt`
+- 预期结果路径：`seuYacc/tests/yacc/expected/15_error_missing_delimiters.txt`
+
+### 操作 24：展示未闭合 action block 错误结果
+
+```bash
+cat "$RESULT_DIR/16_error_unterminated_action.txt"
+cat seuYacc/tests/yacc/expected/16_error_unterminated_action.txt
+```
+
+- 预期输出：`exit_code=1`，stderr 包含未闭合 action block 的错误信息。
+- 实际结果路径：`$RESULT_DIR/16_error_unterminated_action.txt`
+- 预期结果路径：`seuYacc/tests/yacc/expected/16_error_unterminated_action.txt`
+
+### 操作 25：展示 resources/minic.y 回归生成结果
+
+```bash
+cat "$RESULT_DIR/17_resource_minic_generation_regression.txt"
+cat seuYacc/tests/yacc/expected/17_resource_minic_generation_regression.txt
+```
+
+- 预期输出：`generate_exit=0`，`compile_exit=0`。
+- 实际结果路径：`$RESULT_DIR/17_resource_minic_generation_regression.txt`
+- 预期结果路径：`seuYacc/tests/yacc/expected/17_resource_minic_generation_regression.txt`
+
+### 操作 26：展示 CLI 内建自测结果
+
+```bash
+cat "$RESULT_DIR/18_cli_self_test.txt"
+cat seuYacc/tests/yacc/expected/18_cli_self_test.txt
+```
+
+- 预期输出：`exit_code=0`，`has_sample=yes`，`has_semantic=yes`，`has_minic=yes`。
+- 实际结果路径：`$RESULT_DIR/18_cli_self_test.txt`
+- 预期结果路径：`seuYacc/tests/yacc/expected/18_cli_self_test.txt`
+
+### 操作 27：检查 18 个测试结果文件是否齐全
+
+```bash
+ls "$RESULT_DIR"/*.txt | wc -l
+ls "$RESULT_DIR"/*.txt | sort
+```
+
+- 预期输出：第一条命令输出 `18`；第二条命令列出 `01` 到 `18` 的实际结果文件。
+- 结果路径：`$RESULT_DIR/*.txt`

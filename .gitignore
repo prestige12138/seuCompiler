@@ -68,7 +68,7 @@ tasks/
 # Personal configs (if any)
 personal/
 private/
-resources/
+resources_bk/
 
 # Session templates (not committed)
 examples/sessions/*.tmp
@@ -114,3 +114,8 @@ assets/images/security/badrudi-exploit.mp4
 /AGENTS.md
 /.codex/
 /.agents/
+
+# Local defense study notes
+/defense-notes/
+/seuCompiler-code-records/
+/report/
